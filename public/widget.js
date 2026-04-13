@@ -9,7 +9,7 @@
   var TITLE = script.getAttribute("data-title") || "Fale Conosco";
   var POSITION = script.getAttribute("data-position") || "right";
   var SIZE = script.getAttribute("data-size") || "medium";
-  var API_URL = "https://sbcjupyigboefiqfrjqk.supabase.co/functions/v1/save-leads";
+  var API_URL = "https://ggdxcuvmdxznfzttbhss.supabase.co/functions/v1/save-leads";
 
   var sizeMap = {
     small:  { width: 280, btn: 44, icon: 22, title: 15, label: 11, input: "8px 10px", font: 13 },
