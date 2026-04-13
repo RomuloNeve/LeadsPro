@@ -1,0 +1,1 @@
+ALTER TABLE public.chatbot_configs ADD COLUMN auto_reply_all boolean NOT NULL DEFAULT false;

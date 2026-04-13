@@ -1,0 +1,2 @@
+ALTER TABLE public.licenses DROP CONSTRAINT licenses_plan_type_check;
+ALTER TABLE public.licenses ADD CONSTRAINT licenses_plan_type_check CHECK (plan_type = ANY (ARRAY['lifetime'::text, 'monthly'::text, 'mensal'::text, 'anual'::text, 'free'::text, 'starter'::text, 'profissional'::text, 'enterprise'::text]));

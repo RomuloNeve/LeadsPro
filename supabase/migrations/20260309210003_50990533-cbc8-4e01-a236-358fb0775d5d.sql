@@ -1,0 +1,1 @@
+UPDATE public.licenses SET plan_type = 'mensal', expires_at = now() + interval '30 days', updated_at = now() WHERE id = '3149a57a-5942-4eff-93ff-7adf8d3788c7'

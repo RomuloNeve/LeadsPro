@@ -1,0 +1,1 @@
+ALTER TABLE public.chatbot_configs ADD COLUMN scheduling_link text DEFAULT NULL;

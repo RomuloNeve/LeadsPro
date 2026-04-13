@@ -1,0 +1,67 @@
+project_id = "sbcjupyigboefiqfrjqk"
+
+[functions.register-affiliate]
+verify_jwt = false
+
+[functions.validate-license]
+verify_jwt = false
+
+[functions.save-leads]
+verify_jwt = false
+
+[functions.activate-license]
+verify_jwt = false
+
+[functions.search-leads]
+verify_jwt = false
+
+[functions.process-followups]
+verify_jwt = false
+
+[functions.whatsapp-instance]
+verify_jwt = false
+
+[functions.whatsapp-inbox]
+verify_jwt = false
+
+[functions.trigger-campaign]
+verify_jwt = false
+
+[functions.improve-message]
+verify_jwt = false
+
+[functions.improve-email]
+verify_jwt = false
+
+[functions.create-pix]
+verify_jwt = false
+
+[functions.check-pix]
+verify_jwt = false
+
+[functions.generate-license]
+verify_jwt = false
+
+[functions.test-evolution]
+verify_jwt = false
+
+[functions.send-email-campaign]
+verify_jwt = false
+
+[functions.cakto-webhook]
+verify_jwt = false
+
+[functions.chatbot-webhook]
+verify_jwt = false
+
+[functions.generate-blog-posts]
+verify_jwt = false
+
+[functions.sitemap]
+verify_jwt = false
+
+[functions.send-group-message]
+verify_jwt = false
+
+[functions.renewal-reminder]
+verify_jwt = false

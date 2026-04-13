@@ -1,0 +1,1 @@
+ALTER TABLE public.campaigns ADD COLUMN IF NOT EXISTS audio_urls text[] DEFAULT NULL;

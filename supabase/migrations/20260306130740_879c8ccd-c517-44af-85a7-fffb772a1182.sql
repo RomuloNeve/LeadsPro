@@ -1,0 +1,1 @@
+ALTER TABLE public.campaigns ADD COLUMN image_urls text[] DEFAULT NULL;

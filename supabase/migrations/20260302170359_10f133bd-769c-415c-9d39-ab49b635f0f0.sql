@@ -1,0 +1,1 @@
+ALTER TABLE public.followup_sequences ADD COLUMN target_filter text DEFAULT NULL;

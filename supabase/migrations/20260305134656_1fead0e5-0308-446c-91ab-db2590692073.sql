@@ -1,0 +1,1 @@
+DELETE FROM api_error_logs WHERE error_message LIKE '✅%';
