@@ -297,9 +297,11 @@ const LandingPage = () => {
       {/* ═══ NAV ═══ */}
       <nav className={`fixed top-0 w-full z-50 transition-all duration-300 ${scrolled ? "bg-background/95 backdrop-blur-xl border-b border-border/40" : "bg-transparent"}`} role="navigation" aria-label="Navegação principal">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-2.5 sm:py-3 flex items-center justify-between">
-          <a href="/" className="flex items-center gap-3 group" aria-label="LeadsPro - Página inicial">
-            <img src={logoFull} alt="LeadsPro" className="h-8 sm:h-10 hidden sm:block transition-all duration-300" />
-            <img src={logoIcon} alt="LeadsPro" className="h-8 sm:hidden transition-all duration-300" />
+          <a href="/" className="flex items-center gap-2 group" aria-label="LeadsPro - Página inicial">
+            <img src={logoIcon} alt="LeadsPro" className="h-9 sm:h-10 transition-all duration-300" />
+            <span className="text-lg sm:text-xl font-bold font-display text-foreground hidden sm:block">
+              Leads<span className="gradient-text">Pro</span>
+            </span>
           </a>
           <div className="hidden lg:flex items-center gap-8">
             {/* Recursos dropdown */}
@@ -1420,8 +1422,9 @@ const LandingPage = () => {
         <div className="container mx-auto px-5 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
             <div>
-              <a href="/" className="flex items-center gap-2.5 mb-4" aria-label="LeadsPro">
-                <img src={logoFull} alt="LeadsPro — Ferramenta de Captura de Leads e Automação de Vendas" className="h-6" />
+              <a href="/" className="flex items-center gap-2 mb-4" aria-label="LeadsPro">
+                <img src={logoIcon} alt="LeadsPro" className="h-8" />
+                <span className="text-lg font-bold font-display text-foreground">Leads<span className="gradient-text">Pro</span></span>
               </a>
               <p className="text-xs text-muted-foreground max-w-md leading-relaxed">
                 Plataforma completa para capturar leads do Google Maps, Instagram e LinkedIn. Disparo em massa no WhatsApp, follow-up automático, CRM de vendas, pipeline Kanban, chatbot com IA e e-mail marketing.
