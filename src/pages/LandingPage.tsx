@@ -11,22 +11,7 @@ import screenshotOverview from "@/assets/screenshot-overview.png";
 import screenshotStats from "@/assets/screenshot-stats.png";
 import screenshotCampaigns from "@/assets/screenshot-campaigns.png";
 import screenshotFollowups from "@/assets/screenshot-followups.png";
-import featBusca from "@/assets/feat-busca.png";
-import featCrm from "@/assets/feat-crm.png";
-import featDisparo from "@/assets/feat-disparo.png";
-import featFollowup from "@/assets/feat-followup.png";
-import featImportacao from "@/assets/feat-importacao.png";
-import featListas from "@/assets/feat-listas-1.png";
-import featOverview from "@/assets/feat-overview-1.png";
-import featStats from "@/assets/feat-stats.png";
-import featEmailMarketing from "@/assets/feat-email-marketing.png";
-import featInbox from "@/assets/feat-caixa-entrada.png";
-import featCriarGrupo from "@/assets/feat-criar-grupo.png";
-import featInstancia from "@/assets/feat-instancia.png";
-import featChatbot from "@/assets/feat-chatbot.png";
-import featPipeline from "@/assets/feat-pipeline.png";
-import featWidget from "@/assets/feat-widget.png";
-import featAtendimentoHumano from "@/assets/feat-atendimento-humano.png";
+// Feature icons are rendered inline with Lucide icons + gradient backgrounds
 import logoFull from "@/assets/logo-full.png";
 import logoIcon from "@/assets/logo-icon.png";
 import headerBg from "@/assets/header-bg.png";
@@ -313,8 +298,8 @@ const LandingPage = () => {
       <nav className={`fixed top-0 w-full z-50 transition-all duration-300 ${scrolled ? "bg-background/95 backdrop-blur-xl border-b border-border/40" : "bg-transparent"}`} role="navigation" aria-label="Navegação principal">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-2.5 sm:py-3 flex items-center justify-between">
           <a href="/" className="flex items-center gap-3 group" aria-label="LeadsPro - Página inicial">
-            <img src={logoFull} alt="LeadsPro" className={`h-20 sm:h-28 hidden sm:block transition-all duration-300 ${scrolled ? "" : "brightness-0 invert"}`} />
-            <img src={logoIcon} alt="LeadsPro" className={`h-10 sm:hidden transition-all duration-300 ${scrolled ? "" : "brightness-0 invert"}`} />
+            <img src={logoFull} alt="LeadsPro" className="h-8 sm:h-10 hidden sm:block transition-all duration-300" />
+            <img src={logoIcon} alt="LeadsPro" className="h-8 sm:hidden transition-all duration-300" />
           </a>
           <div className="hidden lg:flex items-center gap-8">
             {/* Recursos dropdown */}
@@ -685,22 +670,22 @@ const LandingPage = () => {
           viewport={{ once: true }}
         >
           {[
-            { img: featBusca, title: "Busca Inteligente", desc: "Pesquise por categoria e localização com extração automática de dados.", route: "/recursos/busca" },
-            { img: featCrm, title: "CRM Completo", desc: "Visualize, filtre e organize todos os seus leads em tempo real.", route: "/recursos/crm" },
-            { img: featImportacao, title: "Importação em Massa", desc: "Importe milhares de leads via Excel ou CSV com mapeamento automático.", route: "/recursos/importacao" },
-            { img: featDisparo, title: "Campanhas com disparo em massa no WhatsApp", desc: "Campanhas segmentadas com envio em massa via WhatsApp.", route: "/recursos/disparo" },
-            { img: featFollowup, title: "Follow-ups Automáticos", desc: "Sequências automáticas nos dias 1, 3, 5 e 7 após a captura.", route: "/recursos/followup" },
-            { img: featStats, title: "Estatísticas & Métricas", desc: "Acompanhe sua evolução com gráficos e ranking de categorias.", route: "/recursos/estatisticas" },
-            { img: featListas, title: "Listas Personalizadas", desc: "Organize leads em listas customizadas por cor e nome.", route: "/recursos/listas" },
-            { img: featOverview, title: "Painel de Controle", desc: "Métricas de funil e evolução diária num único painel.", route: "/recursos/painel" },
-            { img: featEmailMarketing, title: "Email Marketing", desc: "Campanhas de email em massa com segmentação por categoria e otimização com IA.", route: "/recursos/email-marketing" },
-            { img: featInbox, title: "Caixa de Entrada WhatsApp", desc: "Visualize e responda conversas do WhatsApp direto pelo sistema em tempo real.", route: "/recursos/caixa-de-entrada" },
-            { img: featCriarGrupo, title: "Criação de Grupos", desc: "Crie grupos no WhatsApp direto pela plataforma, selecione contatos e defina nome.", route: "/recursos/criar-grupos" },
-            { img: featInstancia, title: "Integração via QR Code", desc: "Conecte seu próprio número via QR Code para automações e disparos.", route: "/recursos/instancia" },
-            { img: featChatbot, title: "Chatbot IA 24/7", desc: "Assistente de IA que responde leads, envia propostas e agenda reuniões 24h por dia.", route: "/recursos/chatbot-ia" },
-            { img: featPipeline, title: "Pipeline de Vendas", desc: "Kanban visual com drag-and-drop para gerenciar seu funil de vendas em tempo real.", route: "/recursos/pipeline" },
-            { img: featWidget, title: "Widget de Captura", desc: "Formulário flutuante para seu site. Lead cai no CRM e agente de IA faz o primeiro contato no WhatsApp.", route: "/recursos/widget" },
-            { img: featAtendimentoHumano, title: "Atendimento Humano", desc: "Transferência automática do chatbot para atendente humano. Notificação por e-mail, WhatsApp e som em tempo real.", route: "/recursos/chatbot-ia" },
+            { icon: Search, title: "Busca Inteligente", desc: "Pesquise por categoria e localização com extração automática de dados.", route: "/recursos/busca", color: "from-blue-500 to-cyan-400" },
+            { icon: Database, title: "CRM Completo", desc: "Visualize, filtre e organize todos os seus leads em tempo real.", route: "/recursos/crm", color: "from-emerald-500 to-green-400" },
+            { icon: Upload, title: "Importação em Massa", desc: "Importe milhares de leads via Excel ou CSV com mapeamento automático.", route: "/recursos/importacao", color: "from-violet-500 to-purple-400" },
+            { icon: MessageCircle, title: "Campanhas WhatsApp em Massa", desc: "Campanhas segmentadas com envio em massa via WhatsApp e proteção anti-ban.", route: "/recursos/disparo", color: "from-green-500 to-emerald-400" },
+            { icon: Repeat, title: "Follow-ups Automáticos", desc: "Sequências automáticas nos dias 1, 3, 5 e 7 após a captura.", route: "/recursos/followup", color: "from-orange-500 to-amber-400" },
+            { icon: BarChart3, title: "Estatísticas & Métricas", desc: "Acompanhe sua evolução com gráficos e ranking de categorias.", route: "/recursos/estatisticas", color: "from-pink-500 to-rose-400" },
+            { icon: MousePointerClick, title: "Listas Personalizadas", desc: "Organize leads em listas customizadas por cor e nome.", route: "/recursos/listas", color: "from-yellow-500 to-orange-400" },
+            { icon: LayoutDashboard, title: "Painel de Controle", desc: "Métricas de funil e evolução diária num único painel.", route: "/recursos/painel", color: "from-indigo-500 to-blue-400" },
+            { icon: Mail, title: "Email Marketing", desc: "Campanhas de email em massa com segmentação por categoria e otimização com IA.", route: "/recursos/email-marketing", color: "from-red-500 to-pink-400" },
+            { icon: Inbox, title: "Caixa de Entrada WhatsApp", desc: "Visualize e responda conversas do WhatsApp direto pelo sistema em tempo real.", route: "/recursos/caixa-de-entrada", color: "from-teal-500 to-cyan-400" },
+            { icon: UsersRound, title: "Criação de Grupos", desc: "Crie grupos no WhatsApp direto pela plataforma, selecione contatos e defina nome.", route: "/recursos/criar-grupos", color: "from-lime-500 to-green-400" },
+            { icon: Smartphone, title: "Integração via QR Code", desc: "Conecte seu próprio número via QR Code para automações e disparos.", route: "/recursos/instancia", color: "from-cyan-500 to-blue-400" },
+            { icon: Bot, title: "Chatbot IA 24/7", desc: "Assistente de IA que responde leads, envia propostas e agenda reuniões 24h por dia.", route: "/recursos/chatbot-ia", color: "from-purple-500 to-violet-400" },
+            { icon: Kanban, title: "Pipeline de Vendas", desc: "Kanban visual com drag-and-drop para gerenciar seu funil de vendas em tempo real.", route: "/recursos/pipeline", color: "from-sky-500 to-blue-400" },
+            { icon: Code, title: "Widget de Captura", desc: "Formulário flutuante para seu site. Lead cai no CRM e agente de IA faz o primeiro contato.", route: "/recursos/widget", color: "from-fuchsia-500 to-pink-400" },
+            { icon: Headphones, title: "Atendimento Humano", desc: "Transferência automática do chatbot para atendente humano com notificação em tempo real.", route: "/recursos/chatbot-ia", color: "from-amber-500 to-yellow-400" },
           ].map((item) => (
             <motion.article
               key={item.title}
@@ -708,13 +693,8 @@ const LandingPage = () => {
               onClick={() => navigate(item.route)}
               className="rounded-2xl border border-border/60 bg-card overflow-hidden card-shadow hover:border-primary/30 transition-all duration-300 group cursor-pointer"
             >
-              <div className="overflow-hidden bg-muted/30">
-                <img
-                  src={item.img}
-                  alt={item.title}
-                  className="w-full h-32 sm:h-52 object-contain object-center p-2 group-hover:scale-[1.03] transition-transform duration-500"
-                  loading="lazy"
-                />
+              <div className={`flex items-center justify-center h-32 sm:h-44 bg-gradient-to-br ${item.color} opacity-90 group-hover:opacity-100 transition-opacity`}>
+                <item.icon className="h-12 w-12 sm:h-16 sm:w-16 text-white drop-shadow-lg" strokeWidth={1.5} />
               </div>
               <div className="p-5">
                 <h3 className="font-semibold font-display text-foreground mb-2">{item.title}</h3>
