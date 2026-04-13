@@ -119,13 +119,13 @@ const UserSearch = () => {
         </p>
         {isFreeUser ? (
           <div className="flex flex-col sm:flex-row gap-3">
-            <Button className="gradient-bg text-primary-foreground" onClick={() => window.open("https://pay.cakto.com.br/o2k2g9z_791165", "_blank")}>
+            <Button className="gradient-bg text-primary-foreground" onClick={() => window.open("https://pay.cakto.com.br/mrhbivc_848520", "_blank")}>
               Pro — R$197/mês <ArrowRight className="h-4 w-4 ml-2" />
             </Button>
-            <Button variant="outline" onClick={() => window.open("https://pay.cakto.com.br/8g9ng54_791174", "_blank")}>
+            <Button variant="outline" onClick={() => window.open("https://pay.cakto.com.br/p69cmy8_848513", "_blank")}>
               Starter — R$97/mês
             </Button>
-            <Button variant="outline" onClick={() => window.open("https://pay.cakto.com.br/345cnhf", "_blank")}>
+            <Button variant="outline" onClick={() => window.open("https://pay.cakto.com.br/32icmcq_848524", "_blank")}>
               Enterprise — R$397/mês
             </Button>
           </div>

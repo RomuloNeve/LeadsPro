@@ -154,9 +154,9 @@ const SectionHeader = ({ badge, title, subtitle }: {
 /* ══════════════════════════════════════════════ */
 
 const DEFAULT_CHECKOUT_LINKS = {
-  starter: "https://pay.cakto.com.br/8g9ng54_791174",
-  profissional: "https://pay.cakto.com.br/o2k2g9z_791165",
-  enterprise: "https://pay.cakto.com.br/345cnhf",
+  starter: "https://pay.cakto.com.br/p69cmy8_848513",
+  profissional: "https://pay.cakto.com.br/mrhbivc_848520",
+  enterprise: "https://pay.cakto.com.br/32icmcq_848524",
 };
 
 const LandingPage = () => {

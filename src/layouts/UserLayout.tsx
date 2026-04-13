@@ -93,7 +93,7 @@ const FreeTrialCountdown = () => {
       <span className="text-xs opacity-90">Leads: {freeLeadsUsed}/{FREE_LEAD_LIMIT} ({freeLeadsRemaining} restantes)</span>
       <span className="hidden sm:inline">—</span>
       <a
-        href="https://pay.cakto.com.br/o2k2g9z_791165"
+        href="https://pay.cakto.com.br/mrhbivc_848520"
         target="_blank"
         rel="noopener noreferrer"
         className="underline font-semibold hidden sm:inline"
@@ -176,21 +176,21 @@ const ExpiredTrialModal = () => {
         <div className="space-y-3 mt-4">
           <Button
             className="w-full gradient-bg text-primary-foreground h-12 font-semibold"
-            onClick={() => window.open("https://pay.cakto.com.br/o2k2g9z_791165", "_blank")}
+            onClick={() => window.open("https://pay.cakto.com.br/mrhbivc_848520", "_blank")}
           >
             Pro — R$197/mês <ArrowRight className="h-4 w-4 ml-2" />
           </Button>
           <Button
             variant="outline"
             className="w-full h-12"
-            onClick={() => window.open("https://pay.cakto.com.br/8g9ng54_791174", "_blank")}
+            onClick={() => window.open("https://pay.cakto.com.br/p69cmy8_848513", "_blank")}
           >
             Starter — R$97/mês
           </Button>
           <Button
             variant="outline"
             className="w-full h-12"
-            onClick={() => window.open("https://pay.cakto.com.br/345cnhf", "_blank")}
+            onClick={() => window.open("https://pay.cakto.com.br/32icmcq_848524", "_blank")}
           >
             Enterprise — R$397/mês
           </Button>
@@ -304,7 +304,7 @@ const DashboardHeader = () => {
           <div className="space-y-3 mt-2">
             {license?.plan_type !== "starter" && (
               <button
-                onClick={() => window.open("https://pay.cakto.com.br/8g9ng54_791174", "_blank")}
+                onClick={() => window.open("https://pay.cakto.com.br/p69cmy8_848513", "_blank")}
                 className="w-full p-4 rounded-xl border border-border hover:border-primary/50 hover:bg-primary/5 transition-all text-left"
               >
                 <div className="flex items-center justify-between">
@@ -317,7 +317,7 @@ const DashboardHeader = () => {
               </button>
             )}
             <button
-              onClick={() => window.open("https://pay.cakto.com.br/o2k2g9z_791165", "_blank")}
+              onClick={() => window.open("https://pay.cakto.com.br/mrhbivc_848520", "_blank")}
               className="w-full p-4 rounded-xl border-2 border-primary bg-primary/5 hover:bg-primary/10 transition-all text-left relative"
             >
               <span className="absolute -top-2.5 left-4 px-2 py-0.5 text-[10px] font-bold uppercase gradient-bg text-primary-foreground rounded-full">Mais popular</span>
@@ -330,7 +330,7 @@ const DashboardHeader = () => {
               </div>
             </button>
             <button
-              onClick={() => window.open("https://pay.cakto.com.br/345cnhf", "_blank")}
+              onClick={() => window.open("https://pay.cakto.com.br/32icmcq_848524", "_blank")}
               className="w-full p-4 rounded-xl border border-border hover:border-primary/50 hover:bg-primary/5 transition-all text-left"
             >
               <div className="flex items-center justify-between">

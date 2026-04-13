@@ -151,7 +151,7 @@ Passando para avisar que faltam *5 dias* para a renovação do seu plano no *Lea
 
 Para continuar usando sem interrupção, garanta que a renovação seja feita a tempo! Se tiver qualquer dúvida, estou por aqui. 🚀
 
-Renovar agora: https://pay.cakto.com.br/o2k2g9z_791165`;
+Renovar agora: https://pay.cakto.com.br/mrhbivc_848520`;
 
     // Generate variations
     const variants = await generateVariations(baseMessage, Math.min(targets.length, 6));

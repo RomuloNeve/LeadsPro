@@ -74,9 +74,9 @@ INFORMAÇÕES DE PLANOS:
 - Starter: R$97/mês (500 créditos)
 - Pro: R$197/mês (2.000 créditos) — mais popular
 - Enterprise: R$397/mês (5.000 créditos)
-- Link Starter: https://pay.cakto.com.br/8g9ng54_791174
-- Link Pro: https://pay.cakto.com.br/o2k2g9z_791165
-- Link Enterprise: https://pay.cakto.com.br/345cnhf
+- Link Starter: https://pay.cakto.com.br/p69cmy8_848513
+- Link Pro: https://pay.cakto.com.br/mrhbivc_848520
+- Link Enterprise: https://pay.cakto.com.br/32icmcq_848524
 
 ESCALAÇÃO PARA SUPORTE NÍVEL 2:
 - Se após 2-3 tentativas o problema persistir e você não conseguir resolver
