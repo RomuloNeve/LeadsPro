@@ -14,14 +14,12 @@ const UserBilling = () => {
       case "starter": return "Starter";
       case "profissional": return "Pro";
       case "enterprise": return "Enterprise (Scale)";
-      case "lifetime": return "Vitalício";
       default: return license?.plan_type || "—";
     }
   })();
 
   const getDaysForRenewal = () => {
     if (!license) return null;
-    if (license.plan_type === "lifetime") return null;
     if (license.expires_at) return getDaysRemaining(license.expires_at);
     const created = new Date(license.created_at);
     const renewalDate = new Date(created.getTime() + 30 * 24 * 60 * 60 * 1000);
@@ -43,7 +41,6 @@ const UserBilling = () => {
       case "profissional": return "R$ 197,00/mês";
       case "enterprise": return "R$ 397,00/mês";
       case "free": return "Grátis";
-      case "lifetime": return "Vitalício";
       default: return "—";
     }
   })();
@@ -111,15 +108,6 @@ const UserBilling = () => {
             </div>
           )}
 
-          {license?.plan_type === "lifetime" && (
-            <div className="flex items-center gap-3 p-4 rounded-xl border border-primary/30 bg-primary/5">
-              <Crown className="h-5 w-5 text-primary" />
-              <div>
-                <p className="text-sm font-semibold text-foreground">Plano Vitalício</p>
-                <p className="text-xs text-muted-foreground">Sua licença não expira. Acesso permanente.</p>
-              </div>
-            </div>
-          )}
         </CardContent>
       </Card>
 
@@ -157,7 +145,7 @@ const UserBilling = () => {
       </Card>
 
       {/* Upgrade */}
-      {license?.plan_type !== "enterprise" && license?.plan_type !== "lifetime" && (
+      {license?.plan_type !== "enterprise" && (
         <Card className="border-primary/30 card-shadow bg-primary/[0.02]">
           <CardContent className="p-6">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">

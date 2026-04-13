@@ -60,12 +60,11 @@ const Checkout = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const plan = searchParams.get("plan") || "lifetime";
-  const isLifetime = plan === "lifetime";
+  const plan = searchParams.get("plan") || "monthly";
   const isYearly = plan === "yearly";
-  const amount = isYearly ? 120000 : isLifetime ? 29700 : 19700;
-  const displayAmount = isYearly ? "R$ 1.200,00" : isLifetime ? "R$ 297,00" : "R$ 197,00";
-  const planLabel = isYearly ? "Anual" : isLifetime ? "Vitalício" : "Mensal";
+  const amount = isYearly ? 120000 : 19700;
+  const displayAmount = isYearly ? "R$ 1.200,00" : "R$ 197,00";
+  const planLabel = isYearly ? "Anual" : "Mensal";
 
   const [form, setForm] = useState({ name: "", email: "", cellphone: "", taxId: "" });
   const [loading, setLoading] = useState(false);

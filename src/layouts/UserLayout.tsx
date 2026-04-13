@@ -138,7 +138,7 @@ const ExpiredTrialModal = () => {
 
   // Periodic check every 30s
   useEffect(() => {
-    if (!license || license.plan_type === "lifetime") return;
+    if (!license) return;
     const interval = setInterval(() => {
       if (!license.is_active) {
         setOpen(true);
@@ -256,12 +256,11 @@ const DashboardHeader = () => {
       case "starter": return "Starter";
       case "profissional": return "Pro";
       case "enterprise": return "Scale";
-      case "lifetime": return "Vitalício";
       default: return license?.plan_type || "";
     }
   })();
 
-  const canUpgrade = license && license.plan_type !== "lifetime";
+  const canUpgrade = license && license.plan_type !== "enterprise";
   const [upgradeOpen, setUpgradeOpen] = useState(false);
 
   return (

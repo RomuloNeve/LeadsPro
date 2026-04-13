@@ -211,7 +211,7 @@ const Dashboard = () => {
   const [totalErrors, setTotalErrors] = useState(0);
   const [instances, setInstances] = useState<any[]>([]);
   const [description, setDescription] = useState("");
-  const [planType, setPlanType] = useState<string>("lifetime");
+  const [planType, setPlanType] = useState<string>("monthly");
   const [userEmail, setUserEmail] = useState("");
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
@@ -365,7 +365,7 @@ const Dashboard = () => {
       toast({ title: "Licença gerada!", description: `${code}${assignedTo ? ` → ${userEmail}` : ""}` });
       setDescription("");
       setUserEmail("");
-      setPlanType("lifetime");
+      setPlanType("monthly");
       fetchAdminData();
     }
     setGenerating(false);
@@ -647,14 +647,14 @@ const Dashboard = () => {
             <div className="flex items-center gap-3 flex-wrap">
               <h2 className="text-lg font-semibold font-display text-foreground">Usuários ({users.length})</h2>
               <div className="flex gap-2 flex-wrap">
-                {["todos", "free", "mensal", "anual", "lifetime", "sem-licenca"].map((f) => (
+                {["todos", "free", "mensal", "anual", "sem-licenca"].map((f) => (
                   <Badge
                     key={f}
                     variant="outline"
                     className={`text-xs cursor-pointer transition-colors ${userSearch === (f === "todos" ? "" : f) ? "bg-primary text-primary-foreground border-primary" : "hover:bg-muted"}`}
                     onClick={() => setUserSearch(f === "todos" ? "" : f)}
                   >
-                    {f === "todos" ? "Todos" : f === "sem-licenca" ? "Sem licença" : f === "free" ? "Free" : f === "mensal" ? "Mensal" : f === "anual" ? "Anual" : "Vitalício"}
+                    {f === "todos" ? "Todos" : f === "sem-licenca" ? "Sem licença" : f === "free" ? "Free" : f === "mensal" ? "Mensal" : "Anual"}
                   </Badge>
                 ))}
               </div>
@@ -665,12 +665,11 @@ const Dashboard = () => {
             </div>
 
             {/* Quick stats */}
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               <StatCard icon={Users} label="Total" value={users.length} color="text-foreground" />
               <StatCard icon={Gift} label="Free" value={users.filter(u => u.license?.plan_type === "free").length} color="text-green-500" />
               <StatCard icon={Calendar} label="Mensal" value={users.filter(u => u.license?.plan_type === "mensal").length} color="text-blue-500" />
               <StatCard icon={Crown} label="Anual" value={users.filter(u => u.license?.plan_type === "anual").length} color="text-purple-500" />
-              <StatCard icon={Crown} label="Vitalício" value={users.filter(u => u.license?.plan_type === "lifetime").length} color="text-amber-500" />
             </div>
 
             {/* Export Leads Section */}
@@ -925,8 +924,8 @@ const Dashboard = () => {
                   <Select value={planType} onValueChange={setPlanType}>
                     <SelectTrigger className="w-full sm:w-[160px]"><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="lifetime">Vitalício</SelectItem>
                       <SelectItem value="monthly">Mensal</SelectItem>
+                      <SelectItem value="anual">Anual</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

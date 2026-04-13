@@ -14,7 +14,6 @@ const UserOverview = () => {
   // Calculate days remaining: use expires_at if available, otherwise created_at + 30 days for mensal
   const getDaysForRenewal = () => {
     if (!license) return null;
-    if (license.plan_type === "lifetime") return null;
     if (license.expires_at) {
       return getDaysRemaining(license.expires_at);
     }
@@ -33,7 +32,6 @@ const UserOverview = () => {
       case "starter": return "Starter";
       case "profissional": return "Pro";
       case "enterprise": return "Scale";
-      case "lifetime": return "Vitalício";
       default: return license?.plan_type || "—";
     }
   })();
