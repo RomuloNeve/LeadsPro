@@ -109,13 +109,6 @@
 
   html {
     overflow-x: hidden;
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
-
-  html::-webkit-scrollbar {
-    width: 0;
-    height: 0;
   }
 
   body {
@@ -123,11 +116,6 @@
     font-family: 'Inter', sans-serif;
     overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
-  }
-
-  body::-webkit-scrollbar {
-    width: 0;
-    height: 0;
   }
 
   #root {
