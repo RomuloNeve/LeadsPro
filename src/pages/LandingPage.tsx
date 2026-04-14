@@ -297,8 +297,8 @@ const LandingPage = () => {
       {/* ═══ NAV ═══ */}
       <nav className={`fixed top-0 w-full z-50 transition-all duration-300 ${scrolled ? "bg-background/95 backdrop-blur-xl border-b border-border/40" : "bg-transparent"}`} role="navigation" aria-label="Navegação principal">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-2.5 sm:py-3 flex items-center justify-between">
-          <a href="/" className="flex items-center gap-2.5 group" aria-label="LeadsPro - Página inicial">
-            <img src={logoIcon} alt="LeadsPro" className="h-11 sm:h-14 transition-all duration-300" />
+          <a href="/" className="flex items-center gap-3 group" aria-label="LeadsPro - Página inicial">
+            <img src={logoIcon} alt="LeadsPro" className="h-14 sm:h-16 transition-all duration-300" />
             <span className="text-xl sm:text-2xl font-bold font-display text-foreground hidden sm:block">
               Leads<span className="gradient-text">Pro</span>
             </span>
