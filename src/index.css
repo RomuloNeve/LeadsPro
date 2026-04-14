@@ -7,98 +7,98 @@
 @layer base {
   :root {
     --background: 0 0% 100%;
-    --foreground: 274 10% 10%;
+    --foreground: 160 10% 10%;
 
     --card: 0 0% 98%;
-    --card-foreground: 274 10% 10%;
+    --card-foreground: 160 10% 10%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 274 10% 10%;
+    --popover-foreground: 160 10% 10%;
 
-    --primary: 274 83% 43%;
+    --primary: 160 84% 39%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 274 15% 93%;
-    --secondary-foreground: 274 10% 20%;
+    --secondary: 160 15% 93%;
+    --secondary-foreground: 160 10% 20%;
 
-    --muted: 274 10% 95%;
-    --muted-foreground: 274 5% 40%;
+    --muted: 160 10% 95%;
+    --muted-foreground: 160 5% 40%;
 
-    --accent: 274 70% 40%;
+    --accent: 175 70% 35%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 70% 50%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 274 10% 88%;
-    --input: 274 10% 88%;
-    --ring: 274 83% 43%;
+    --border: 160 10% 88%;
+    --input: 160 10% 88%;
+    --ring: 160 84% 39%;
 
     --radius: 0.75rem;
 
     --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 274 10% 15%;
-    --sidebar-primary: 274 83% 43%;
+    --sidebar-foreground: 160 10% 15%;
+    --sidebar-primary: 160 84% 39%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 274 15% 93%;
-    --sidebar-accent-foreground: 274 10% 20%;
-    --sidebar-border: 274 10% 88%;
-    --sidebar-ring: 274 83% 43%;
+    --sidebar-accent: 160 15% 93%;
+    --sidebar-accent-foreground: 160 10% 20%;
+    --sidebar-border: 160 10% 88%;
+    --sidebar-ring: 160 84% 39%;
 
-    /* Custom tokens */
-    --gradient-primary: linear-gradient(135deg, hsl(274 83% 43%), hsl(300 70% 45%));
-    --gradient-hero: linear-gradient(160deg, hsl(274 83% 43%), hsl(320 80% 50%), hsl(274 83% 43%));
-    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%), hsl(274 10% 97%));
-    --shadow-glow: 0 0 30px -5px hsl(274 83% 43% / 0.2);
+    /* Custom tokens — Emerald Growth palette */
+    --gradient-primary: linear-gradient(135deg, hsl(190 90% 40%), hsl(160 84% 39%));
+    --gradient-hero: linear-gradient(160deg, hsl(200 85% 45%), hsl(170 80% 38%), hsl(145 75% 42%));
+    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%), hsl(160 10% 97%));
+    --shadow-glow: 0 0 30px -5px hsl(160 84% 39% / 0.2);
     --shadow-card: 0 4px 20px -4px hsl(0 0% 0% / 0.08);
-    --shadow-intense: 0 0 60px -10px hsl(274 83% 43% / 0.3);
+    --shadow-intense: 0 0 60px -10px hsl(160 84% 39% / 0.3);
   }
 
   .dark {
-    --background: 274 10% 6%;
-    --foreground: 274 10% 95%;
+    --background: 200 15% 6%;
+    --foreground: 160 10% 95%;
 
-    --card: 274 10% 9%;
-    --card-foreground: 274 10% 95%;
+    --card: 200 12% 9%;
+    --card-foreground: 160 10% 95%;
 
-    --popover: 274 10% 9%;
-    --popover-foreground: 274 10% 95%;
+    --popover: 200 12% 9%;
+    --popover-foreground: 160 10% 95%;
 
-    --primary: 274 83% 43%;
+    --primary: 160 84% 39%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 274 20% 15%;
-    --secondary-foreground: 274 10% 90%;
+    --secondary: 200 15% 15%;
+    --secondary-foreground: 160 10% 90%;
 
-    --muted: 274 10% 14%;
-    --muted-foreground: 274 5% 55%;
+    --muted: 200 10% 14%;
+    --muted-foreground: 160 5% 55%;
 
-    --accent: 274 70% 40%;
+    --accent: 175 70% 35%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 70% 50%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 274 15% 18%;
-    --input: 274 15% 18%;
-    --ring: 274 83% 43%;
+    --border: 200 12% 18%;
+    --input: 200 12% 18%;
+    --ring: 160 84% 39%;
 
-    --sidebar-background: 274 10% 8%;
-    --sidebar-foreground: 274 10% 90%;
-    --sidebar-primary: 274 83% 43%;
+    --sidebar-background: 200 12% 8%;
+    --sidebar-foreground: 160 10% 90%;
+    --sidebar-primary: 160 84% 39%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 274 20% 15%;
-    --sidebar-accent-foreground: 274 10% 90%;
-    --sidebar-border: 274 15% 18%;
-    --sidebar-ring: 274 83% 43%;
+    --sidebar-accent: 200 15% 15%;
+    --sidebar-accent-foreground: 160 10% 90%;
+    --sidebar-border: 200 12% 18%;
+    --sidebar-ring: 160 84% 39%;
 
-    /* Custom tokens */
-    --gradient-primary: linear-gradient(135deg, hsl(274 83% 43%), hsl(300 70% 45%));
-    --gradient-hero: linear-gradient(160deg, hsl(274 83% 43%), hsl(320 80% 50%), hsl(274 83% 43%));
-    --gradient-card: linear-gradient(145deg, hsl(274 10% 11%), hsl(274 10% 8%));
-    --shadow-glow: 0 0 30px -5px hsl(274 83% 43% / 0.3);
+    /* Custom tokens — Emerald Growth palette (dark) */
+    --gradient-primary: linear-gradient(135deg, hsl(190 90% 40%), hsl(160 84% 39%));
+    --gradient-hero: linear-gradient(160deg, hsl(200 85% 45%), hsl(170 80% 38%), hsl(145 75% 42%));
+    --gradient-card: linear-gradient(145deg, hsl(200 12% 11%), hsl(200 12% 8%));
+    --shadow-glow: 0 0 30px -5px hsl(160 84% 39% / 0.3);
     --shadow-card: 0 4px 20px -4px hsl(0 0% 0% / 0.5);
-    --shadow-intense: 0 0 60px -10px hsl(274 83% 43% / 0.5);
+    --shadow-intense: 0 0 60px -10px hsl(160 84% 39% / 0.5);
   }
 }
 
