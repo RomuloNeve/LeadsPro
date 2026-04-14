@@ -109,12 +109,13 @@
 
   html {
     overflow-x: hidden;
+    overflow-y: auto;
   }
 
   body {
     @apply bg-background text-foreground font-sans antialiased;
     font-family: 'Inter', sans-serif;
-    overflow-x: hidden;
+    overflow: hidden;
     -webkit-overflow-scrolling: touch;
   }
 
