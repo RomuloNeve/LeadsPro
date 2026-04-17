@@ -20,7 +20,16 @@ serve(async (req) => {
       );
     }
 
-    const response = await fetch("https://api.abacatepay.com/v1/pixQrCode/check", {
+    const url = new URL(req.url);
+    const pixId = url.searchParams.get("id");
+    if (!pixId) {
+      return new Response(
+        JSON.stringify({ error: "pixId obrigatório" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const response = await fetch(`https://api.abacatepay.com/v1/pixQrCode/check?id=${pixId}`, {
       method: "GET",
       headers: {
         Authorization: `Bearer ${apiKey}`,

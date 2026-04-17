@@ -105,7 +105,7 @@ const Checkout = () => {
     pollingRef.current = setInterval(async () => {
       try {
         const res = await fetch(
-          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/check-pix`,
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/check-pix?id=${pixData.id}`,
           { method: "GET", headers: { "Content-Type": "application/json" } }
         );
         const result = await res.json();

@@ -177,7 +177,7 @@ Deno.serve(async (req) => {
         });
       }
 
-      const checkRes = await fetch("https://api.abacatepay.com/v1/pixQrCode/check", {
+      const checkRes = await fetch(`https://api.abacatepay.com/v1/pixQrCode/check?id=${pixId}`, {
         method: "GET",
         headers: { Authorization: `Bearer ${apiKey}` },
       });

@@ -38,8 +38,7 @@ serve(async (req) => {
       body: JSON.stringify({
         amount,
         expiresIn: 3600,
-        description: description || `Monster Prospect - Plano ${plan || "mensal"}`,
-        productId: plan === "lifetime" ? "prod_gZerLWC4GWym6nmshfZDxkFW" : "prod_pYPMTnLPKMhGc3yNJCtsry4z",
+        description: description || `LeadsPro - Plano ${plan || "mensal"}`,
         customer: {
           name: customer.name,
           cellphone: customer.cellphone,
