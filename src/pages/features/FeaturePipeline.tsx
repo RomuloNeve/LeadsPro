@@ -4,7 +4,6 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, ArrowRight, Kanban, GripVertical, Eye, Zap, BarChart3, MessageCircle, Shield } from "lucide-react";
 import { motion } from "framer-motion";
 import { useDocumentMeta } from "@/hooks/useDocumentMeta";
-import featPipeline from "@/assets/feat-pipeline.png";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 24 },
@@ -48,8 +47,8 @@ const FeaturePipeline = () => {
             <p className="text-muted-foreground mb-6 leading-relaxed max-w-3xl">
               Cada coluna representa uma etapa do funil: <strong>Novo</strong>, <strong>Quente</strong>, <strong>Frio</strong>, <strong>Agendado</strong>, <strong>Fechado</strong> e <strong>Perdido</strong>. Os cards mostram o nome do lead, categoria, e ações rápidas de contato (telefone, WhatsApp, email, Instagram, LinkedIn). Basta arrastar um card para outra coluna e o status é atualizado instantaneamente no banco de dados.
             </p>
-            <div className="rounded-2xl border border-border/60 overflow-hidden shadow-xl">
-              <img src={featPipeline} alt="Pipeline de vendas Kanban com colunas de status e cards de leads" className="w-full" />
+            <div className="rounded-2xl border border-border/60 overflow-hidden shadow-xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center h-48 sm:h-64">
+              <Kanban className="h-16 w-16 sm:h-24 sm:w-24 text-primary/40" strokeWidth={1} />
             </div>
           </motion.div>
 

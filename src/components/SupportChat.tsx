@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { X, Send, ImagePlus, AlertTriangle, Minimize2, Phone, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import leandroAvatar from "@/assets/fernando-avatar.png";
+import leandroAvatar from "@/assets/logo-icon.png";
 import ReactMarkdown from "react-markdown";
 import { useIsMobile } from "@/hooks/use-mobile";
 

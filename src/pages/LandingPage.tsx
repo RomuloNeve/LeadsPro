@@ -6,11 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useRef, useEffect, useState } from "react";
-import screenshotLeads from "@/assets/screenshot-leads.png";
-import screenshotOverview from "@/assets/screenshot-overview.png";
-import screenshotStats from "@/assets/screenshot-stats.png";
-import screenshotCampaigns from "@/assets/screenshot-campaigns.png";
-import screenshotFollowups from "@/assets/screenshot-followups.png";
 // Feature icons are rendered inline with Lucide icons + gradient backgrounds
 import logoFull from "@/assets/logo-full.png";
 import logoIcon from "@/assets/logo-icon.png";

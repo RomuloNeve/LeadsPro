@@ -5,7 +5,7 @@ import { ArrowLeft, ArrowRight, Search, MapPin, Globe, Building, Phone, Instagra
 import { motion } from "framer-motion";
 import { useDocumentMeta } from "@/hooks/useDocumentMeta";
 import { useStructuredData } from "@/hooks/useStructuredData";
-import featBusca from "@/assets/feat-busca.png";
+
 import { useState } from "react";
 
 const fadeUp = {

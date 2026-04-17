@@ -5,7 +5,7 @@ import { ArrowLeft, ArrowRight, MessageCircle, Users, Sparkles, Image, Send, Tar
 import { motion } from "framer-motion";
 import { useDocumentMeta } from "@/hooks/useDocumentMeta";
 import { useStructuredData } from "@/hooks/useStructuredData";
-import featDisparo from "@/assets/feat-disparo.png";
+
 import { useState } from "react";
 
 const fadeUp = {

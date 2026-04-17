@@ -27,7 +27,7 @@ import {
   ShieldCheck,
   Timer,
 } from "lucide-react";
-import productImage from "@/assets/monster-product.png";
+import productImage from "@/assets/logo-icon.png";
 import { trackCheckoutStart, trackPixGenerated, trackPurchaseComplete } from "@/lib/gtag";
 
 const formatCPF = (value: string) => {

@@ -4,7 +4,6 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, ArrowRight, MessageCircle, Bell, Search, Send, Smartphone, Users, Mic, Image, FileText, Contact, BarChart3, MapPin, Play, Volume2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useDocumentMeta } from "@/hooks/useDocumentMeta";
-import featInbox from "@/assets/feat-caixa-entrada.png";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 24 },
@@ -166,8 +165,8 @@ const FeatureInbox = () => {
             <p className="text-muted-foreground mb-6 leading-relaxed max-w-3xl">
               A caixa de entrada replica a interface do WhatsApp Web dentro da sua ferramenta de prospecção. Veja todas as conversas à esquerda, abra o histórico de mensagens e responda instantaneamente. As mensagens são sincronizadas em tempo real com seu WhatsApp conectado.
             </p>
-            <div className="rounded-2xl border border-border/60 overflow-hidden shadow-xl">
-              <img src={featInbox} alt="Caixa de entrada WhatsApp integrada ao sistema" className="w-full" />
+            <div className="rounded-2xl border border-border/60 overflow-hidden shadow-xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center h-48 sm:h-64">
+              <MessageCircle className="h-16 w-16 sm:h-24 sm:w-24 text-primary/40" strokeWidth={1} />
             </div>
           </motion.div>
 

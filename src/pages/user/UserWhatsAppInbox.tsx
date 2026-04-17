@@ -1,7 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import whatsappBg from "@/assets/whatsapp-bg.png";
-import whatsappBgDark from "@/assets/whatsapp-bg-dark.png";
-import screenshotInbox from "@/assets/screenshot-inbox.png";
+// WhatsApp-style background patterns applied via CSS
 import { useTheme } from "next-themes";
 import { PageTutorial } from "@/components/PageTutorial";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -1660,10 +1658,11 @@ const UserWhatsAppInbox = () => {
 
         {/* Messages Panel */}
         <div className={`flex-1 flex flex-col ${!selectedChat ? "hidden md:flex" : "flex"}`}
-          style={{ 
-            backgroundImage: `url(${isDark ? whatsappBgDark : whatsappBg})`,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
+          style={{
+            backgroundColor: isDark ? "#0b141a" : "#efeae2",
+            backgroundImage: isDark
+              ? "url(\"data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 5l5 10h10l-8 6 3 10-10-7-10 7 3-10-8-6h10z' fill='%23ffffff' fill-opacity='0.02'/%3E%3C/svg%3E\")"
+              : "url(\"data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 5l5 10h10l-8 6 3 10-10-7-10 7 3-10-8-6h10z' fill='%23000000' fill-opacity='0.03'/%3E%3C/svg%3E\")",
           }}
         >
           {!selectedChat ? (

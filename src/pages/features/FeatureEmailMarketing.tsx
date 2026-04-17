@@ -4,7 +4,6 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, ArrowRight, Mail, FileText, Users, BarChart3, Zap, Target, Sparkles, Clock, Send } from "lucide-react";
 import { motion } from "framer-motion";
 import { useDocumentMeta } from "@/hooks/useDocumentMeta";
-import featEmailMarketing from "@/assets/feat-email-marketing.png";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 24 },
@@ -43,8 +42,8 @@ const FeatureEmailMarketing = () => {
           </motion.p>
 
           <motion.div variants={fadeUp} custom={2.5} className="mb-12">
-            <div className="rounded-2xl border border-border/60 bg-card overflow-hidden card-shadow">
-              <img src={featEmailMarketing} alt="Print do Email Marketing do LeadsPro" className="w-full h-auto" loading="lazy" />
+            <div className="rounded-2xl border border-border/60 overflow-hidden shadow-xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center h-48 sm:h-64">
+              <Mail className="h-16 w-16 sm:h-24 sm:w-24 text-primary/40" strokeWidth={1} />
             </div>
           </motion.div>
 

@@ -4,7 +4,6 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, ArrowRight, Code, Globe, Palette, MessageCircle, Database, Zap, Bot, Send } from "lucide-react";
 import { motion } from "framer-motion";
 import { useDocumentMeta } from "@/hooks/useDocumentMeta";
-import featWidget from "@/assets/feat-widget.png";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 24 },
@@ -43,8 +42,8 @@ const FeatureWidget = () => {
           </motion.p>
 
           {/* Screenshot */}
-          <motion.div variants={fadeUp} custom={3} className="mb-16 rounded-2xl border border-border/60 overflow-hidden bg-card shadow-lg">
-            <img src={featWidget} alt="Widget de Captura - Tela de configuração" className="w-full object-contain" loading="lazy" />
+          <motion.div variants={fadeUp} custom={3} className="mb-16 rounded-2xl border border-border/60 overflow-hidden shadow-xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center h-48 sm:h-64">
+            <Code className="h-16 w-16 sm:h-24 sm:w-24 text-primary/40" strokeWidth={1} />
           </motion.div>
 
           {/* How it works */}
