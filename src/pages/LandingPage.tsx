@@ -106,8 +106,8 @@ function useCounter(end: number, duration = 2000, suffix = "") {
 const Section = ({ id, className = "", children, ariaLabel }: {
   id?: string; className?: string; children: React.ReactNode; ariaLabel?: string;
 }) => (
-  <section id={id} className={`py-16 md:py-24 lg:py-32 ${className} will-change-auto`} aria-label={ariaLabel}>
-    <div className="container mx-auto px-5 sm:px-6 lg:px-8">{children}</div>
+  <section id={id} className={`py-12 sm:py-16 md:py-24 lg:py-32 ${className} will-change-auto`} aria-label={ariaLabel}>
+    <div className="container mx-auto px-4 sm:px-6 lg:px-8">{children}</div>
   </section>
 );
 
@@ -124,8 +124,8 @@ const SectionHeader = ({ badge, title, subtitle }: {
     {badge && (
       <Badge variant="outline" className="mb-4 md:mb-5 border-primary/30 text-primary text-xs tracking-wide uppercase px-3 md:px-4 py-1.5">{badge}</Badge>
     )}
-    <h2 className="text-2xl sm:text-3xl md:text-5xl lg:text-[3.25rem] font-bold font-display leading-[1.15] tracking-tight">{title}</h2>
-    {subtitle && <p className="text-muted-foreground mt-4 md:mt-5 text-sm md:text-base lg:text-lg leading-relaxed max-w-xl mx-auto">{subtitle}</p>}
+    <h2 className="text-[1.5rem] sm:text-3xl md:text-5xl lg:text-[3.25rem] font-bold font-display leading-[1.15] tracking-tight">{title}</h2>
+    {subtitle && <p className="text-muted-foreground mt-3 md:mt-5 text-sm md:text-base lg:text-lg leading-relaxed max-w-xl mx-auto">{subtitle}</p>}
   </motion.header>
 );
 
@@ -288,13 +288,13 @@ const LandingPage = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-background overflow-x-hidden">
+    <div className="min-h-screen bg-background">
       {/* ═══ NAV ═══ */}
       <nav className={`fixed top-0 w-full z-50 transition-all duration-300 ${scrolled ? "bg-background/95 backdrop-blur-xl border-b border-border/40" : "bg-transparent"}`} role="navigation" aria-label="Navegação principal">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-2.5 sm:py-3 flex items-center justify-between">
-          <a href="/" className="flex items-center gap-3 group" aria-label="LeadsPro - Página inicial">
-            <img src={logoIcon} alt="LeadsPro" className="h-14 sm:h-16 transition-all duration-300" />
-            <span className="text-xl sm:text-2xl font-bold font-display text-foreground hidden sm:block">
+          <a href="/" className="flex items-center gap-2 sm:gap-3 group" aria-label="LeadsPro - Página inicial">
+            <img src={logoIcon} alt="LeadsPro" className="h-10 sm:h-12 transition-all duration-300" />
+            <span className="text-lg sm:text-xl font-bold font-display text-foreground">
               Leads<span className="gradient-text">Pro</span>
             </span>
           </a>
@@ -447,22 +447,22 @@ const LandingPage = () => {
       </nav>
 
       {/* ═══ HERO ═══ */}
-      <header className="relative min-h-screen flex items-center">
+      <header className="relative min-h-[100dvh] flex items-center">
         <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
           <img src={headerBg} alt="" className="absolute inset-0 w-full h-full object-cover object-top hidden lg:block" fetchPriority="high" decoding="async" loading="eager" />
-          <img src={headerBgMobile} alt="" className="absolute inset-0 w-full h-full object-cover object-top lg:hidden" fetchPriority="high" decoding="async" loading="eager" />
-          <div className="absolute inset-0 bg-black/60" />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/80" />
+          <img src={headerBgMobile} alt="" className="absolute inset-0 w-full h-full object-cover object-center lg:hidden" fetchPriority="high" decoding="async" loading="eager" />
+          <div className="absolute inset-0 bg-black/65" />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/85" />
         </div>
 
-        <div className="container mx-auto px-5 sm:px-6 lg:px-8 relative z-10 pt-36 sm:pt-44 lg:pt-48">
+        <div className="container mx-auto px-5 sm:px-6 lg:px-8 relative z-10 pt-28 sm:pt-36 lg:pt-44 pb-16 sm:pb-20">
           <motion.div className="max-w-4xl" initial="hidden" animate="visible">
-            <motion.div variants={fadeUp} custom={0} className="flex flex-wrap items-center gap-2.5 mb-8">
-              <Badge variant="outline" className="border-white/30 text-white/90 bg-white/10 backdrop-blur-sm px-4 py-1.5 text-xs tracking-wide">
-                <Zap className="h-3.5 w-3.5 mr-2" />
+            <motion.div variants={fadeUp} custom={0} className="flex flex-wrap items-center gap-2 mb-5 sm:mb-8">
+              <Badge variant="outline" className="border-white/30 text-white/90 bg-white/10 backdrop-blur-sm px-3 sm:px-4 py-1.5 text-[11px] sm:text-xs tracking-wide">
+                <Zap className="h-3 w-3 sm:h-3.5 sm:w-3.5 mr-1.5 sm:mr-2" />
                 +50.000 leads capturados na plataforma
               </Badge>
-              <Badge className="bg-red-600 text-white border-red-500 backdrop-blur-sm px-3 py-1.5 text-xs font-bold animate-pulse shadow-[0_0_20px_rgba(239,68,68,0.5)]">
+              <Badge className="bg-red-600 text-white border-red-500 backdrop-blur-sm px-2.5 sm:px-3 py-1.5 text-[11px] sm:text-xs font-bold animate-pulse shadow-[0_0_20px_rgba(239,68,68,0.5)]">
                 <Flame className="h-3 w-3 mr-1" />
                 2 horas grátis
               </Badge>
@@ -471,53 +471,53 @@ const LandingPage = () => {
             <motion.h1
               variants={fadeUp}
               custom={1}
-              className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold font-display leading-[1.08] tracking-tight mb-5 sm:mb-7 text-white"
+              className="text-[1.85rem] leading-[1.12] sm:text-5xl sm:leading-[1.08] md:text-6xl lg:text-7xl xl:text-8xl font-bold font-display tracking-tight mb-4 sm:mb-6 text-white"
             >
-              Encontre clientes. Dispare em massa.
-              <br />
+              Encontre clientes.{" "}
+              <span className="inline sm:hidden">Dispare em massa.</span>
+              <span className="hidden sm:inline">Dispare em massa.<br /></span>
               <span className="gradient-text">Feche vendas no automático.</span>
             </motion.h1>
 
             <motion.p
               variants={fadeUp}
               custom={2}
-              className="text-sm sm:text-base md:text-xl text-white/70 max-w-2xl mb-3 sm:mb-4 leading-relaxed"
+              className="text-sm sm:text-base md:text-xl text-white/75 max-w-2xl mb-3 sm:mb-4 leading-relaxed"
             >
               Capture leads do Google Maps em 3 segundos. Dispare mensagens no WhatsApp sem ser banido. Automatize follow-ups. CRM, chatbot IA e pipeline de vendas — tudo numa única plataforma.
             </motion.p>
 
-            <motion.div variants={fadeUp} custom={2.5} className="flex flex-wrap items-center gap-x-5 gap-y-2 mb-6 sm:mb-8">
+            <motion.div variants={fadeUp} custom={2.5} className="flex flex-wrap items-center gap-x-4 sm:gap-x-5 gap-y-1.5 mb-6 sm:mb-8">
               {[
                 "✅ Sem cartão de crédito",
                 "✅ Acesso imediato",
                 "✅ Cancele quando quiser",
               ].map((t) => (
-                <span key={t} className="text-xs sm:text-sm text-white/60">{t}</span>
+                <span key={t} className="text-[11px] sm:text-sm text-white/60">{t}</span>
               ))}
             </motion.div>
 
-            <motion.div variants={fadeUp} custom={3} className="flex flex-col sm:flex-row items-start gap-4 mb-16 sm:mb-20 lg:mb-28">
+            <motion.div variants={fadeUp} custom={3} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
               <Button
                 size="lg"
                 onClick={() => scrollTo("pricing")}
-                className="gradient-bg text-primary-foreground hover:opacity-90 text-sm sm:text-base md:text-lg px-6 sm:px-10 h-12 sm:h-14 glow-shadow group w-full sm:w-auto"
+                className="gradient-bg text-primary-foreground hover:opacity-90 text-sm sm:text-base md:text-lg px-6 sm:px-10 h-12 sm:h-14 glow-shadow group"
               >
                 Quero dominar meu mercado agora
-                <ArrowRight className="ml-2.5 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5 shrink-0 group-hover:translate-x-1 transition-transform" />
               </Button>
               {!isAffiliateRef && (
                 <Button
                   size="lg"
                   variant="outline"
                   onClick={() => navigate("/auth?paid=true&plan=free")}
-                  className="border-green-500/50 bg-green-500/10 text-green-400 hover:bg-green-500/20 text-sm sm:text-base md:text-lg px-6 sm:px-10 h-12 sm:h-14 w-full sm:w-auto"
+                  className="border-green-500/50 bg-green-500/10 text-green-400 hover:bg-green-500/20 text-sm sm:text-base md:text-lg px-6 sm:px-10 h-12 sm:h-14"
                 >
-                  <Gift className="h-5 w-5 mr-2" /> Testar Grátis — 2 Horas
+                  <Gift className="h-4 w-4 sm:h-5 sm:w-5 mr-2 shrink-0" /> Testar Grátis — 2 Horas
                 </Button>
               )}
             </motion.div>
           </motion.div>
-
         </div>
       </header>
 
@@ -641,7 +641,7 @@ const LandingPage = () => {
             <Button
               size="lg"
               onClick={() => scrollTo("pricing")}
-              className="gradient-bg text-primary-foreground hover:opacity-90 text-base px-6 sm:px-10 h-14 glow-shadow group w-full sm:w-auto whitespace-normal"
+              className="gradient-bg text-primary-foreground hover:opacity-90 text-sm sm:text-base px-5 sm:px-10 h-12 sm:h-14 glow-shadow group w-full sm:w-auto"
             >
               Chega de perder dinheiro — comece agora
               <ArrowRight className="ml-2.5 h-5 w-5 shrink-0 group-hover:translate-x-1 transition-transform" />
@@ -660,7 +660,7 @@ const LandingPage = () => {
         />
 
         <motion.div
-          className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6 max-w-6xl mx-auto"
+          className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-5 sm:gap-6 max-w-6xl mx-auto"
           variants={stagger}
           initial="hidden"
           whileInView="visible"
@@ -690,14 +690,14 @@ const LandingPage = () => {
               onClick={() => navigate(item.route)}
               className="rounded-2xl border border-border/60 bg-card overflow-hidden card-shadow hover:border-primary/30 transition-all duration-300 group cursor-pointer"
             >
-              <div className={`flex items-center justify-center h-32 sm:h-44 bg-gradient-to-br ${item.color} opacity-90 group-hover:opacity-100 transition-opacity`}>
-                <item.icon className="h-12 w-12 sm:h-16 sm:w-16 text-white drop-shadow-lg" strokeWidth={1.5} />
+              <div className={`flex items-center justify-center h-24 sm:h-36 md:h-44 bg-gradient-to-br ${item.color} opacity-90 group-hover:opacity-100 transition-opacity`}>
+                <item.icon className="h-9 w-9 sm:h-12 sm:w-12 md:h-16 md:w-16 text-white drop-shadow-lg" strokeWidth={1.5} />
               </div>
-              <div className="p-5">
-                <h3 className="font-semibold font-display text-foreground mb-2">{item.title}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed mb-3">{item.desc}</p>
+              <div className="p-3 sm:p-5">
+                <h3 className="font-semibold font-display text-foreground mb-1 sm:mb-2 text-xs sm:text-sm md:text-base leading-snug">{item.title}</h3>
+                <p className="text-xs text-muted-foreground leading-relaxed mb-2 sm:mb-3 hidden sm:block">{item.desc}</p>
                 <span className="text-xs text-primary font-medium flex items-center gap-1 group-hover:gap-2 transition-all">
-                  Ver detalhes <ArrowRight className="h-3 w-3" />
+                  Ver <ArrowRight className="h-3 w-3" />
                 </span>
               </div>
             </motion.article>
@@ -714,7 +714,7 @@ const LandingPage = () => {
         />
 
         {/* Row 1: Steps 1-3 */}
-        <div className="grid grid-cols-3 gap-4 md:gap-6 lg:gap-8 max-w-4xl mx-auto">
+        <div className="grid grid-cols-3 gap-3 sm:gap-4 md:gap-6 lg:gap-8 max-w-4xl mx-auto">
           {[
             { n: "01", title: "Crie sua conta", desc: "Cadastre-se em segundos e acesse o painel completo imediatamente.", icon: Users },
             { n: "02", title: "Busque leads", desc: "Pesquise por categoria e localização no mundo inteiro. Dados completos extraídos automaticamente.", icon: Search },
@@ -732,15 +732,15 @@ const LandingPage = () => {
                 <div className="hidden md:block absolute top-8 left-[60%] w-[80%] h-px bg-gradient-to-r from-primary/20 to-transparent" aria-hidden="true" />
               )}
               <div className="relative mx-auto mb-3 md:mb-5">
-                <div className="w-12 h-12 md:w-16 md:h-16 rounded-2xl gradient-bg flex items-center justify-center mx-auto glow-shadow">
-                  <s.icon className="h-5 w-5 md:h-7 md:w-7 text-primary-foreground" />
+                <div className="w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 rounded-2xl gradient-bg flex items-center justify-center mx-auto glow-shadow">
+                  <s.icon className="h-4 w-4 sm:h-5 sm:w-5 md:h-7 md:w-7 text-primary-foreground" />
                 </div>
-                <span className="absolute -top-1.5 -right-1.5 md:-top-2 md:-right-2 text-[10px] md:text-[11px] font-bold font-display gradient-text bg-background border border-border rounded-full w-6 h-6 md:w-7 md:h-7 flex items-center justify-center">
+                <span className="absolute -top-1.5 -right-1.5 md:-top-2 md:-right-2 text-[9px] sm:text-[10px] md:text-[11px] font-bold font-display gradient-text bg-background border border-border rounded-full w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 flex items-center justify-center">
                   {s.n}
                 </span>
               </div>
-              <h3 className="text-xs md:text-sm font-semibold font-display text-foreground mb-1 uppercase tracking-wide">{s.title}</h3>
-              <p className="text-xs text-muted-foreground leading-relaxed hidden md:block">{s.desc}</p>
+              <h3 className="text-[11px] sm:text-xs md:text-sm font-semibold font-display text-foreground mb-1 uppercase tracking-wide">{s.title}</h3>
+              <p className="text-[11px] sm:text-xs text-muted-foreground leading-relaxed hidden sm:block">{s.desc}</p>
             </motion.div>
           ))}
         </div>
@@ -752,7 +752,7 @@ const LandingPage = () => {
         <div className="block md:hidden my-6" />
 
         {/* Row 2: Steps 4-6 */}
-        <div className="grid grid-cols-3 gap-4 md:gap-6 lg:gap-8 max-w-4xl mx-auto">
+        <div className="grid grid-cols-3 gap-3 sm:gap-4 md:gap-6 lg:gap-8 max-w-4xl mx-auto">
           {[
             { n: "04", title: "Importe sua base", desc: "Já tem leads? Importe via Excel ou CSV com mapeamento automático de colunas.", icon: Upload },
             { n: "05", title: "Dispare no WhatsApp", desc: "Campanhas segmentadas com envio em massa direto pelo WhatsApp. Sem copiar e colar.", icon: MessageCircle },
@@ -770,15 +770,15 @@ const LandingPage = () => {
                 <div className="hidden md:block absolute top-8 left-[60%] w-[80%] h-px bg-gradient-to-r from-primary/20 to-transparent" aria-hidden="true" />
               )}
               <div className="relative mx-auto mb-3 md:mb-5">
-                <div className="w-12 h-12 md:w-16 md:h-16 rounded-2xl gradient-bg flex items-center justify-center mx-auto glow-shadow">
-                  <s.icon className="h-5 w-5 md:h-7 md:w-7 text-primary-foreground" />
+                <div className="w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 rounded-2xl gradient-bg flex items-center justify-center mx-auto glow-shadow">
+                  <s.icon className="h-4 w-4 sm:h-5 sm:w-5 md:h-7 md:w-7 text-primary-foreground" />
                 </div>
-                <span className="absolute -top-1.5 -right-1.5 md:-top-2 md:-right-2 text-[10px] md:text-[11px] font-bold font-display gradient-text bg-background border border-border rounded-full w-6 h-6 md:w-7 md:h-7 flex items-center justify-center">
+                <span className="absolute -top-1.5 -right-1.5 md:-top-2 md:-right-2 text-[9px] sm:text-[10px] md:text-[11px] font-bold font-display gradient-text bg-background border border-border rounded-full w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 flex items-center justify-center">
                   {s.n}
                 </span>
               </div>
-              <h3 className="text-xs md:text-sm font-semibold font-display text-foreground mb-1 uppercase tracking-wide">{s.title}</h3>
-              <p className="text-xs text-muted-foreground leading-relaxed hidden md:block">{s.desc}</p>
+              <h3 className="text-[11px] sm:text-xs md:text-sm font-semibold font-display text-foreground mb-1 uppercase tracking-wide">{s.title}</h3>
+              <p className="text-[11px] sm:text-xs text-muted-foreground leading-relaxed hidden sm:block">{s.desc}</p>
             </motion.div>
           ))}
         </div>
@@ -790,7 +790,7 @@ const LandingPage = () => {
         <div className="block md:hidden my-6" />
 
         {/* Row 3: Steps 7-9 */}
-        <div className="grid grid-cols-3 gap-4 md:gap-6 lg:gap-8 max-w-4xl mx-auto">
+        <div className="grid grid-cols-3 gap-3 sm:gap-4 md:gap-6 lg:gap-8 max-w-4xl mx-auto">
           {[
             { n: "07", title: "Follow-up automático", desc: "Mensagens nos dias 1, 3, 5 e 7 enviadas sozinhas. Nenhum lead esfria.", icon: Repeat },
             { n: "08", title: "Chatbot IA 24/7", desc: "Atendimento automático inteligente que responde seus leads a qualquer hora, sem parar.", icon: Bot },
@@ -808,15 +808,15 @@ const LandingPage = () => {
                 <div className="hidden md:block absolute top-8 left-[60%] w-[80%] h-px bg-gradient-to-r from-primary/20 to-transparent" aria-hidden="true" />
               )}
               <div className="relative mx-auto mb-3 md:mb-5">
-                <div className="w-12 h-12 md:w-16 md:h-16 rounded-2xl gradient-bg flex items-center justify-center mx-auto glow-shadow">
-                  <s.icon className="h-5 w-5 md:h-7 md:w-7 text-primary-foreground" />
+                <div className="w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 rounded-2xl gradient-bg flex items-center justify-center mx-auto glow-shadow">
+                  <s.icon className="h-4 w-4 sm:h-5 sm:w-5 md:h-7 md:w-7 text-primary-foreground" />
                 </div>
-                <span className="absolute -top-1.5 -right-1.5 md:-top-2 md:-right-2 text-[10px] md:text-[11px] font-bold font-display gradient-text bg-background border border-border rounded-full w-6 h-6 md:w-7 md:h-7 flex items-center justify-center">
+                <span className="absolute -top-1.5 -right-1.5 md:-top-2 md:-right-2 text-[9px] sm:text-[10px] md:text-[11px] font-bold font-display gradient-text bg-background border border-border rounded-full w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 flex items-center justify-center">
                   {s.n}
                 </span>
               </div>
-              <h3 className="text-xs md:text-sm font-semibold font-display text-foreground mb-1 uppercase tracking-wide">{s.title}</h3>
-              <p className="text-xs text-muted-foreground leading-relaxed hidden md:block">{s.desc}</p>
+              <h3 className="text-[11px] sm:text-xs md:text-sm font-semibold font-display text-foreground mb-1 uppercase tracking-wide">{s.title}</h3>
+              <p className="text-[11px] sm:text-xs text-muted-foreground leading-relaxed hidden sm:block">{s.desc}</p>
             </motion.div>
           ))}
         </div>
@@ -829,7 +829,7 @@ const LandingPage = () => {
           title={<>Profissionais que <span className="gradient-text">já transformaram</span> seus resultados</>}
         />
 
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5 max-w-6xl mx-auto">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 max-w-6xl mx-auto">
           {testimonials.map((t, i) => (
             <motion.article
               key={t.name}
@@ -942,7 +942,7 @@ const LandingPage = () => {
             subtitle="Sem trocar de aba. Sem copiar e colar. Tudo no mesmo lugar."
           />
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 max-w-5xl mx-auto mb-8 sm:mb-12">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 max-w-5xl mx-auto mb-8 sm:mb-12">
             {[
               {
                 icon: <Smartphone className="h-6 w-6" />,
@@ -1067,7 +1067,7 @@ const LandingPage = () => {
           </motion.div>
 
           <motion.h2
-            className="text-3xl sm:text-4xl md:text-5xl lg:text-[3.5rem] font-bold font-display leading-[1.1] tracking-tight mb-6"
+            className="text-2xl sm:text-4xl md:text-5xl lg:text-[3.5rem] font-bold font-display leading-[1.1] tracking-tight mb-6"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -1114,7 +1114,7 @@ const LandingPage = () => {
             subtitle="Menos que um almoço de negócios por mês. O retorno? Imensurável."
           />
 
-          <div className={`grid sm:grid-cols-2 ${isAffiliateRef ? 'lg:grid-cols-3' : 'lg:grid-cols-4'} gap-5 sm:gap-6 max-w-6xl mx-auto pt-6`}>
+          <div className={`grid grid-cols-1 sm:grid-cols-2 ${isAffiliateRef ? 'lg:grid-cols-3' : 'lg:grid-cols-4'} gap-4 sm:gap-5 sm:gap-6 max-w-6xl mx-auto pt-6`}>
             {/* Free Trial - hidden for affiliate URLs */}
             {!isAffiliateRef && (
               <motion.div
@@ -1425,7 +1425,7 @@ const LandingPage = () => {
                 Plataforma completa para capturar leads do Google Maps, Instagram e LinkedIn. Disparo em massa no WhatsApp, follow-up automático, CRM de vendas, pipeline Kanban, chatbot com IA e e-mail marketing.
               </p>
             </div>
-            <nav className="flex flex-wrap gap-x-6 gap-y-2" aria-label="Links do rodapé">
+            <nav className="flex flex-wrap gap-x-5 gap-y-3" aria-label="Links do rodapé">
               <a href="/blog" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Blog</a>
               <a href="/recursos/busca" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Busca de Leads</a>
               <a href="/recursos/disparo" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Disparo WhatsApp</a>
