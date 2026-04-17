@@ -293,7 +293,7 @@ const LandingPage = () => {
       <nav className={`fixed top-0 w-full z-50 transition-all duration-300 ${scrolled ? "bg-background/95 backdrop-blur-xl border-b border-border/40" : "bg-transparent"}`} role="navigation" aria-label="Navegação principal">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-2.5 sm:py-3 flex items-center justify-between">
           <a href="/" className="flex items-center gap-2 sm:gap-3 group" aria-label="LeadsPro - Página inicial">
-            <img src={logoIcon} alt="LeadsPro" className="h-12 sm:h-14 transition-all duration-300" />
+            <img src={logoIcon} alt="LeadsPro" className="h-16 sm:h-20 lg:h-24 transition-all duration-300" />
             <span className="text-lg sm:text-xl font-bold font-display text-foreground">
               Leads<span className="gradient-text">Pro</span>
             </span>
@@ -1418,7 +1418,7 @@ const LandingPage = () => {
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
             <div>
               <a href="/" className="flex items-center gap-2 mb-4" aria-label="LeadsPro">
-                <img src={logoIcon} alt="LeadsPro" className="h-10" />
+                <img src={logoIcon} alt="LeadsPro" className="h-14" />
                 <span className="text-lg font-bold font-display text-foreground">Leads<span className="gradient-text">Pro</span></span>
               </a>
               <p className="text-xs text-muted-foreground max-w-md leading-relaxed">

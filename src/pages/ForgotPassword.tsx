@@ -70,7 +70,7 @@ const ForgotPassword = () => {
           <ArrowLeft className="h-4 w-4" /> Voltar ao login
         </Button>
 
-        <img src={logoAuth} alt="LeadsPro" className="h-20" />
+        <img src={logoAuth} alt="LeadsPro" className="h-28" />
 
         <div className="space-y-2">
           <h1 className="text-2xl font-bold font-display text-foreground">

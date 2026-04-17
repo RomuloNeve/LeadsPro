@@ -223,7 +223,7 @@ const AffiliateLayout = () => {
         <img
           src={logoFull}
           alt="LeadsPro"
-          className="h-10 cursor-pointer"
+          className="h-12 sm:h-14 cursor-pointer"
           onClick={() => navigate("/")}
         />
         <div className="flex items-center gap-2">

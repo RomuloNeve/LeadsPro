@@ -76,7 +76,7 @@ const AffiliateSignup = () => {
           <img
             src={logoFull}
             alt="LeadsPro"
-            className="h-12 mx-auto cursor-pointer"
+            className="h-16 sm:h-20 mx-auto cursor-pointer"
             onClick={() => navigate("/")}
           />
           <Badge className="gradient-bg text-primary-foreground border-0">

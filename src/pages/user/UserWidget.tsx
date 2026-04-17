@@ -92,7 +92,7 @@ body{margin:0;font-family:sans-serif;background:#f1f5f9;height:100vh;position:re
       />
 
       <div className="flex items-center gap-3">
-        <img src={logoFull} alt="LeadsPro" className="h-10" />
+        <img src={logoFull} alt="LeadsPro" className="h-14" />
         <div>
           <h1 className="text-2xl font-bold font-display text-foreground flex items-center gap-2">
             <Code className="h-6 w-6 text-primary" />

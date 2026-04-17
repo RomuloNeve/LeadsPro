@@ -57,7 +57,7 @@ export function PwaInstallBanner() {
   return (
     <div className="fixed bottom-20 left-3 right-3 z-50 animate-in slide-in-from-bottom duration-500 md:hidden">
       <div className="flex items-center gap-3 rounded-2xl border border-border bg-card/95 backdrop-blur-xl p-3 shadow-lg">
-        <img src={logoIcon} alt="LeadsPro" className="h-10 w-10 shrink-0 rounded-xl" />
+        <img src={logoIcon} alt="LeadsPro" className="h-14 w-14 shrink-0 rounded-xl" />
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold text-foreground leading-tight">Instalar LeadsPro</p>
           <p className="text-xs text-muted-foreground leading-tight mt-0.5">
