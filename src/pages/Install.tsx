@@ -61,7 +61,7 @@ const Install = () => {
         </button>
 
         <div className="text-center mb-8">
-          <img src={logoFull} alt="LeadsPro" className="h-16 mx-auto mb-4" />
+          <img src={logoFull} alt="LeadsPro" className="h-20 mx-auto mb-4" />
           <h1 className="text-2xl font-bold font-display text-foreground mb-2">Instalar LeadsPro</h1>
           <p className="text-muted-foreground text-sm">
             Adicione o LeadsPro à sua tela inicial e use como um app nativo.

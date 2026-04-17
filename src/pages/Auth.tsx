@@ -121,7 +121,7 @@ const Auth = () => {
 
         <div className="w-full max-w-[380px] mx-auto space-y-8">
           {/* Logo */}
-          <img src={logoAuth} alt="LeadsPro" className="h-20" />
+          <img src={logoAuth} alt="LeadsPro" className="h-24" />
 
           {/* Header */}
           <div className="space-y-2">

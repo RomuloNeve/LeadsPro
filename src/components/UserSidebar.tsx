@@ -99,10 +99,10 @@ export function UserSidebar() {
         {/* Logo */}
         <div className={`flex items-center justify-center py-4 ${collapsed ? "px-1" : "px-4"}`}>
           {collapsed ? (
-            <img src={logoIcon} alt="LeadsPro" className="flex-shrink-0 object-contain h-9 w-9" />
+            <img src={logoIcon} alt="LeadsPro" className="flex-shrink-0 object-contain h-11 w-11" />
           ) : (
             <div className="flex items-center gap-2">
-              <img src={logoIcon} alt="LeadsPro" className="flex-shrink-0 object-contain h-10 w-10" />
+              <img src={logoIcon} alt="LeadsPro" className="flex-shrink-0 object-contain h-12 w-12" />
               <span className="text-lg font-bold font-display text-foreground">Leads<span className="gradient-text">Pro</span></span>
             </div>
           )}
