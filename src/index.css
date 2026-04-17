@@ -108,20 +108,15 @@
   }
 
   html {
-    overflow-x: hidden;
-    -webkit-overflow-scrolling: touch;
     scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
   }
 
   body {
     @apply bg-background text-foreground font-sans antialiased;
     font-family: 'Inter', sans-serif;
-    overflow-x: hidden;
+    overflow-x: clip;
     min-height: 100dvh;
-  }
-
-  #root {
-    isolation: isolate;
   }
 
   h1, h2, h3, h4, h5, h6 {
