@@ -7,10 +7,19 @@ const corsHeaders = {
 };
 
 const CREDIT_PACKAGES: Record<string, { credits: number; amount: number; label: string }> = {
+  // amount in cents (Mercado Pago expects decimal BRL — we'll divide by 100)
   "100": { credits: 100, amount: 2990, label: "+100 créditos" },
   "500": { credits: 500, amount: 5990, label: "+500 créditos" },
   "1000": { credits: 1000, amount: 9790, label: "+1.000 créditos" },
   "2000": { credits: 2000, amount: 13790, label: "+2.000 créditos" },
+};
+
+const splitName = (fullName: string) => {
+  const parts = fullName.trim().split(/\s+/);
+  return {
+    first_name: parts[0] || "Cliente",
+    last_name: parts.slice(1).join(" ") || "LeadsPro",
+  };
 };
 
 Deno.serve(async (req) => {
@@ -43,6 +52,14 @@ Deno.serve(async (req) => {
 
     const body = await req.json();
     const { action } = body;
+
+    const mpToken = Deno.env.get("MERCADOPAGO_ACCESS_TOKEN");
+    if (!mpToken) {
+      return new Response(JSON.stringify({ error: "Pagamento não configurado" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     // ── ACTION: create-pix ──
     if (action === "create-pix") {
@@ -77,81 +94,89 @@ Deno.serve(async (req) => {
         });
       }
 
-      const apiKey = Deno.env.get("ABACATEPAY_API_KEY");
-      if (!apiKey) {
-        return new Response(JSON.stringify({ error: "Pagamento não configurado" }), {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
+      const { first_name, last_name } = splitName(customer.name);
+      const idempotencyKey = `${user.id}-${packageId}-${Date.now()}`;
 
-      const pixPayload = {
-        amount: pkg.amount,
-        expiresIn: 1800,
+      const mpPayload = {
+        transaction_amount: pkg.amount / 100,
         description: `LeadsPro - ${pkg.label}`,
-        customer: {
-          name: customer.name,
-          cellphone: customer.cellphone.replace(/\D/g, ""),
+        payment_method_id: "pix",
+        payer: {
           email: customer.email,
-          taxId: customer.taxId.replace(/\D/g, ""),
+          first_name,
+          last_name,
+          identification: {
+            type: "CPF",
+            number: customer.taxId.replace(/\D/g, ""),
+          },
         },
         metadata: {
-          userId: user.id,
-          licenseId: license.id,
-          packageId: String(packageId),
+          user_id: user.id,
+          license_id: license.id,
+          package_id: String(packageId),
           credits: String(pkg.credits),
           type: "extra_credits",
         },
       };
 
-      console.log("Creating PIX with payload:", JSON.stringify(pixPayload));
+      console.log("Creating Mercado Pago PIX:", JSON.stringify(mpPayload));
 
-      const pixRes = await fetch("https://api.abacatepay.com/v1/pixQrCode/create", {
+      const mpRes = await fetch("https://api.mercadopago.com/v1/payments", {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${apiKey}`,
+          Authorization: `Bearer ${mpToken}`,
           "Content-Type": "application/json",
+          "X-Idempotency-Key": idempotencyKey,
         },
-        body: JSON.stringify(pixPayload),
+        body: JSON.stringify(mpPayload),
       });
 
-      const pixText = await pixRes.text();
-      console.log("AbacatePay response status:", pixRes.status, "body:", pixText);
+      const mpText = await mpRes.text();
+      console.log("Mercado Pago response status:", mpRes.status, "body:", mpText.slice(0, 500));
 
-      let pixData: any;
+      let mpData: any;
       try {
-        pixData = JSON.parse(pixText);
+        mpData = JSON.parse(mpText);
       } catch {
         return new Response(
-          JSON.stringify({ error: `Erro na resposta do AbacatePay: ${pixText.slice(0, 200)}` }),
+          JSON.stringify({ error: `Erro na resposta do Mercado Pago: ${mpText.slice(0, 200)}` }),
           { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
 
-      if (!pixRes.ok || pixData.error) {
-        const errorMsg = pixData.error?.message || pixData.error || pixData.message || "Erro ao gerar PIX";
-        console.error("AbacatePay error:", errorMsg);
-        
-        // Log to error table
+      if (!mpRes.ok || mpData.error) {
+        const errorMsg = mpData.message || mpData.error || "Erro ao gerar PIX";
+        console.error("Mercado Pago error:", errorMsg);
+
         await supabase.from("api_error_logs").insert({
           function_name: "buy-credits",
-          error_message: `AbacatePay: ${errorMsg}`,
-          error_details: pixData,
+          error_message: `MercadoPago: ${errorMsg}`,
+          error_details: mpData,
           user_id: user.id,
         });
 
         return new Response(
           JSON.stringify({ error: errorMsg }),
-          { status: pixRes.status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          { status: mpRes.status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const qrCode = mpData.point_of_interaction?.transaction_data?.qr_code;
+      const qrCodeBase64 = mpData.point_of_interaction?.transaction_data?.qr_code_base64;
+
+      if (!qrCode || !qrCodeBase64) {
+        return new Response(
+          JSON.stringify({ error: "Resposta do Mercado Pago sem QR Code" }),
+          { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
 
       return new Response(
         JSON.stringify({
-          pixId: pixData.data?.id,
-          brCode: pixData.data?.brCode,
-          brCodeBase64: pixData.data?.brCodeBase64,
-          expiresAt: pixData.data?.expiresAt,
+          pixId: String(mpData.id),
+          brCode: qrCode,
+          brCodeBase64: `data:image/png;base64,${qrCodeBase64}`,
+          expiresAt: mpData.date_of_expiration,
           credits: pkg.credits,
           amount: pkg.amount,
         }),
@@ -169,28 +194,21 @@ Deno.serve(async (req) => {
         });
       }
 
-      const apiKey = Deno.env.get("ABACATEPAY_API_KEY");
-      if (!apiKey) {
-        return new Response(JSON.stringify({ error: "Pagamento não configurado" }), {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-
-      const checkRes = await fetch(`https://api.abacatepay.com/v1/pixQrCode/check?id=${pixId}`, {
+      const checkRes = await fetch(`https://api.mercadopago.com/v1/payments/${pixId}`, {
         method: "GET",
-        headers: { Authorization: `Bearer ${apiKey}` },
+        headers: { Authorization: `Bearer ${mpToken}` },
       });
 
       const checkData = await checkRes.json();
-      const status = checkData.data?.status;
+      const status = checkData.status;
 
-      if (status === "PAID" || status === "COMPLETED") {
+      // Mercado Pago: "approved" = paid
+      if (status === "approved") {
         // Check if already processed (idempotency)
         const { data: existing } = await supabase
           .from("credit_transactions")
           .select("id")
-          .eq("payment_id", pixId)
+          .eq("payment_id", String(pixId))
           .limit(1)
           .maybeSingle();
 
@@ -198,7 +216,6 @@ Deno.serve(async (req) => {
           const { packageId } = body;
           const pkg = CREDIT_PACKAGES[packageId];
           if (pkg) {
-            // Get license
             const { data: license } = await supabase
               .from("licenses")
               .select("id, extra_credits")
@@ -209,20 +226,18 @@ Deno.serve(async (req) => {
             if (license) {
               const newExtra = (license.extra_credits || 0) + pkg.credits;
 
-              // Update extra_credits
               await supabase
                 .from("licenses")
                 .update({ extra_credits: newExtra })
                 .eq("id", license.id);
 
-              // Log transaction
               await supabase.from("credit_transactions").insert({
                 license_id: license.id,
                 type: "extra_purchase",
                 amount: pkg.credits,
                 balance_after: newExtra,
                 description: `Compra ${pkg.label} via PIX`,
-                payment_id: pixId,
+                payment_id: String(pixId),
               });
             }
           }
@@ -234,8 +249,16 @@ Deno.serve(async (req) => {
         );
       }
 
+      // Map Mercado Pago statuses to our internal ones
+      // pending, in_process → PENDING; rejected, cancelled, refunded → FAILED
+      const internalStatus = status === "approved"
+        ? "PAID"
+        : ["rejected", "cancelled", "refunded", "charged_back"].includes(status)
+          ? "FAILED"
+          : "PENDING";
+
       return new Response(
-        JSON.stringify({ status: status || "PENDING" }),
+        JSON.stringify({ status: internalStatus, mp_status: status }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }

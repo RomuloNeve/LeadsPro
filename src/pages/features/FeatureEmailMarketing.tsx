@@ -99,7 +99,7 @@ const FeatureEmailMarketing = () => {
           </motion.div>
 
           <motion.div variants={fadeUp} custom={6} className="text-center">
-            <Button size="lg" onClick={() => navigate("/checkout")} className="gradient-bg text-primary-foreground hover:opacity-90 text-lg px-10 h-14 glow-shadow group">
+            <Button size="lg" onClick={() => navigate("/auth?plan=free")} className="gradient-bg text-primary-foreground hover:opacity-90 text-lg px-10 h-14 glow-shadow group">
               Começar agora <ArrowRight className="ml-2.5 h-5 w-5 group-hover:translate-x-1 transition-transform" />
             </Button>
           </motion.div>

@@ -50,7 +50,7 @@ const FloatingCTA = () => {
             <button
               onClick={() => {
                 trackEvent("floating_cta_click");
-                navigate("/auth?paid=true&plan=free");
+                navigate("/auth?plan=free");
               }}
               className="shrink-0 flex items-center gap-1.5 gradient-bg text-primary-foreground px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold hover:opacity-90 transition-opacity glow-shadow group"
             >

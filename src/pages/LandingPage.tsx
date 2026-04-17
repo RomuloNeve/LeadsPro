@@ -351,7 +351,7 @@ const LandingPage = () => {
               Entrar
             </Button>
             {!isAffiliateRef && (
-              <Button size="sm" onClick={() => navigate("/auth?paid=true&plan=free")} className="hidden lg:inline-flex border-green-500/50 bg-green-500/10 text-green-400 hover:bg-green-500/20 text-xs sm:text-sm px-3 sm:px-4" variant="outline">
+              <Button size="sm" onClick={() => navigate("/auth?plan=free")} className="hidden lg:inline-flex border-green-500/50 bg-green-500/10 text-green-400 hover:bg-green-500/20 text-xs sm:text-sm px-3 sm:px-4" variant="outline">
                 <Gift className="h-3.5 w-3.5 mr-1.5" /> Testar Grátis
               </Button>
             )}
@@ -435,7 +435,7 @@ const LandingPage = () => {
                     </Button>
                   </div>
                   {!isAffiliateRef && (
-                    <Button size="sm" variant="outline" onClick={() => { navigate("/auth?paid=true&plan=free"); setMobileMenuOpen(false); }} className="w-full border-green-500/50 bg-green-500/10 text-green-600 dark:text-green-400 hover:bg-green-500/20">
+                    <Button size="sm" variant="outline" onClick={() => { navigate("/auth?plan=free"); setMobileMenuOpen(false); }} className="w-full border-green-500/50 bg-green-500/10 text-green-600 dark:text-green-400 hover:bg-green-500/20">
                       <Gift className="h-3.5 w-3.5 mr-1.5" /> Testar Grátis — 2 Horas
                     </Button>
                   )}
@@ -510,7 +510,7 @@ const LandingPage = () => {
                 <Button
                   size="lg"
                   variant="outline"
-                  onClick={() => navigate("/auth?paid=true&plan=free")}
+                  onClick={() => navigate("/auth?plan=free")}
                   className="border-green-500/50 bg-green-500/10 text-green-400 hover:bg-green-500/20 text-sm sm:text-base md:text-lg px-6 sm:px-10 h-12 sm:h-14"
                 >
                   <Gift className="h-4 w-4 sm:h-5 sm:w-5 mr-2 shrink-0" /> Testar Grátis — 2 Horas
@@ -1147,7 +1147,7 @@ const LandingPage = () => {
                 </ul>
                 <Button
                   size="lg"
-                  onClick={() => navigate("/auth?paid=true&plan=free")}
+                  onClick={() => navigate("/auth?plan=free")}
                   className="w-full h-11 gradient-bg text-primary-foreground hover:opacity-90 glow-shadow text-sm"
                 >
                   <Gift className="mr-2 h-4 w-4" />

@@ -31,7 +31,7 @@ const ExitIntentPopup = () => {
   const handleCta = () => {
     trackEvent("exit_intent_cta_click");
     setShow(false);
-    navigate("/auth?paid=true&plan=free");
+    navigate("/auth?plan=free");
   };
 
   return (

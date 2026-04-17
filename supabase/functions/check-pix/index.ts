@@ -12,10 +12,10 @@ serve(async (req) => {
   }
 
   try {
-    const apiKey = Deno.env.get("ABACATEPAY_API_KEY");
-    if (!apiKey) {
+    const mpToken = Deno.env.get("MERCADOPAGO_ACCESS_TOKEN");
+    if (!mpToken) {
       return new Response(
-        JSON.stringify({ error: "API key not configured" }),
+        JSON.stringify({ error: "Pagamento não configurado" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -29,18 +29,32 @@ serve(async (req) => {
       );
     }
 
-    const response = await fetch(`https://api.abacatepay.com/v1/pixQrCode/check?id=${pixId}`, {
+    const response = await fetch(`https://api.mercadopago.com/v1/payments/${pixId}`, {
       method: "GET",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-      },
+      headers: { Authorization: `Bearer ${mpToken}` },
     });
 
-    const data = await response.json();
+    const mpData = await response.json();
 
-    return new Response(JSON.stringify(data), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    // Map Mercado Pago status to internal status expected by Checkout.tsx
+    // approved → PAID, rejected/cancelled/refunded → FAILED, else PENDING
+    const mpStatus = mpData.status;
+    const internalStatus = mpStatus === "approved"
+      ? "PAID"
+      : ["rejected", "cancelled", "refunded", "charged_back"].includes(mpStatus)
+        ? "FAILED"
+        : "PENDING";
+
+    return new Response(
+      JSON.stringify({
+        data: {
+          id: String(mpData.id),
+          status: internalStatus,
+          mp_status: mpStatus,
+        },
+      }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
   } catch (error) {
     return new Response(
       JSON.stringify({ error: "Erro ao verificar pagamento" }),

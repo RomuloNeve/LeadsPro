@@ -154,7 +154,7 @@ const UserBilling = () => {
                 <p className="text-sm text-muted-foreground">Faça upgrade do seu plano para desbloquear mais créditos mensais.</p>
               </div>
               <Button
-                onClick={() => window.open("https://leadspro.app/checkout", "_blank")}
+                onClick={() => window.open("https://pay.cakto.com.br/mrhbivc_848520", "_blank")}
                 className="gradient-bg text-primary-foreground hover:opacity-90 glow-shadow shrink-0"
               >
                 <ArrowUpRight className="h-4 w-4 mr-2" />

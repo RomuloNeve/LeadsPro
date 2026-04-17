@@ -265,7 +265,7 @@ const Auth = () => {
               ) : (
                 <button
                   type="button"
-                  onClick={() => navigate("/#pricing")}
+                  onClick={() => { window.location.href = "/#pricing"; }}
                   className="text-primary hover:underline font-medium"
                 >
                   Escolha um plano
