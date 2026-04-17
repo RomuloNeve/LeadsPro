@@ -97,13 +97,13 @@ export function UserSidebar() {
     <Sidebar collapsible="icon">
       <SidebarContent>
         {/* Logo */}
-        <div className={`flex items-center justify-center py-4 ${collapsed ? "px-1" : "px-4"}`}>
+        <div className={`flex items-center justify-center py-5 ${collapsed ? "px-0" : "px-4"}`}>
           {collapsed ? (
-            <img src={logoIcon} alt="LeadsPro" className="flex-shrink-0 object-contain h-11 w-11" />
+            <img src={logoIcon} alt="LeadsPro" className="flex-shrink-0 object-contain h-14 w-14" />
           ) : (
             <div className="flex items-center gap-2">
-              <img src={logoIcon} alt="LeadsPro" className="flex-shrink-0 object-contain h-12 w-12" />
-              <span className="text-lg font-bold font-display text-foreground">Leads<span className="gradient-text">Pro</span></span>
+              <img src={logoIcon} alt="LeadsPro" className="flex-shrink-0 object-contain h-14 w-14" />
+              <span className="text-xl font-bold font-display text-foreground">Leads<span className="gradient-text">Pro</span></span>
             </div>
           )}
         </div>
