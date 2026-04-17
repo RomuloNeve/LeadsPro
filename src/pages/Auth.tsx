@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -9,7 +9,31 @@ import { useToast } from "@/hooks/use-toast";
 import { CheckCircle2, Eye, EyeOff, ArrowLeft, Gift, Phone } from "lucide-react";
 import logoAuth from "@/assets/logo-auth.png";
 import authHero from "@/assets/auth-hero.jpg";
+import avatarHelena from "@/assets/avatar-helena.jpg";
+import avatarMarcos from "@/assets/avatar-marcos.jpg";
+import avatarPatricia from "@/assets/avatar-patricia.jpg";
 import { trackSignup, trackLogin, trackFreeTrialStart } from "@/lib/gtag";
+
+const testimonials = [
+  {
+    text: "O LeadsPro transformou a maneira como prospectamos clientes. Conseguimos capturar e organizar leads de forma automática, economizando horas de trabalho manual.",
+    name: "Helena Oliveira",
+    role: "CEO, Agência Digital",
+    avatar: avatarHelena,
+  },
+  {
+    text: "Em menos de uma semana já recuperei o investimento. O disparo em massa com proteção anti-ban é simplesmente absurdo — mando 300 mensagens por dia sem nenhum problema.",
+    name: "Marcos Ferreira",
+    role: "Diretor Comercial, StartSales",
+    avatar: avatarMarcos,
+  },
+  {
+    text: "Os follow-ups automáticos mudaram completamente o meu processo de vendas. Hoje fecho negócios que antes eu simplesmente perdia por não conseguir fazer o acompanhamento.",
+    name: "Patrícia Santos",
+    role: "Consultora de Vendas Digitais",
+    avatar: avatarPatricia,
+  },
+];
 
 const Auth = () => {
   const [email, setEmail] = useState("");
@@ -17,9 +41,18 @@ const Auth = () => {
   const [phone, setPhone] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [currentTestimonial, setCurrentTestimonial] = useState(0);
   const navigate = useNavigate();
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
+
+  // Auto-rotate testimonials every 5 seconds
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTestimonial((prev) => (prev + 1) % testimonials.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, []);
 
   const isPaid = searchParams.get("paid") === "true";
   const plan = searchParams.get("plan");
@@ -292,34 +325,55 @@ const Auth = () => {
       <div className="hidden lg:block lg:w-1/2 relative overflow-hidden">
         <img
           src={authHero}
-          alt="LeadsPro platform"
-          className="absolute inset-0 w-full h-full object-cover"
-          fetchPriority="high"
+          alt="LeadsPro"
+          className="absolute inset-0 w-full h-full object-cover object-top"
           decoding="async"
           loading="eager"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+        {/* Dark gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-black/10" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/20 to-transparent" />
 
-        <div className="absolute bottom-12 left-10 right-10">
-          <div className="bg-background/80 backdrop-blur-xl rounded-2xl p-6 border border-border/50 shadow-xl">
-            <p className="text-foreground text-sm leading-relaxed italic">
-              "O LeadsPro transformou a maneira como prospectamos clientes. Conseguimos capturar e organizar leads de forma automática, economizando horas de trabalho manual."
-            </p>
-            <div className="mt-4 flex items-center gap-3">
-              <div className="h-9 w-9 rounded-full gradient-bg flex items-center justify-center text-primary-foreground font-bold text-sm">
-                R
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-foreground">Rafael Oliveira</p>
-                <p className="text-xs text-muted-foreground">CEO, Agência Digital</p>
+        {/* Testimonial carousel */}
+        <div className="absolute bottom-10 left-9 right-9">
+          <div className="relative bg-white/10 backdrop-blur-xl rounded-2xl p-6 border border-white/20 shadow-2xl overflow-hidden">
+            {/* Slide transition container */}
+            <div className="min-h-[110px]">
+              <p className="text-white text-sm leading-relaxed italic mb-5">
+                "{testimonials[currentTestimonial].text}"
+              </p>
+              <div className="flex items-center gap-3">
+                <img
+                  src={testimonials[currentTestimonial].avatar}
+                  alt={testimonials[currentTestimonial].name}
+                  className="h-10 w-10 rounded-full object-cover ring-2 ring-white/30"
+                />
+                <div>
+                  <p className="text-sm font-semibold text-white">
+                    {testimonials[currentTestimonial].name}
+                  </p>
+                  <p className="text-xs text-white/70">
+                    {testimonials[currentTestimonial].role}
+                  </p>
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="flex items-center justify-center gap-2 mt-5">
-            <div className="w-2 h-2 rounded-full bg-primary/40" />
-            <div className="w-2 h-2 rounded-full bg-primary/40" />
-            <div className="w-2.5 h-2.5 rounded-full bg-primary" />
+          {/* Dots */}
+          <div className="flex items-center justify-center gap-2 mt-4">
+            {testimonials.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setCurrentTestimonial(i)}
+                className={`rounded-full transition-all duration-300 ${
+                  i === currentTestimonial
+                    ? "w-5 h-2 bg-primary"
+                    : "w-2 h-2 bg-white/30 hover:bg-white/50"
+                }`}
+                aria-label={`Depoimento ${i + 1}`}
+              />
+            ))}
           </div>
         </div>
       </div>
