@@ -91,27 +91,16 @@ const BuyCreditsDialog = ({ open, onOpenChange }: BuyCreditsDialogProps) => {
 
     pollingRef.current = setInterval(async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) return;
+        const { data, error } = await supabase.functions.invoke("buy-credits", {
+          body: {
+            action: "check-payment",
+            pixId: pixData.pixId,
+            packageId: selectedPkg,
+          },
+        });
+        if (error) return;
 
-        const res = await fetch(
-          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/buy-credits`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${session.access_token}`,
-            },
-            body: JSON.stringify({
-              action: "check-payment",
-              pixId: pixData.pixId,
-              packageId: selectedPkg,
-            }),
-          }
-        );
-        const result = await res.json();
-
-        if (result.status === "PAID") {
+        if (data?.status === "PAID") {
           if (pollingRef.current) clearInterval(pollingRef.current);
           setStep("success");
           await fetchLicense();
@@ -131,36 +120,25 @@ const BuyCreditsDialog = ({ open, onOpenChange }: BuyCreditsDialogProps) => {
     setLoading(true);
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        toast({ title: "Sessão expirada", description: "Faça login novamente.", variant: "destructive" });
-        return;
-      }
-
-      const res = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/buy-credits`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${session.access_token}`,
+      const { data: result, error } = await supabase.functions.invoke("buy-credits", {
+        body: {
+          action: "create-pix",
+          packageId: selectedPkg,
+          customer: {
+            name: form.name.trim(),
+            email: form.email.trim(),
+            cellphone: form.cellphone,
+            taxId: form.taxId,
           },
-          body: JSON.stringify({
-            action: "create-pix",
-            packageId: selectedPkg,
-            customer: {
-              name: form.name.trim(),
-              email: form.email.trim(),
-              cellphone: form.cellphone,
-              taxId: form.taxId,
-            },
-          }),
-        }
-      );
+        },
+      });
 
-      const result = await res.json();
-      if (!res.ok || result.error) {
-        toast({ title: "Erro ao gerar PIX", description: result.error, variant: "destructive" });
+      if (error || result?.error) {
+        toast({
+          title: "Erro ao gerar PIX",
+          description: result?.error || error?.message || "Tente novamente.",
+          variant: "destructive",
+        });
       } else {
         setPixData({
           brCode: result.brCode,
@@ -169,8 +147,8 @@ const BuyCreditsDialog = ({ open, onOpenChange }: BuyCreditsDialogProps) => {
         });
         setStep("pix");
       }
-    } catch {
-      toast({ title: "Erro de conexão", variant: "destructive" });
+    } catch (e: any) {
+      toast({ title: "Erro de conexão", description: e?.message, variant: "destructive" });
     }
     setLoading(false);
   };
