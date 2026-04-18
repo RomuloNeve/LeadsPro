@@ -56,7 +56,7 @@ const UserSearch = () => {
   const isMobile = useIsMobile();
   const { license, fetchLicense, refreshCredits } = useUserData();
   const { toast } = useToast();
-  const [role, setRole] = useState("");
+  const [roles, setRoles] = useState<string[]>([]);
   const [locationMode, setLocationMode] = useState<LocationMode>("brasil");
   const [state, setState] = useState("");
   const [city, setCity] = useState("");
@@ -133,8 +133,9 @@ const UserSearch = () => {
   }
 
   const handleSearch = async () => {
-    if (!role.trim()) {
-      toast({ title: "Preencha a categoria/função!", variant: "destructive" });
+    const cleanedRoles = roles.map((r) => r.trim()).filter(Boolean);
+    if (cleanedRoles.length === 0) {
+      toast({ title: "Selecione pelo menos uma categoria!", variant: "destructive" });
       return;
     }
 
@@ -147,9 +148,13 @@ const UserSearch = () => {
       return "";
     })();
 
+    const roleLabel = cleanedRoles.length === 1
+      ? cleanedRoles[0]
+      : `${cleanedRoles.length} categorias (${cleanedRoles.slice(0, 2).join(", ")}${cleanedRoles.length > 2 ? "…" : ""})`;
+
     await startSearch(
       {
-        role: role.trim(),
+        role: cleanedRoles,
         state: locationMode === "estado" || locationMode === "estado_cidade" ? state : "",
         city:
           locationMode === "estado_cidade"
@@ -160,7 +165,7 @@ const UserSearch = () => {
         country: locationMode === "pais" || locationMode === "pais_cidade" ? country.trim() : "",
         code: license?.code || "",
       },
-      { role: role.trim(), locationLabel },
+      { role: roleLabel, locationLabel },
       () => refreshCredits()
     );
   };
@@ -306,8 +311,8 @@ const UserSearch = () => {
         {/* Categoria */}
         <div className="space-y-2">
           <Label className="text-sm font-medium">Categoria / Atividade *</Label>
-          <CnaeCombobox value={role} onValueChange={setRole} disabled={searching} />
-          <p className="text-xs text-muted-foreground">Escolha uma categoria popular ou digite livremente (ex: Dentista, Pizzaria, Advogado)</p>
+          <CnaeCombobox values={roles} onValuesChange={setRoles} disabled={searching} />
+          <p className="text-xs text-muted-foreground">Selecione <strong>uma ou mais</strong> categorias — a busca rodará em sequência para cada uma (ex: Dentista, Pizzaria, Advogado).</p>
         </div>
 
         {/* Localização */}
@@ -415,7 +420,7 @@ const UserSearch = () => {
             </Button>
           ) : (
             <Button onClick={handleSearch}
-              disabled={isSearchLimitReached || !role.trim() || ((locationMode === "estado" || locationMode === "estado_cidade") && !state) || (locationMode === "estado_cidade" && !city.trim()) || ((locationMode === "pais" || locationMode === "pais_cidade") && !country.trim()) || (locationMode === "pais_cidade" && !countryCity.trim())}
+              disabled={isSearchLimitReached || roles.length === 0 || ((locationMode === "estado" || locationMode === "estado_cidade") && !state) || (locationMode === "estado_cidade" && !city.trim()) || ((locationMode === "pais" || locationMode === "pais_cidade") && !country.trim()) || (locationMode === "pais_cidade" && !countryCity.trim())}
               className="w-full sm:w-auto gradient-bg text-primary-foreground">
               <Search className="h-4 w-4 mr-2" /> Buscar Leads
             </Button>

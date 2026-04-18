@@ -16,7 +16,9 @@ export interface SearchLead {
 }
 
 export interface SearchParams {
-  role: string;
+  /** One or more categories/roles. When multiple, the search runs sequentially
+   *  and accumulates results from all of them into the same stream. */
+  role: string | string[];
   state?: string;
   city?: string;
   country?: string;
@@ -117,64 +119,94 @@ export const SearchProvider = ({ children }: { children: ReactNode }) => {
         const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
         const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
-        const response = await fetch(`${supabaseUrl}/functions/v1/search-leads`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            apikey: supabaseKey,
-            Authorization: `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify({
-            role: params.role,
-            state: params.state || "",
-            city: params.city || "",
-            country: params.country || "",
-            code: params.code || "",
-          }),
-          signal: controller.signal,
-        });
-
-        if (!response.ok) {
-          const err = await response.json();
-          throw new Error(err.error || "Erro na busca");
+        // Normalize role to array so we can loop — one HTTP call per category,
+        // accumulating leads across all of them.
+        const roles = (Array.isArray(params.role) ? params.role : [params.role])
+          .map((r) => r.trim())
+          .filter(Boolean);
+        if (roles.length === 0) {
+          toast({ title: "Selecione pelo menos uma categoria", variant: "destructive" });
+          setSearching(false);
+          return;
         }
 
-        const reader = response.body?.getReader();
-        if (!reader) throw new Error("Stream não suportado");
-        const decoder = new TextDecoder();
-        let buffer = "";
+        let accumulatedTotal = 0;
+        let leadIndex = 0;
 
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split("\n\n");
-          buffer = lines.pop() || "";
+        for (let i = 0; i < roles.length; i++) {
+          if (controller.signal.aborted) break;
+          const currentRole = roles[i];
 
-          for (const line of lines) {
-            const match = line.match(/^data: (.+)$/);
-            if (!match) continue;
-            try {
-              const msg = JSON.parse(match[1]);
-              if (msg.type === "total") {
-                totalRef.current = msg.count;
-                setTotal(msg.count);
-              } else if (msg.type === "lead") {
-                setLeads((prev) => [...prev, msg.lead]);
-                const denom = totalRef.current || msg.index + 1;
-                setProgress(Math.round(((msg.index + 1) / denom) * 100));
-                setLiveCreditsUsed((prev) => prev + 1);
-                if (msg.lead?.id) {
-                  setSavedLeadIds((prev) => [...prev, msg.lead.id]);
+          const response = await fetch(`${supabaseUrl}/functions/v1/search-leads`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              apikey: supabaseKey,
+              Authorization: `Bearer ${session.access_token}`,
+            },
+            body: JSON.stringify({
+              role: currentRole,
+              state: params.state || "",
+              city: params.city || "",
+              country: params.country || "",
+              code: params.code || "",
+            }),
+            signal: controller.signal,
+          });
+
+          if (!response.ok) {
+            const err = await response.json().catch(() => ({}));
+            // Don't abort the whole multi-category search on one failure —
+            // toast and continue to the next category.
+            toast({
+              title: `Erro em "${currentRole}"`,
+              description: err.error || `HTTP ${response.status}`,
+              variant: "destructive",
+            });
+            continue;
+          }
+
+          const reader = response.body?.getReader();
+          if (!reader) continue;
+          const decoder = new TextDecoder();
+          let buffer = "";
+
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split("\n\n");
+            buffer = lines.pop() || "";
+
+            for (const line of lines) {
+              const match = line.match(/^data: (.+)$/);
+              if (!match) continue;
+              try {
+                const msg = JSON.parse(match[1]);
+                if (msg.type === "total") {
+                  accumulatedTotal += msg.count;
+                  totalRef.current = accumulatedTotal;
+                  setTotal(accumulatedTotal);
+                } else if (msg.type === "lead") {
+                  setLeads((prev) => [...prev, msg.lead]);
+                  leadIndex += 1;
+                  const denom = totalRef.current || leadIndex;
+                  setProgress(Math.round((leadIndex / denom) * 100));
+                  setLiveCreditsUsed((prev) => prev + 1);
+                  if (msg.lead?.id) {
+                    setSavedLeadIds((prev) => [...prev, msg.lead.id]);
+                  }
+                } else if (msg.type === "done") {
+                  // Per-category done; keep streaming the next one.
                 }
-              } else if (msg.type === "done") {
-                setProgress(100);
+              } catch {
+                /* ignore */
               }
-            } catch {
-              /* ignore */
             }
           }
         }
+
+        setProgress(100);
 
         // Use a setState callback to read the final count without stale closure
         setLeads((curr) => {

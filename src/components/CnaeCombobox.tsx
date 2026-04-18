@@ -1,7 +1,8 @@
 import { useState, useMemo } from "react";
-import { Check, ChevronsUpDown, Search } from "lucide-react";
+import { Check, ChevronsUpDown, Search, X, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import {
   Popover, PopoverContent, PopoverTrigger,
 } from "@/components/ui/popover";
@@ -14,19 +15,20 @@ interface CategoryGroup {
 }
 
 interface CnaeComboboxProps {
-  value: string;
-  onValueChange: (value: string) => void;
+  /** Array of currently selected categories (multi-select). */
+  values: string[];
+  onValuesChange: (values: string[]) => void;
   disabled?: boolean;
 }
 
-export const CnaeCombobox = ({ value, onValueChange, disabled }: CnaeComboboxProps) => {
+export const CnaeCombobox = ({ values, onValuesChange, disabled }: CnaeComboboxProps) => {
   const [mode, setMode] = useState<"cat" | "livre">("cat");
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
+  const [freeInput, setFreeInput] = useState("");
 
   const groups = categoriesData as CategoryGroup[];
 
-  // Flatten for search + keep group info for display
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     const out: { group: string; item: string }[] = [];
@@ -40,13 +42,37 @@ export const CnaeCombobox = ({ value, onValueChange, disabled }: CnaeComboboxPro
     return out;
   }, [search, groups]);
 
+  const toggle = (item: string) => {
+    if (values.includes(item)) {
+      onValuesChange(values.filter((v) => v !== item));
+    } else {
+      onValuesChange([...values, item]);
+    }
+  };
+
+  const remove = (item: string) => onValuesChange(values.filter((v) => v !== item));
+  const clearAll = () => onValuesChange([]);
+
+  const addFree = () => {
+    const trimmed = freeInput.trim();
+    if (!trimmed) return;
+    // Support comma/semicolon separated entries
+    const parts = trimmed
+      .split(/[,;]/)
+      .map((p) => p.trim())
+      .filter(Boolean);
+    const merged = Array.from(new Set([...values, ...parts]));
+    onValuesChange(merged);
+    setFreeInput("");
+  };
+
   return (
     <div className="space-y-2">
       <div className="flex gap-2">
         <button
           type="button"
           disabled={disabled}
-          onClick={() => { setMode("cat"); onValueChange(""); }}
+          onClick={() => setMode("cat")}
           className={cn(
             "px-3 py-1.5 rounded-md text-xs font-medium border transition-all",
             mode === "cat"
@@ -59,7 +85,7 @@ export const CnaeCombobox = ({ value, onValueChange, disabled }: CnaeComboboxPro
         <button
           type="button"
           disabled={disabled}
-          onClick={() => { setMode("livre"); onValueChange(""); }}
+          onClick={() => setMode("livre")}
           className={cn(
             "px-3 py-1.5 rounded-md text-xs font-medium border transition-all",
             mode === "livre"
@@ -72,12 +98,23 @@ export const CnaeCombobox = ({ value, onValueChange, disabled }: CnaeComboboxPro
       </div>
 
       {mode === "livre" ? (
-        <Input
-          value={value}
-          onChange={(e) => onValueChange(e.target.value)}
-          placeholder="Ex: Dentista, Pizzaria, Advogado..."
-          disabled={disabled}
-        />
+        <div className="flex gap-2">
+          <Input
+            value={freeInput}
+            onChange={(e) => setFreeInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                addFree();
+              }
+            }}
+            placeholder="Ex: Dentista, Pizzaria, Advogado (separe por vírgula)"
+            disabled={disabled}
+          />
+          <Button type="button" variant="outline" onClick={addFree} disabled={disabled || !freeInput.trim()}>
+            <Plus className="h-4 w-4 mr-1" /> Adicionar
+          </Button>
+        </div>
       ) : (
         <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger asChild>
@@ -89,7 +126,9 @@ export const CnaeCombobox = ({ value, onValueChange, disabled }: CnaeComboboxPro
               className="w-full justify-between font-normal h-10 text-left"
             >
               <span className="truncate">
-                {value || "Selecione uma categoria..."}
+                {values.length === 0
+                  ? "Selecione uma ou mais categorias..."
+                  : `${values.length} categoria${values.length > 1 ? "s" : ""} selecionada${values.length > 1 ? "s" : ""}`}
               </span>
               <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
             </Button>
@@ -112,15 +151,15 @@ export const CnaeCombobox = ({ value, onValueChange, disabled }: CnaeComboboxPro
                 if (filtered.length === 0) {
                   return (
                     <p className="text-sm text-muted-foreground text-center py-4">
-                      Nenhuma categoria encontrada. Use "Digitar livremente" para buscar qualquer termo.
+                      Nenhuma categoria encontrada. Use "Digitar livremente" para adicionar qualquer termo.
                     </p>
                   );
                 }
-                // Group the flat list back by group name for visual headers
                 let lastGroup = "";
                 return filtered.map(({ group, item }) => {
                   const showHeader = group !== lastGroup;
                   lastGroup = group;
+                  const isSelected = values.includes(item);
                   return (
                     <div key={`${group}-${item}`}>
                       {showHeader && (
@@ -132,15 +171,11 @@ export const CnaeCombobox = ({ value, onValueChange, disabled }: CnaeComboboxPro
                         type="button"
                         className={cn(
                           "w-full text-left px-3 py-1.5 text-sm rounded-md hover:bg-accent flex items-center gap-2",
-                          value === item && "bg-accent"
+                          isSelected && "bg-accent"
                         )}
-                        onClick={() => {
-                          onValueChange(item);
-                          setOpen(false);
-                          setSearch("");
-                        }}
+                        onClick={() => toggle(item)}
                       >
-                        <Check className={cn("h-3 w-3 shrink-0", value === item ? "opacity-100" : "opacity-0")} />
+                        <Check className={cn("h-3 w-3 shrink-0", isSelected ? "opacity-100 text-primary" : "opacity-0")} />
                         <span className="truncate">{item}</span>
                       </button>
                     </div>
@@ -148,8 +183,42 @@ export const CnaeCombobox = ({ value, onValueChange, disabled }: CnaeComboboxPro
                 });
               })()}
             </div>
+            {values.length > 0 && (
+              <div className="border-t border-border p-2 flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">
+                  {values.length} selecionada{values.length > 1 ? "s" : ""}
+                </span>
+                <Button type="button" variant="ghost" size="sm" className="h-7 text-xs" onClick={clearAll}>
+                  Limpar
+                </Button>
+              </div>
+            )}
           </PopoverContent>
         </Popover>
+      )}
+
+      {/* Selected chips */}
+      {values.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 pt-1">
+          {values.map((v) => (
+            <Badge
+              key={v}
+              variant="secondary"
+              className="gap-1 pr-1 pl-2 py-0.5 text-xs font-medium"
+            >
+              {v}
+              <button
+                type="button"
+                onClick={() => remove(v)}
+                disabled={disabled}
+                className="ml-0.5 rounded-sm hover:bg-background/60 p-0.5 transition-colors"
+                aria-label={`Remover ${v}`}
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </Badge>
+          ))}
+        </div>
       )}
     </div>
   );
