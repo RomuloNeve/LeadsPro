@@ -304,7 +304,7 @@ const UserSearch = () => {
         title="Buscar Leads"
         description="Encontre leads qualificados direto do Google Maps com dados de contato completos."
         steps={[
-          { emoji: "1️⃣", text: "Selecione a categoria/atividade (CNAE) que deseja prospectar." },
+          { emoji: "1️⃣", text: "Selecione a categoria/atividade que deseja prospectar." },
           { emoji: "2️⃣", text: "Escolha a localização: todo Brasil, estado, cidade ou outro país." },
           { emoji: "3️⃣", text: "Clique em 'Buscar Leads' e aguarde os resultados aparecerem em tempo real." },
           { emoji: "4️⃣", text: "Salve os leads no CRM clicando em 'Salvar no CRM'." },
@@ -376,11 +376,11 @@ const UserSearch = () => {
 
       {/* Search Form */}
       <div className="rounded-xl border border-border bg-card p-6 card-shadow space-y-4">
-        {/* Categoria via CNAE */}
+        {/* Categoria */}
         <div className="space-y-2">
-          <Label className="text-sm font-medium">Categoria / Atividade (CNAE) *</Label>
+          <Label className="text-sm font-medium">Categoria / Atividade *</Label>
           <CnaeCombobox value={role} onValueChange={setRole} disabled={searching} />
-          <p className="text-xs text-muted-foreground">Selecione um CNAE ou digite livremente</p>
+          <p className="text-xs text-muted-foreground">Escolha uma categoria popular ou digite livremente (ex: Dentista, Pizzaria, Advogado)</p>
         </div>
 
         {/* Localização */}

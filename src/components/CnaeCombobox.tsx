@@ -6,11 +6,11 @@ import {
   Popover, PopoverContent, PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import cnaesData from "@/data/cnaes.json";
+import categoriesData from "@/data/categories.json";
 
-interface CnaeItem {
-  cod: string;
-  desc: string;
+interface CategoryGroup {
+  group: string;
+  items: string[];
 }
 
 interface CnaeComboboxProps {
@@ -20,19 +20,25 @@ interface CnaeComboboxProps {
 }
 
 export const CnaeCombobox = ({ value, onValueChange, disabled }: CnaeComboboxProps) => {
-  const [mode, setMode] = useState<"cnae" | "livre">("cnae");
+  const [mode, setMode] = useState<"cat" | "livre">("cat");
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
 
-  const cnaes = cnaesData as CnaeItem[];
+  const groups = categoriesData as CategoryGroup[];
 
+  // Flatten for search + keep group info for display
   const filtered = useMemo(() => {
-    if (!search.trim()) return cnaes.slice(0, 50);
-    const q = search.toLowerCase();
-    return cnaes.filter(
-      (c) => c.desc.toLowerCase().includes(q) || c.cod.includes(q)
-    ).slice(0, 50);
-  }, [search, cnaes]);
+    const q = search.trim().toLowerCase();
+    const out: { group: string; item: string }[] = [];
+    for (const g of groups) {
+      for (const item of g.items) {
+        if (!q || item.toLowerCase().includes(q) || g.group.toLowerCase().includes(q)) {
+          out.push({ group: g.group, item });
+        }
+      }
+    }
+    return out;
+  }, [search, groups]);
 
   return (
     <div className="space-y-2">
@@ -40,15 +46,15 @@ export const CnaeCombobox = ({ value, onValueChange, disabled }: CnaeComboboxPro
         <button
           type="button"
           disabled={disabled}
-          onClick={() => { setMode("cnae"); onValueChange(""); }}
+          onClick={() => { setMode("cat"); onValueChange(""); }}
           className={cn(
             "px-3 py-1.5 rounded-md text-xs font-medium border transition-all",
-            mode === "cnae"
+            mode === "cat"
               ? "border-primary bg-primary/10 text-primary"
               : "border-border text-muted-foreground hover:border-primary/40"
           )}
         >
-          📋 Buscar por CNAE
+          📋 Categorias populares
         </button>
         <button
           type="button"
@@ -83,7 +89,7 @@ export const CnaeCombobox = ({ value, onValueChange, disabled }: CnaeComboboxPro
               className="w-full justify-between font-normal h-10 text-left"
             >
               <span className="truncate">
-                {value || "Selecione um CNAE..."}
+                {value || "Selecione uma categoria..."}
               </span>
               <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
             </Button>
@@ -93,7 +99,7 @@ export const CnaeCombobox = ({ value, onValueChange, disabled }: CnaeComboboxPro
               <div className="flex items-center gap-2 px-2">
                 <Search className="h-4 w-4 text-muted-foreground shrink-0" />
                 <Input
-                  placeholder="Filtrar CNAE..."
+                  placeholder="Buscar categoria..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   className="border-0 p-0 h-8 focus-visible:ring-0 shadow-none"
@@ -101,29 +107,46 @@ export const CnaeCombobox = ({ value, onValueChange, disabled }: CnaeComboboxPro
                 />
               </div>
             </div>
-            <div className="max-h-[250px] overflow-y-auto p-1">
-              {filtered.map((cnae) => (
-                <button
-                  key={cnae.cod}
-                  type="button"
-                  className={cn(
-                    "w-full text-left px-3 py-2 text-sm rounded-md hover:bg-accent flex items-center gap-2",
-                    value === cnae.desc && "bg-accent"
-                  )}
-                  onClick={() => {
-                    onValueChange(cnae.desc);
-                    setOpen(false);
-                    setSearch("");
-                  }}
-                >
-                  <Check className={cn("h-3 w-3 shrink-0", value === cnae.desc ? "opacity-100" : "opacity-0")} />
-                  <span className="truncate">{cnae.desc}</span>
-                  <span className="text-xs text-muted-foreground ml-auto shrink-0">{cnae.cod}</span>
-                </button>
-              ))}
-              {filtered.length === 0 && (
-                <p className="text-sm text-muted-foreground text-center py-4">Nenhum CNAE encontrado</p>
-              )}
+            <div className="max-h-[320px] overflow-y-auto p-1">
+              {(() => {
+                if (filtered.length === 0) {
+                  return (
+                    <p className="text-sm text-muted-foreground text-center py-4">
+                      Nenhuma categoria encontrada. Use "Digitar livremente" para buscar qualquer termo.
+                    </p>
+                  );
+                }
+                // Group the flat list back by group name for visual headers
+                let lastGroup = "";
+                return filtered.map(({ group, item }) => {
+                  const showHeader = group !== lastGroup;
+                  lastGroup = group;
+                  return (
+                    <div key={`${group}-${item}`}>
+                      {showHeader && (
+                        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground px-3 pt-2 pb-1">
+                          {group}
+                        </p>
+                      )}
+                      <button
+                        type="button"
+                        className={cn(
+                          "w-full text-left px-3 py-1.5 text-sm rounded-md hover:bg-accent flex items-center gap-2",
+                          value === item && "bg-accent"
+                        )}
+                        onClick={() => {
+                          onValueChange(item);
+                          setOpen(false);
+                          setSearch("");
+                        }}
+                      >
+                        <Check className={cn("h-3 w-3 shrink-0", value === item ? "opacity-100" : "opacity-0")} />
+                        <span className="truncate">{item}</span>
+                      </button>
+                    </div>
+                  );
+                });
+              })()}
             </div>
           </PopoverContent>
         </Popover>
