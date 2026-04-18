@@ -56,11 +56,27 @@ Deno.serve(async (req) => {
     // Limit batch size
     const ids = lead_ids.slice(0, 50);
 
-    // Fetch leads that belong to the user
+    // Resolve caller's licenses so we scope the lead lookup to their tenant.
+    // Without this, any authenticated user could pass arbitrary lead UUIDs
+    // and leak / mutate leads owned by other users.
+    const { data: ownedLicenses } = await supabase
+      .from("licenses")
+      .select("id")
+      .eq("assigned_to", user.id);
+    const licenseIds = (ownedLicenses || []).map((l: any) => l.id);
+    if (licenseIds.length === 0) {
+      return new Response(JSON.stringify({ error: "Usuário sem licença" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Fetch leads that belong to the user (scoped by license_id)
     const { data: leads, error: leadsError } = await supabase
       .from("leads")
-      .select("id, name, email, instagram, phone, category, website, linkedin, notes, lead_status, created_at")
+      .select("id, name, email, instagram, phone, category, website, linkedin, notes, lead_status, created_at, license_id")
       .in("id", ids)
+      .in("license_id", licenseIds)
       .not("name", "is", null);
 
     if (leadsError || !leads || leads.length === 0) {
@@ -120,14 +136,25 @@ Sem explicações adicionais.`;
     if (!response.ok) {
       const errorText = await response.text();
       console.error("OpenAI error:", response.status, errorText);
-      return new Response(JSON.stringify({ error: "Erro ao processar com IA" }), {
-        status: 500,
+      const lowQuota =
+        response.status === 429 || /insufficient_quota|quota|billing/i.test(errorText);
+      const friendly = lowQuota
+        ? "A IA de qualificação está temporariamente indisponível (cota esgotada)."
+        : "Erro ao processar com IA.";
+      return new Response(JSON.stringify({ error: friendly, ai_unavailable: true }), {
+        status: 503,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     const aiData = await response.json();
-    const content = aiData.choices?.[0]?.message?.content?.trim();
+    const content: string | undefined = aiData.choices?.[0]?.message?.content?.trim();
+    if (!content) {
+      return new Response(JSON.stringify({ error: "Resposta vazia da IA" }), {
+        status: 502,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     let scores: { id: string; score: number }[];
     try {
@@ -142,7 +169,8 @@ Sem explicações adicionais.`;
       });
     }
 
-    // Update each lead with its score
+    // Update each lead with its score — scoped to caller's licenses so the
+    // AI can't be coaxed into writing scores for other tenants' leads.
     const now = new Date().toISOString();
     const results = [];
     for (const item of scores) {
@@ -150,7 +178,8 @@ Sem explicações adicionais.`;
       const { error: updateError } = await supabase
         .from("leads")
         .update({ lead_score: score, scored_at: now })
-        .eq("id", item.id);
+        .eq("id", item.id)
+        .in("license_id", licenseIds);
 
       if (!updateError) {
         results.push({ id: item.id, score });

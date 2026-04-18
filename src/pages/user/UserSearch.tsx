@@ -1,7 +1,8 @@
-import { useState, useRef, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { useUserData } from "@/hooks/useUserData";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useSearch } from "@/contexts/SearchContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,19 +25,6 @@ import { CountryCombobox } from "@/components/CountryCombobox";
 import municipiosData from "@/data/municipios.json";
 import { useIsMobile } from "@/hooks/use-mobile";
 import BuyCreditsDialog from "@/components/BuyCreditsDialog";
-
-interface SearchLead {
-  id?: string; // DB id; present when the backend auto-saved the lead
-  name: string;
-  phone: string;
-  email: string;
-  instagram: string;
-  linkedin: string;
-  website: string;
-  city: string;
-  state: string;
-  category: string;
-}
 
 const UF_TO_STATE: Record<string, string> = {
   AC: "Acre", AL: "Alagoas", AM: "Amazonas", AP: "Amapá",
@@ -81,15 +69,19 @@ const UserSearch = () => {
     const fullName = UF_TO_STATE[state];
     return fullName ? (municipios[fullName] || []) : [];
   }, [state, municipios]);
-  const [leads, setLeads] = useState<SearchLead[]>([]);
-  const [searching, setSearching] = useState(false);
+  const {
+    leads,
+    searching,
+    progress,
+    total,
+    savedLeadIds,
+    liveCreditsUsed,
+    startSearch,
+    stopSearch,
+    setSavedLeadIds,
+  } = useSearch();
   const [saving, setSaving] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [total, setTotal] = useState(0);
-  const [savedLeadIds, setSavedLeadIds] = useState<string[]>([]);
   const [showListDialog, setShowListDialog] = useState(false);
-  const [liveCreditsUsed, setLiveCreditsUsed] = useState(0);
-  const abortRef = useRef<AbortController | null>(null);
 
   // Check credit limits
   const { leads: allLeads } = useUserData();
@@ -104,7 +96,10 @@ const UserSearch = () => {
   const isPaidUser = license && license.plan_type !== "free";
   const isSearchLimitReached = isFreeUser ? freeLeadsUsed >= FREE_LEAD_LIMIT : (isPaidUser && availableCredits <= 0 && !searching);
 
-  if (isSearchLimitReached) {
+  // Only hide the whole page when the limit is reached AND there are no fresh
+  // results the user still needs to save/export. Otherwise we'd hide a search
+  // the user just ran (e.g. credits went to 0 exactly at the end).
+  if (isSearchLimitReached && leads.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4 space-y-4">
         <div className="h-16 w-16 rounded-full bg-destructive/10 flex items-center justify-center">
@@ -143,103 +138,35 @@ const UserSearch = () => {
       return;
     }
 
-    setSearching(true);
-    setLeads([]);
-    setProgress(0);
-    setTotal(0);
-    setLiveCreditsUsed(0);
+    const locationLabel = (() => {
+      if (locationMode === "brasil") return "Todo Brasil";
+      if (locationMode === "estado") return `Estado: ${state}`;
+      if (locationMode === "estado_cidade") return `${city}, ${state}`;
+      if (locationMode === "pais") return country;
+      if (locationMode === "pais_cidade") return `${countryCity}, ${country}`;
+      return "";
+    })();
 
-    const controller = new AbortController();
-    abortRef.current = controller;
-
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        toast({ title: "Você precisa estar logado!", variant: "destructive" });
-        setSearching(false);
-        return;
-      }
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-
-      const response = await fetch(`${supabaseUrl}/functions/v1/search-leads`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "apikey": supabaseKey,
-          "Authorization": `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({
-          role: role.trim(),
-          state: locationMode === "estado" || locationMode === "estado_cidade" ? state : "",
-          city: locationMode === "estado_cidade" ? city.trim() : locationMode === "pais_cidade" ? countryCity.trim() : "",
-          code: license?.code || "",
-          country: locationMode === "pais" || locationMode === "pais_cidade" ? country.trim() : "",
-        }),
-        signal: controller.signal,
-      });
-
-      if (!response.ok) {
-        const err = await response.json();
-        throw new Error(err.error || "Erro na busca");
-      }
-
-      const reader = response.body?.getReader();
-      if (!reader) throw new Error("Stream não suportado");
-
-      const decoder = new TextDecoder();
-      let buffer = "";
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n\n");
-        buffer = lines.pop() || "";
-
-        for (const line of lines) {
-          const match = line.match(/^data: (.+)$/);
-          if (!match) continue;
-
-          try {
-            const msg = JSON.parse(match[1]);
-
-            if (msg.type === "total") {
-              setTotal(msg.count);
-            } else if (msg.type === "lead") {
-              setLeads((prev) => [...prev, msg.lead]);
-              setProgress(Math.round(((msg.index + 1) / (total || msg.index + 1)) * 100));
-              setLiveCreditsUsed((prev) => prev + 1);
-              // Backend now auto-saves each lead to DB and returns its id — mark
-              // it as saved so the UI reflects persistence without requiring
-              // a manual "Salvar no CRM" click.
-              if (msg.lead?.id) setSavedLeadIds((prev) => [...prev, msg.lead.id]);
-            } else if (msg.type === "done") {
-              setProgress(100);
-            }
-          } catch { /* ignore parse errors */ }
-        }
-      }
-
-      toast({ title: "🎯 Busca concluída!" });
-    } catch (err: any) {
-      if (err.name === "AbortError") {
-        toast({ title: "Busca cancelada" });
-      } else {
-        toast({ title: "Erro na busca", description: err.message, variant: "destructive" });
-      }
-    } finally {
-      setSearching(false);
-      abortRef.current = null;
-      setLiveCreditsUsed(0);
-      // Refresh only credits (lightweight, keeps search results intact)
-      refreshCredits();
-    }
+    await startSearch(
+      {
+        role: role.trim(),
+        state: locationMode === "estado" || locationMode === "estado_cidade" ? state : "",
+        city:
+          locationMode === "estado_cidade"
+            ? city.trim()
+            : locationMode === "pais_cidade"
+            ? countryCity.trim()
+            : "",
+        country: locationMode === "pais" || locationMode === "pais_cidade" ? country.trim() : "",
+        code: license?.code || "",
+      },
+      { role: role.trim(), locationLabel },
+      () => refreshCredits()
+    );
   };
 
   const handleStop = () => {
-    abortRef.current?.abort();
+    stopSearch();
   };
 
   const handleSave = async () => {
@@ -467,6 +394,19 @@ const UserSearch = () => {
           )}
         </div>
 
+        {/* Inline limit warning (when results are visible but credits ran out) */}
+        {isSearchLimitReached && leads.length > 0 && (
+          <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-sm text-foreground">
+            <p className="font-semibold">
+              {isFreeUser ? "Limite de leads atingido" : "Créditos esgotados"}
+            </p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Os leads abaixo foram salvos no seu CRM. Para fazer uma nova busca,{" "}
+              {isFreeUser ? "assine um plano pago." : "compre créditos extras."}
+            </p>
+          </div>
+        )}
+
         {/* Search / Stop button */}
         <div className="flex items-end gap-2 pt-2">
           {searching ? (
@@ -475,7 +415,7 @@ const UserSearch = () => {
             </Button>
           ) : (
             <Button onClick={handleSearch}
-              disabled={!role.trim() || ((locationMode === "estado" || locationMode === "estado_cidade") && !state) || (locationMode === "estado_cidade" && !city.trim()) || ((locationMode === "pais" || locationMode === "pais_cidade") && !country.trim()) || (locationMode === "pais_cidade" && !countryCity.trim())}
+              disabled={isSearchLimitReached || !role.trim() || ((locationMode === "estado" || locationMode === "estado_cidade") && !state) || (locationMode === "estado_cidade" && !city.trim()) || ((locationMode === "pais" || locationMode === "pais_cidade") && !country.trim()) || (locationMode === "pais_cidade" && !countryCity.trim())}
               className="w-full sm:w-auto gradient-bg text-primary-foreground">
               <Search className="h-4 w-4 mr-2" /> Buscar Leads
             </Button>

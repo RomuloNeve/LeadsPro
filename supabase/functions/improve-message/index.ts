@@ -55,7 +55,15 @@ Regras obrigatórias:
     if (!response.ok) {
       const t = await response.text();
       console.error("AI gateway error:", response.status, t);
-      throw new Error(`AI gateway error: ${response.status}`);
+      const lowQuota =
+        response.status === 429 || /insufficient_quota|quota|billing/i.test(t);
+      const friendly = lowQuota
+        ? "A IA para melhorar mensagens está temporariamente indisponível (cota esgotada). Tente novamente mais tarde ou contate o suporte."
+        : "Não consegui melhorar a mensagem agora. Tente novamente em instantes.";
+      return new Response(
+        JSON.stringify({ error: friendly, ai_unavailable: true }),
+        { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     const data = await response.json();

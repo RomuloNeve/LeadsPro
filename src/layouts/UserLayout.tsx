@@ -15,6 +15,8 @@ import logoFull from "@/assets/logo-full-text.png";
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import LowCreditsAlert from "@/components/LowCreditsAlert";
+import { SearchProvider } from "@/contexts/SearchContext";
+import { SearchProgressBanner } from "@/components/SearchProgressBanner";
 
 // Activates the 2-hour free trial timer when user first enters the dashboard
 const FreeTrialActivator = () => {
@@ -46,6 +48,7 @@ const FreeTrialCountdown = () => {
   useEffect(() => {
     if (!license || license.plan_type !== "free" || !license.expires_at) return;
 
+    let interval: ReturnType<typeof setInterval> | null = null;
     const update = () => {
       const now = new Date().getTime();
       const expires = new Date(license.expires_at!).getTime();
@@ -53,6 +56,7 @@ const FreeTrialCountdown = () => {
 
       if (diff <= 0) {
         setTimeLeft(null);
+        if (interval) clearInterval(interval);
         return;
       }
 
@@ -67,8 +71,8 @@ const FreeTrialCountdown = () => {
     };
 
     update();
-    const interval = setInterval(update, 10000);
-    return () => clearInterval(interval);
+    interval = setInterval(update, 10000);
+    return () => { if (interval) clearInterval(interval); };
   }, [license]);
 
   if (timeLeft === null || !license || license.plan_type !== "free") return null;
@@ -135,7 +139,7 @@ const ExpiredTrialModal = () => {
         setOpen(true);
       }
     }
-  }, [license]);
+  }, [license, isAdmin]);
 
   // Periodic check every 30s
   useEffect(() => {
@@ -157,7 +161,7 @@ const ExpiredTrialModal = () => {
       }
     }, 30000);
     return () => clearInterval(interval);
-  }, [license]);
+  }, [license, isAdmin]);
 
   const isFree = license?.plan_type === "free";
   const title = isFree ? "Teste grátis expirado" : "Assinatura expirada";
@@ -394,6 +398,7 @@ const LayoutContent = () => {
         <MobileBottomNav />
         <FreeTrialActivator />
         <ExpiredTrialModal />
+        <SearchProgressBanner />
       </div>
     );
   }
@@ -417,6 +422,7 @@ const LayoutContent = () => {
       </div>
       <FreeTrialActivator />
       <ExpiredTrialModal />
+      <SearchProgressBanner />
     </SidebarProvider>
   );
 };
@@ -424,8 +430,10 @@ const LayoutContent = () => {
 const UserLayout = () => {
   return (
     <UserDataProvider>
-      <LayoutContent />
-      <SupportChat />
+      <SearchProvider>
+        <LayoutContent />
+        <SupportChat />
+      </SearchProvider>
     </UserDataProvider>
   );
 };

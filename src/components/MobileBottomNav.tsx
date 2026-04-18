@@ -31,7 +31,7 @@ const mainTabs = [
 
 const moreItems = [
   { title: "Integração via QR Code", url: "/user-dashboard/whatsapp-instance", icon: Smartphone },
-  { title: "Pipeline", url: "/user-dashboard/kanban", icon: Kanban },
+  { title: "Pipeline (Funil)", url: "/user-dashboard/kanban", icon: Kanban },
   { title: "Listas", url: "/user-dashboard/lists", icon: FolderOpen },
   { title: "Estatísticas", url: "/user-dashboard/stats", icon: BarChart3 },
   { title: "Caixa de Entrada", url: "/user-dashboard/inbox", icon: WhatsAppIcon },

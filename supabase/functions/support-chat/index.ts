@@ -190,8 +190,33 @@ Deno.serve(async (req) => {
     if (!aiRes.ok) {
       const t = await aiRes.text();
       console.error("OpenAI error:", aiRes.status, t);
-      return new Response(JSON.stringify({ error: "Erro no serviço de suporte" }), {
-        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+
+      // Graceful degradation: stream a friendly canned message instead of 500,
+      // so the user sees a useful reply pointing to WhatsApp/email support.
+      // Matches the SSE format the client already parses (OpenAI-compatible chunks).
+      const lowQuota =
+        aiRes.status === 429 || /insufficient_quota|quota|billing/i.test(t);
+
+      const fallback = lowQuota
+        ? `Oi! 👋 Estou com uma instabilidade aqui no meu atendente automático neste momento. 😅\n\nEnquanto isso, fala direto com a nossa equipe humana:\n\n📱 **WhatsApp:** [(27) 99813-3374](https://wa.me/5527998133374)\n✉️ **Email:** suporte@leadspro.app\n\nA gente te responde rapidinho por lá! 🚀`
+        : `Oi! 👋 Deu um probleminha aqui no meu lado agora. Tenta de novo em instantes — se continuar, me chama no WhatsApp: [(27) 99813-3374](https://wa.me/5527998133374).`;
+
+      const encoder = new TextEncoder();
+      const stream = new ReadableStream({
+        start(controller) {
+          // Emit the fallback as OpenAI-compatible delta chunks so the existing
+          // client-side streaming/revealer works without changes.
+          for (const piece of fallback.match(/.{1,24}/g) || [fallback]) {
+            const chunk = { choices: [{ delta: { content: piece } }] };
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify(chunk)}\n\n`));
+          }
+          controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+          controller.close();
+        },
+      });
+
+      return new Response(stream, {
+        headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
       });
     }
 

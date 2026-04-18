@@ -522,9 +522,18 @@ Deno.serve(async (req) => {
     for (const topic of selectedTopics) {
       // Use TOPIC slug as the canonical slug (prevents AI title variations creating duplicates)
       const canonicalSlug = slugify(topic.title);
-      
+
       const prompt = buildPrompt(topic, existingTitles);
-      const rawContent = await callAI(prompt, openaiApiKey);
+      // Resilience: a single OpenAI failure (e.g. 429/quota) shouldn't abort
+      // the whole batch — catch, log, and continue with the next topic.
+      let rawContent: string;
+      try {
+        rawContent = await callAI(prompt, openaiApiKey);
+      } catch (err: any) {
+        console.error(`callAI failed for "${topic.title}":`, err?.message || err);
+        results.push({ slug: canonicalSlug, status: "skipped", reason: String(err?.message || err) });
+        continue;
+      }
 
       const raw = rawContent.trim();
       

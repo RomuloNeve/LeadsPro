@@ -46,7 +46,15 @@ async function getAIResponse(systemPrompt: string, conversationHistory: { role: 
   if (!response.ok) {
     const text = await response.text();
     console.error("OpenAI error:", response.status, text);
-    throw new Error(`OpenAI error: ${response.status}`);
+    // Don't throw — a 429/5xx from OpenAI would otherwise abort the whole
+    // webhook and Evolution API would keep retrying the message delivery.
+    // Return a friendly fallback so the conversation keeps flowing and a
+    // human can pick up via Atendimento Humano.
+    const lowQuota =
+      response.status === 429 || /insufficient_quota|quota|billing/i.test(text);
+    return lowQuota
+      ? "Oi! Nosso atendimento automático está temporariamente indisponível. Um atendente humano vai responder em breve. 🙏"
+      : "Desculpe, estou com uma instabilidade aqui. Um atendente humano vai responder em breve.";
   }
 
   const data = await response.json();

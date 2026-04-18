@@ -23,14 +23,13 @@ import {
 import {
   Users, Search, Download, RefreshCw, Pencil, Check, X, Filter, Trash2,
   ChevronLeft, ChevronRight, Copy, FileSpreadsheet, FileText, MessageCircle,
-  Mail, Globe, Instagram, Linkedin, Phone, LayoutGrid, TableIcon, StickyNote,
+  Mail, Globe, Instagram, Linkedin, Phone, StickyNote, Kanban, ArrowRight,
 } from "lucide-react";
 import { WhatsAppIcon } from "@/components/WhatsAppIcon";
 import { PageTutorial } from "@/components/PageTutorial";
 import { BulkImportDialog } from "@/components/BulkImportDialog";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { LeadStatusBadge, LeadStatus } from "@/components/LeadStatusBadge";
-import LeadKanban from "@/components/LeadKanban";
 import { LeadScoreBadge } from "@/components/LeadScoreBadge";
 import * as XLSX from "xlsx";
 
@@ -47,7 +46,6 @@ const UserLeads = () => {
   const [editForm, setEditForm] = useState<Partial<Lead>>({});
   const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState("busca");
-  const [viewMode, setViewMode] = useState<"table" | "kanban">("table");
   const [scoring, setScoring] = useState(false);
 
   const buscaLeads = leads.filter((l) => !l.is_duplicate && l.category !== "Widget");
@@ -230,17 +228,37 @@ const UserLeads = () => {
   return (
     <div className="space-y-6">
       <PageTutorial
-        title="CRM"
-        description="Gerencie todos os leads salvos, edite informações e exporte dados."
+        title="CRM — Banco de Contatos"
+        description="Base única de todos os seus leads: visualize, edite, importe, exporte e classifique com IA."
         steps={[
-          { emoji: "🔍", text: "Use a barra de busca para encontrar leads por nome, telefone ou categoria." },
-          { emoji: "🏷️", text: "Filtre por categoria usando o seletor ao lado da busca." },
-          { emoji: "✏️", text: "Passe o mouse sobre um lead e clique no ícone de lápis para editar." },
-          { emoji: "📥", text: "Exporte seus leads como CSV clicando no botão 'CSV'." },
-          { emoji: "🔄", text: "Alterne entre leads 'Únicos' e 'Duplicatas' nas abas acima da tabela." },
-          { emoji: "📊", text: "Use o Kanban para arrastar leads entre status: Novo, Quente, Frio, Agendado, Fechado e Perdido." },
+          { emoji: "🔍", text: "Busque leads por nome, telefone, Instagram ou categoria." },
+          { emoji: "🏷️", text: "Filtre por categoria e alterne entre Busca, Widget e Duplicatas." },
+          { emoji: "✏️", text: "Clique no ícone de lápis para editar qualquer campo do lead." },
+          { emoji: "⬆️", text: "Use 'Importar' para subir leads em massa via planilha Excel/CSV." },
+          { emoji: "✨", text: "Clique em 'Score IA' para classificar automaticamente os leads por probabilidade de conversão." },
+          { emoji: "📥", text: "Exporte seus leads em CSV ou Excel a qualquer momento." },
+          { emoji: "➡️", text: "Para gerenciar estágios de venda (funil), acesse a página Pipeline no menu." },
         ]}
       />
+
+      {/* Cross-link to Pipeline — makes the two pages complementary, not redundant */}
+      <button
+        onClick={() => navigate("/user-dashboard/kanban")}
+        className="w-full rounded-xl border border-primary/30 bg-primary/5 hover:bg-primary/10 transition-colors p-3 flex items-center justify-between gap-3 text-left"
+      >
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+            <Kanban className="h-4 w-4 text-primary" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-foreground">Quer trabalhar o funil de vendas?</p>
+            <p className="text-xs text-muted-foreground truncate">
+              O <strong>Pipeline</strong> mostra os leads em colunas por estágio, com métricas de conversão e alertas de leads parados.
+            </p>
+          </div>
+        </div>
+        <ArrowRight className="h-4 w-4 text-primary shrink-0" />
+      </button>
     <div className="rounded-xl border border-border bg-card p-6 card-shadow">
       <div className="flex flex-col gap-4 mb-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -249,27 +267,6 @@ const UserLeads = () => {
             Seus Leads
           </h2>
           <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto sm:justify-end">
-            {/* View mode toggle */}
-            <div className="flex items-center border border-border rounded-lg overflow-hidden">
-              <Button
-                variant={viewMode === "table" ? "default" : "ghost"}
-                size="icon"
-                className={`h-8 w-8 rounded-none ${viewMode === "table" ? "gradient-bg text-primary-foreground" : ""}`}
-                onClick={() => setViewMode("table")}
-                title="Tabela"
-              >
-                <TableIcon className="h-4 w-4" />
-              </Button>
-              <Button
-                variant={viewMode === "kanban" ? "default" : "ghost"}
-                size="icon"
-                className={`h-8 w-8 rounded-none ${viewMode === "kanban" ? "gradient-bg text-primary-foreground" : ""}`}
-                onClick={() => setViewMode("kanban")}
-                title="Kanban"
-              >
-                <LayoutGrid className="h-4 w-4" />
-              </Button>
-            </div>
             <Button variant="outline" size="icon" onClick={handleRefresh} disabled={refreshing} title="Atualizar" className="shrink-0">
               <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
             </Button>
@@ -347,18 +344,8 @@ const UserLeads = () => {
         </div>
       </div>
 
-      {/* KANBAN VIEW */}
-      {viewMode === "kanban" ? (
-        filteredLeads.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
-            {search || categoryFilter !== "all" ? "Nenhum lead encontrado." : activeTab === "widget" ? "Nenhum lead do widget ainda." : "Nenhum lead capturado ainda."}
-          </div>
-        ) : (
-          <LeadKanban leads={filteredLeads} onChangeStatus={changeLeadStatus} />
-        )
-      ) : (
-        /* TABLE VIEW */
-        <>
+      {/* TABLE VIEW */}
+      <>
           {filteredLeads.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               {search || categoryFilter !== "all"
@@ -610,7 +597,6 @@ const UserLeads = () => {
             </div>
           )}
         </>
-      )}
     </div>
     </div>
   );
