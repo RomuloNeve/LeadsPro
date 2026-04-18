@@ -388,7 +388,7 @@ export function SupportChat() {
           </p>
         </div>
         <div className="flex items-center gap-1">
-          <a href="https://wa.me/5527998133374" target="_blank" rel="noopener noreferrer" className="p-1 rounded hover:bg-primary-foreground/10 transition-colors" title="WhatsApp direto">
+          <a href="https://wa.me/5511997345749" target="_blank" rel="noopener noreferrer" className="p-1 rounded hover:bg-primary-foreground/10 transition-colors" title="WhatsApp direto">
             <Phone className="h-4 w-4" />
           </a>
           <a href="mailto:suporte@leadspro.app" className="p-1 rounded hover:bg-primary-foreground/10 transition-colors" title="Email">

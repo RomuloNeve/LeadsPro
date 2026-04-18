@@ -198,8 +198,8 @@ Deno.serve(async (req) => {
         aiRes.status === 429 || /insufficient_quota|quota|billing/i.test(t);
 
       const fallback = lowQuota
-        ? `Oi! 👋 Estou com uma instabilidade aqui no meu atendente automático neste momento. 😅\n\nEnquanto isso, fala direto com a nossa equipe humana:\n\n📱 **WhatsApp:** [(27) 99813-3374](https://wa.me/5527998133374)\n✉️ **Email:** suporte@leadspro.app\n\nA gente te responde rapidinho por lá! 🚀`
-        : `Oi! 👋 Deu um probleminha aqui no meu lado agora. Tenta de novo em instantes — se continuar, me chama no WhatsApp: [(27) 99813-3374](https://wa.me/5527998133374).`;
+        ? `Oi! 👋 Estou com uma instabilidade aqui no meu atendente automático neste momento. 😅\n\nEnquanto isso, fala direto com a nossa equipe humana:\n\n📱 **WhatsApp:** [(11) 99734-5749](https://wa.me/5511997345749)\n✉️ **Email:** suporte@leadspro.app\n\nA gente te responde rapidinho por lá! 🚀`
+        : `Oi! 👋 Deu um probleminha aqui no meu lado agora. Tenta de novo em instantes — se continuar, me chama no WhatsApp: [(11) 99734-5749](https://wa.me/5511997345749).`;
 
       const encoder = new TextEncoder();
       const stream = new ReadableStream({
