@@ -14,12 +14,25 @@ const SERPER_KEYS = [
   Deno.env.get("SERPER_API_KEY_5")!,
 ].filter(Boolean);
 
+// Top ~60 Brazilian cities by population, ordered so early breaks still cover
+// the highest-density markets first. Used by "Brasil inteiro" searches.
 const MAJOR_CITIES = [
-  "São Paulo SP", "Rio de Janeiro RJ", "Belo Horizonte MG",
-  "Curitiba PR", "Porto Alegre RS", "Brasília DF",
-  "Salvador BA", "Fortaleza CE", "Recife PE", "Goiânia GO",
-  "Campinas SP", "Florianópolis SC", "Vitória ES", "Belém PA",
-  "Manaus AM",
+  "São Paulo SP", "Rio de Janeiro RJ", "Brasília DF", "Salvador BA",
+  "Fortaleza CE", "Belo Horizonte MG", "Manaus AM", "Curitiba PR",
+  "Recife PE", "Porto Alegre RS", "Goiânia GO", "Belém PA",
+  "Guarulhos SP", "Campinas SP", "São Luís MA", "São Gonçalo RJ",
+  "Maceió AL", "Duque de Caxias RJ", "Natal RN", "Teresina PI",
+  "Campo Grande MS", "Nova Iguaçu RJ", "São Bernardo do Campo SP",
+  "João Pessoa PB", "Santo André SP", "Osasco SP", "Jaboatão dos Guararapes PE",
+  "Contagem MG", "São José dos Campos SP", "Ribeirão Preto SP",
+  "Uberlândia MG", "Sorocaba SP", "Cuiabá MT", "Aparecida de Goiânia GO",
+  "Aracaju SE", "Feira de Santana BA", "Londrina PR", "Juiz de Fora MG",
+  "Joinville SC", "Niterói RJ", "Ananindeua PA", "Belford Roxo RJ",
+  "Caxias do Sul RS", "Florianópolis SC", "Porto Velho RO", "Macapá AP",
+  "Campos dos Goytacazes RJ", "Vila Velha ES", "Serra ES", "Diadema SP",
+  "Mauá SP", "Betim MG", "Santos SP", "Maringá PR", "Carapicuíba SP",
+  "Olinda PE", "Piracicaba SP", "Bauru SP", "Montes Claros MG",
+  "Anápolis GO", "Rio Branco AC", "Vitória ES",
 ];
 
 const STATE_CITIES: Record<string, string[]> = {
@@ -182,7 +195,12 @@ function deduplicatePlaces(places: any[]): any[] {
   return unique;
 }
 
-async function searchMultiCity(role: string, cities: string[], suffix = ""): Promise<any[]> {
+async function searchMultiCity(
+  role: string,
+  cities: string[],
+  suffix = "",
+  targetMin = 1000 // don't early-break until we have at least this many unique places
+): Promise<any[]> {
   const allPlaces: any[] = [];
 
   for (let i = 0; i < cities.length; i += 5) {
@@ -193,7 +211,10 @@ async function searchMultiCity(role: string, cities: string[], suffix = ""): Pro
     for (const places of results) {
       allPlaces.push(...places);
     }
-    if (deduplicatePlaces(allPlaces).length >= 80) break;
+    // Only stop once we comfortably exceed the target — the outer layer will
+    // still cap per the user's credit balance. Previously this hard-capped at
+    // 80 which meant nation-wide searches stopped after just 1-2 city batches.
+    if (deduplicatePlaces(allPlaces).length >= targetMin) break;
   }
 
   return deduplicatePlaces(allPlaces);
