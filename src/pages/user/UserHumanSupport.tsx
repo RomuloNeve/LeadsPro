@@ -6,12 +6,10 @@ import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { PageTutorial } from "@/components/PageTutorial";
 import {
   Headphones,
-  Send,
   Phone,
   Clock,
   CheckCircle2,
@@ -20,6 +18,7 @@ import {
   User,
   MessageCircle,
   Trash2,
+  ArrowRight,
 } from "lucide-react";
 
 interface HandoffRequest {
@@ -35,14 +34,6 @@ interface HandoffRequest {
   updated_at: string;
 }
 
-interface ChatMessage {
-  role: "user" | "assistant";
-  content: string;
-  timestamp?: string;
-}
-
-const WHATSAPP_INBOX_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/whatsapp-inbox`;
-
 // Notification sound using Web Audio API
 function playNotificationSound() {
   try {
@@ -56,7 +47,6 @@ function playNotificationSound() {
     osc.start();
     gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
     osc.stop(ctx.currentTime + 0.5);
-    // Second beep
     setTimeout(() => {
       const osc2 = ctx.createOscillator();
       const gain2 = ctx.createGain();
@@ -77,13 +67,12 @@ const UserHumanSupport = () => {
   const navigate = useNavigate();
   const [requests, setRequests] = useState<HandoffRequest[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedRequest, setSelectedRequest] = useState<HandoffRequest | null>(null);
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
-  const [loadingChat, setLoadingChat] = useState(false);
-  const [messageInput, setMessageInput] = useState("");
-  const [sending, setSending] = useState(false);
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const prevCountRef = useRef(0);
+  // Track whether we've completed the initial fetch. The notification sound
+  // must NOT fire on first load (would beep every page visit if there are
+  // already-pending requests). It fires only when the pending count grows
+  // while the page is open.
+  const hasLoadedOnceRef = useRef(false);
+  const prevPendingCountRef = useRef(0);
 
   const loadRequests = useCallback(async () => {
     if (!license?.id) return;
@@ -93,14 +82,14 @@ const UserHumanSupport = () => {
       .eq("license_id", license.id)
       .order("created_at", { ascending: false });
     const newRequests = (data as HandoffRequest[] | null) || [];
-    
-    // Play sound if new pending request appeared
+
     const pendingCount = newRequests.filter(r => r.status === "pending").length;
-    if (pendingCount > prevCountRef.current && prevCountRef.current >= 0) {
+    if (hasLoadedOnceRef.current && pendingCount > prevPendingCountRef.current) {
       playNotificationSound();
     }
-    prevCountRef.current = pendingCount;
-    
+    prevPendingCountRef.current = pendingCount;
+    hasLoadedOnceRef.current = true;
+
     setRequests(newRequests);
     setLoading(false);
   }, [license?.id]);
@@ -108,7 +97,7 @@ const UserHumanSupport = () => {
   // Initial load
   useEffect(() => { loadRequests(); }, [loadRequests]);
 
-  // Realtime subscription
+  // Realtime subscription: refetch on any change to this license's handoffs.
   useEffect(() => {
     if (!license?.id) return;
     const channel = supabase
@@ -125,95 +114,16 @@ const UserHumanSupport = () => {
     return () => { supabase.removeChannel(channel); };
   }, [license?.id, loadRequests]);
 
-  // Load chat when selecting a request
-  const loadChat = useCallback(async (request: HandoffRequest) => {
-    setSelectedRequest(request);
-    setLoadingChat(true);
-    setChatMessages([]);
-
-    // Mark as in_progress
+  const openConversation = async (request: HandoffRequest) => {
+    // Auto-move pending → in_progress when the user opens the chat,
+    // so the "Novo" badge doesn't stay on after they've seen it.
     if (request.status === "pending") {
       await supabase
         .from("human_handoff_requests")
         .update({ status: "in_progress", updated_at: new Date().toISOString() })
         .eq("id", request.id);
     }
-
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
-
-      const res = await fetch(`${WHATSAPP_INBOX_URL}?action=messages&remoteJid=${encodeURIComponent(request.remote_jid)}`, {
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-        },
-      });
-
-      const json = await res.json();
-      const msgs = json.messages || json || [];
-      
-      if (Array.isArray(msgs)) {
-        const parsed: ChatMessage[] = msgs
-          .filter((m: any) => {
-            const text = m.message?.conversation || m.message?.extendedTextMessage?.text;
-            return text?.trim();
-          })
-          .map((m: any) => ({
-            role: m.key?.fromMe ? "assistant" as const : "user" as const,
-            content: m.message?.conversation || m.message?.extendedTextMessage?.text || "",
-            timestamp: m.messageTimestamp ? new Date(Number(m.messageTimestamp) * 1000).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : undefined,
-          }));
-        setChatMessages(parsed);
-      }
-    } catch (err) {
-      console.error("Error loading chat:", err);
-    } finally {
-      setLoadingChat(false);
-    }
-  }, []);
-
-  // Auto-scroll
-  useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
-  }, [chatMessages]);
-
-  // Send message
-  const handleSend = async () => {
-    if (!messageInput.trim() || !selectedRequest || sending) return;
-    const text = messageInput.trim();
-    setMessageInput("");
-    setSending(true);
-
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
-
-      const res = await fetch(`${WHATSAPP_INBOX_URL}?action=send`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-          "Content-Type": "application/json",
-          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-        },
-        body: JSON.stringify({
-          remoteJid: selectedRequest.remote_jid,
-          message: text,
-        }),
-      });
-
-      if (res.ok) {
-        setChatMessages(prev => [...prev, { role: "assistant", content: text }]);
-      } else {
-        toast({ title: "Erro ao enviar", variant: "destructive" });
-        setMessageInput(text);
-      }
-    } catch {
-      toast({ title: "Erro ao enviar", variant: "destructive" });
-      setMessageInput(text);
-    } finally {
-      setSending(false);
-    }
+    navigate(`/user-dashboard/inbox?contact=${encodeURIComponent(request.remote_jid)}`);
   };
 
   const handleResolve = async (request: HandoffRequest) => {
@@ -221,7 +131,6 @@ const UserHumanSupport = () => {
       .from("human_handoff_requests")
       .update({ status: "resolved", updated_at: new Date().toISOString() })
       .eq("id", request.id);
-    if (selectedRequest?.id === request.id) setSelectedRequest(null);
     toast({ title: "Atendimento finalizado ✅" });
   };
 
@@ -230,7 +139,6 @@ const UserHumanSupport = () => {
       .from("human_handoff_requests")
       .delete()
       .eq("id", request.id);
-    if (selectedRequest?.id === request.id) setSelectedRequest(null);
   };
 
   const pendingCount = requests.filter(r => r.status === "pending").length;
@@ -248,15 +156,16 @@ const UserHumanSupport = () => {
     <div className="space-y-6">
       <PageTutorial
         title="Atendimento Humano"
-        description="Quando um lead pede para falar com uma pessoa, ele aparece aqui. Você pode ver a conversa e responder diretamente."
+        description="Quando um lead pede para falar com uma pessoa, ele aparece aqui. Clique em 'Abrir conversa' para responder na Caixa de Entrada."
         steps={[
-          { emoji: "🔔", text: "Quando um lead pedir atendente humano, você recebe notificação por email, WhatsApp e som." },
-          { emoji: "💬", text: "Clique no lead para ver a conversa e responder em tempo real." },
-          { emoji: "✅", text: "Marque como resolvido quando terminar o atendimento." },
+          { emoji: "🔔", text: "Quando um lead pedir atendente humano, você recebe notificação por email, WhatsApp e som (nesta aba)." },
+          { emoji: "💬", text: "Clique em 'Abrir conversa' para ir direto à Caixa de Entrada e responder pelo WhatsApp." },
+          { emoji: "✅", text: "Depois de atender, clique em 'Resolvido' aqui para marcar a solicitação como finalizada." },
+          { emoji: "🗑️", text: "Se foi engano ou já resolveu fora do sistema, use a lixeira para remover da lista." },
         ]}
       />
 
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold font-display text-foreground flex items-center gap-2">
             <Headphones className="h-6 w-6 text-primary" />
@@ -274,172 +183,110 @@ const UserHumanSupport = () => {
             </Badge>
           )}
           {activeCount > 0 && (
-            <Badge className="bg-yellow-500 text-black">
+            <Badge className="bg-yellow-500 text-black hover:bg-yellow-500">
               {activeCount} em atendimento
             </Badge>
           )}
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[350px_1fr]">
-        {/* Request List */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Solicitações</CardTitle>
-            <CardDescription className="text-xs">
-              {requests.length === 0 ? "Nenhuma solicitação" : `${requests.length} solicitação(ões)`}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="p-0">
-            <ScrollArea className="h-[500px]">
-              {requests.length === 0 ? (
-                <div className="text-center py-12 text-muted-foreground px-4">
-                  <Headphones className="h-12 w-12 mx-auto mb-3 opacity-20" />
-                  <p className="text-sm">Nenhum lead solicitou atendimento humano ainda.</p>
-                </div>
-              ) : (
-                <div className="divide-y divide-border">
-                  {requests.map((req) => (
-                    <div
-                      key={req.id}
-                      onClick={async () => {
-                        if (req.status === "pending") {
-                          await supabase
-                            .from("human_handoff_requests")
-                            .update({ status: "in_progress", updated_at: new Date().toISOString() })
-                            .eq("id", req.id);
-                        }
-                        navigate(`/user-dashboard/inbox?contact=${encodeURIComponent(req.remote_jid)}`);
-                      }}
-                      className={`p-3 cursor-pointer transition-colors hover:bg-muted/50 ${
-                        selectedRequest?.id === req.id ? "bg-muted" : ""
-                      } ${req.status === "pending" ? "border-l-4 border-l-destructive" : ""}`}
-                    >
-                      <div className="flex items-center justify-between mb-1">
-                        <div className="flex items-center gap-2">
-                          <User className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm font-medium text-foreground truncate">
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Solicitações</CardTitle>
+          <CardDescription className="text-xs">
+            {requests.length === 0 ? "Nenhuma solicitação ainda" : `${requests.length} solicitação(ões)`}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="p-0">
+          <ScrollArea className="max-h-[70vh]">
+            {requests.length === 0 ? (
+              <div className="text-center py-16 text-muted-foreground px-4">
+                <Headphones className="h-12 w-12 mx-auto mb-3 opacity-20" />
+                <p className="text-sm font-medium text-foreground">Nenhum lead solicitou atendimento humano ainda.</p>
+                <p className="text-xs mt-1">
+                  Quando o chatbot identificar essa necessidade, a solicitação aparece aqui automaticamente.
+                </p>
+              </div>
+            ) : (
+              <div className="divide-y divide-border">
+                {requests.map((req) => (
+                  <div
+                    key={req.id}
+                    className={`p-4 transition-colors hover:bg-muted/40 ${
+                      req.status === "pending" ? "border-l-4 border-l-destructive" : ""
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-3 flex-wrap">
+                      <div className="min-w-0 flex-1 space-y-1.5">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <User className="h-4 w-4 text-muted-foreground shrink-0" />
+                          <span className="text-sm font-semibold text-foreground truncate">
                             {req.lead_name || req.lead_phone}
                           </span>
-                        </div>
-                        <div className="flex items-center gap-1">
                           {req.status === "pending" && (
                             <Badge variant="destructive" className="text-[10px] px-1.5 py-0">Novo</Badge>
                           )}
                           {req.status === "in_progress" && (
-                            <Badge className="bg-yellow-500 text-black text-[10px] px-1.5 py-0">Atendendo</Badge>
+                            <Badge className="bg-yellow-500 text-black hover:bg-yellow-500 text-[10px] px-1.5 py-0">Atendendo</Badge>
                           )}
                           {req.status === "resolved" && (
                             <Badge variant="secondary" className="text-[10px] px-1.5 py-0">Resolvido</Badge>
                           )}
                         </div>
-                      </div>
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                        <Phone className="h-3 w-3" />
-                        <span>{req.lead_phone}</span>
-                      </div>
-                      {req.last_message && (
-                        <p className="text-xs text-muted-foreground mt-1 truncate">
-                          💬 {req.last_message}
-                        </p>
-                      )}
-                      <div className="flex items-center justify-between mt-1">
-                        <span className="text-[10px] text-muted-foreground/60">
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                          <Phone className="h-3 w-3" />
+                          <span>{req.lead_phone}</span>
+                        </div>
+                        {req.last_message && (
+                          <p className="text-xs text-muted-foreground truncate">
+                            💬 {req.last_message}
+                          </p>
+                        )}
+                        <div className="text-[10px] text-muted-foreground/60">
                           <Clock className="h-3 w-3 inline mr-0.5" />
                           {new Date(req.created_at).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}
-                        </span>
-                        <div className="flex gap-1">
-                          {req.status !== "resolved" && (
-                            <Button size="icon" variant="ghost" className="h-6 w-6" onClick={(e) => { e.stopPropagation(); handleResolve(req); }}>
-                              <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
-                            </Button>
-                          )}
-                          <Button size="icon" variant="ghost" className="h-6 w-6" onClick={(e) => { e.stopPropagation(); handleDelete(req); }}>
-                            <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0">
+                        <Button
+                          size="sm"
+                          onClick={() => openConversation(req)}
+                          className="gap-1.5"
+                        >
+                          <MessageCircle className="h-3.5 w-3.5" />
+                          Abrir conversa
+                          <ArrowRight className="h-3.5 w-3.5" />
+                        </Button>
+                        {req.status !== "resolved" && (
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-8 w-8"
+                            onClick={() => handleResolve(req)}
+                            title="Marcar como resolvido"
+                          >
+                            <CheckCircle2 className="h-4 w-4 text-green-500" />
                           </Button>
-                        </div>
+                        )}
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-8 w-8"
+                          onClick={() => handleDelete(req)}
+                          title="Remover solicitação"
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
                       </div>
                     </div>
-                  ))}
-                </div>
-              )}
-            </ScrollArea>
-          </CardContent>
-        </Card>
-
-        {/* Chat Area */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <MessageCircle className="h-5 w-5 text-primary" />
-              {selectedRequest
-                ? `Conversa com ${selectedRequest.lead_name || selectedRequest.lead_phone}`
-                : "Selecione um atendimento"}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            {!selectedRequest ? (
-              <div className="text-center py-20 text-muted-foreground">
-                <MessageCircle className="h-12 w-12 mx-auto mb-3 opacity-20" />
-                <p className="text-sm">Clique em uma solicitação ao lado para abrir a conversa.</p>
-              </div>
-            ) : loadingChat ? (
-              <div className="flex items-center justify-center py-20">
-                <Loader2 className="h-6 w-6 animate-spin text-primary" />
-              </div>
-            ) : (
-              <div className="flex flex-col h-[500px]">
-                <ScrollArea className="flex-1 px-4 py-3" ref={scrollRef}>
-                  <div className="space-y-3">
-                    {chatMessages.map((msg, i) => (
-                      <div key={i} className={`flex ${msg.role === "user" ? "justify-start" : "justify-end"}`}>
-                        <div className={`max-w-[80%] rounded-2xl px-3 py-2 text-sm ${
-                          msg.role === "user"
-                            ? "bg-muted text-foreground rounded-bl-md"
-                            : "bg-primary text-primary-foreground rounded-br-md"
-                        }`}>
-                          <p>{msg.content}</p>
-                          {msg.timestamp && (
-                            <p className={`text-[10px] mt-1 ${msg.role === "user" ? "text-muted-foreground" : "text-primary-foreground/60"}`}>
-                              {msg.timestamp}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    ))}
                   </div>
-                </ScrollArea>
-
-                {selectedRequest.status !== "resolved" ? (
-                  <div className="p-3 border-t border-border">
-                    <form onSubmit={(e) => { e.preventDefault(); handleSend(); }} className="flex gap-2">
-                      <Input
-                        value={messageInput}
-                        onChange={(e) => setMessageInput(e.target.value)}
-                        placeholder="Digite sua resposta..."
-                        disabled={sending}
-                      />
-                      <Button type="submit" size="icon" disabled={sending || !messageInput.trim()} className="shrink-0">
-                        {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                      </Button>
-                    </form>
-                    <div className="flex justify-end mt-2">
-                      <Button size="sm" variant="outline" onClick={() => handleResolve(selectedRequest)} className="text-xs">
-                        <CheckCircle2 className="h-3.5 w-3.5 mr-1 text-green-500" />
-                        Finalizar atendimento
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="p-3 border-t border-border text-center">
-                    <Badge variant="secondary">Atendimento finalizado</Badge>
-                  </div>
-                )}
+                ))}
               </div>
             )}
-          </CardContent>
-        </Card>
-      </div>
+          </ScrollArea>
+        </CardContent>
+      </Card>
     </div>
   );
 };
