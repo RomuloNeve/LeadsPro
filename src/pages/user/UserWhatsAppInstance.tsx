@@ -94,23 +94,59 @@ const UserWhatsAppInstance = () => {
     checkStatusLocal().then(() => checkStatusRemote());
   }, [checkStatusLocal, checkStatusRemote]);
 
-  // Auto-refresh status when waiting for QR scan
+  // Auto-refresh status when waiting for QR scan.
+  // Dual strategy: (1) Supabase Realtime on whatsapp_instances (instant when
+  // backend writes "connected") + (2) fast polling as fallback in case the
+  // backend only learns the state when we poll Evolution API.
   useEffect(() => {
     if (status !== "created" && status !== "disconnected") return;
     if (!qrCode) return;
 
+    let active = true;
+    const markConnected = () => {
+      if (!active) return;
+      setStatus("connected");
+      setQrCode(null);
+      toast({ title: "WhatsApp conectado!", description: "Seu número foi vinculado com sucesso." });
+    };
+
+    // (1) Realtime subscription — fires instantly when backend updates row
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    (async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      channel = supabase
+        .channel(`whatsapp-instance-${session.user.id}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "UPDATE",
+            schema: "public",
+            table: "whatsapp_instances",
+            filter: `user_id=eq.${session.user.id}`,
+          },
+          (payload) => {
+            const newStatus = (payload.new as { status?: string })?.status;
+            if (newStatus === "connected") markConnected();
+          }
+        )
+        .subscribe();
+    })();
+
+    // (2) Polling fallback — 2s (was 5s). Triggers backend to refresh the row
+    // from Evolution API, which then triggers the realtime listener above.
     const interval = setInterval(async () => {
       try {
         const data = await invokeFunction("status");
-        if (data.status === "connected") {
-          setStatus("connected");
-          setQrCode(null);
-          toast({ title: "WhatsApp conectado!", description: "Seu número foi vinculado com sucesso." });
-        }
+        if (data.status === "connected") markConnected();
       } catch { /* ignore */ }
-    }, 5000);
+    }, 2000);
 
-    return () => clearInterval(interval);
+    return () => {
+      active = false;
+      clearInterval(interval);
+      if (channel) supabase.removeChannel(channel);
+    };
   }, [status, qrCode, invokeFunction, toast]);
 
   const handleCreate = async () => {

@@ -75,6 +75,67 @@ const COUNTRY_CITIES: Record<string, string[]> = {
   "Emirados Árabes Unidos": ["Dubai UAE", "Abu Dhabi UAE"],
 };
 
+// Converts verbose CNAE descriptions into concise Maps-friendly keywords.
+// Examples:
+//   "Comércio varejista de pães, bolos, biscoitos..." -> "pães bolos biscoitos"
+//   "Atividades odontológicas"                        -> "odontológicas"
+//   "Fabricação de móveis de madeira"                 -> "móveis de madeira"
+//   "Serviços de alimentação para eventos"            -> "alimentação para eventos"
+//   "Cultivo de arroz"                                -> "arroz"
+// Leaves short free-text searches ("Dentista", "Pizzaria") untouched.
+function normalizeRole(raw: string): string {
+  let s = raw.trim();
+  if (!s) return s;
+  // Skip normalization for short terms — user probably typed free text.
+  if (s.split(/\s+/).length <= 2 && s.length < 30) return s;
+
+  const prefixes: RegExp[] = [
+    /^com[ée]rcio\s+varejista\s+especializado\s+de\s+/i,
+    /^com[ée]rcio\s+varejista\s+de\s+/i,
+    /^com[ée]rcio\s+atacadista\s+especializado\s+de\s+/i,
+    /^com[ée]rcio\s+atacadista\s+de\s+/i,
+    /^com[ée]rcio\s+a\s+varejo\s+de\s+/i,
+    /^com[ée]rcio\s+varejista\s+/i,
+    /^com[ée]rcio\s+atacadista\s+/i,
+    /^com[ée]rcio\s+de\s+/i,
+    /^fabrica[çc][ãa]o\s+de\s+/i,
+    /^produ[çc][ãa]o\s+de\s+/i,
+    /^cultivo\s+de\s+/i,
+    /^cria[çc][ãa]o\s+de\s+/i,
+    /^extra[çc][ãa]o\s+de\s+/i,
+    /^atividades?\s+de\s+/i,
+    /^atividades?\s+/i,
+    /^servi[çc]os?\s+de\s+/i,
+    /^servi[çc]os?\s+/i,
+    /^presta[çc][ãa]o\s+de\s+servi[çc]os?\s+de\s+/i,
+    /^manuten[çc][ãa]o\s+e\s+repara[çc][ãa]o\s+de\s+/i,
+    /^manuten[çc][ãa]o\s+de\s+/i,
+    /^repara[çc][ãa]o\s+de\s+/i,
+    /^instala[çc][ãa]o\s+de\s+/i,
+    /^transporte\s+rodovi[áa]rio\s+de\s+/i,
+    /^transporte\s+de\s+/i,
+    /^constru[çc][ãa]o\s+de\s+/i,
+  ];
+  for (const re of prefixes) {
+    if (re.test(s)) { s = s.replace(re, ""); break; }
+  }
+
+  // Strip trailing "não especificados anteriormente", parentheticals,
+  // "exceto ...", and anything after a semicolon.
+  s = s
+    .replace(/\s*n[ãa]o\s+especific[ao]s?\s+anteriormente.*$/i, "")
+    .replace(/\s*\([^)]*\)\s*/g, " ")
+    .replace(/\s*,?\s*exceto\s+.*$/i, "")
+    .replace(/;.*$/, "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  // If the cleaned term is too long, take the first 6 words.
+  const words = s.split(/\s+/);
+  if (words.length > 6) s = words.slice(0, 6).join(" ");
+  return s || raw.trim();
+}
+
 async function searchMapsPage(query: string, key: string, page = 1): Promise<any[]> {
   const response = await fetch("https://google.serper.dev/maps", {
     method: "POST",
@@ -237,14 +298,20 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { role, state, city, code, country } = await req.json();
+    const { role: rawRole, state, city, code, country } = await req.json();
 
-    if (!role) {
+    if (!rawRole) {
       return new Response(
         JSON.stringify({ error: "Categoria é obrigatória" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
+    // Normalize CNAE descriptions into Google-Maps-friendly search terms.
+    // Official CNAE descriptions like "Comércio varejista de produtos de padaria"
+    // don't map well onto Google Maps queries. Strip common verbose prefixes
+    // and redundant tail phrases so the search becomes "padaria" instead.
+    const role = normalizeRole(String(rawRole));
 
     // Auth: get user from token and find their license
     const authHeader = req.headers.get("Authorization");
@@ -428,7 +495,34 @@ Deno.serve(async (req) => {
             category: role,
           };
 
-          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: "lead", lead, index: i })}\n\n`));
+          // Persist lead to DB immediately so it survives navigation and shows
+          // up live in the CRM via the existing realtime subscription.
+          // (Previously the lead only lived in frontend state and was lost when
+          // the user left the search page without clicking "Save to CRM".)
+          let savedLeadId: string | null = null;
+          if (licenseId) {
+            try {
+              const { data: ins } = await supabase
+                .from("leads")
+                .insert({
+                  license_id: licenseId,
+                  name: lead.name && lead.name !== "Não encontrado" ? lead.name : null,
+                  email: lead.email && lead.email !== "Não encontrado" ? lead.email : null,
+                  instagram: lead.instagram && lead.instagram !== "Não encontrado" ? lead.instagram : null,
+                  phone: lead.phone && lead.phone !== "Não encontrado" ? lead.phone : null,
+                  website: lead.website && lead.website !== "Não encontrado" ? lead.website : null,
+                  linkedin: lead.linkedin && lead.linkedin !== "Não encontrado" ? lead.linkedin : null,
+                  category: lead.category || null,
+                })
+                .select("id")
+                .single();
+              savedLeadId = ins?.id || null;
+            } catch (e) {
+              console.error("Failed to persist lead", i, e);
+            }
+          }
+
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: "lead", lead: { ...lead, id: savedLeadId }, index: i })}\n\n`));
           leadsStreamed++;
 
           // Deduct 1 credit immediately for this lead

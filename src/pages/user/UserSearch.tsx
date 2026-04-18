@@ -26,6 +26,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import BuyCreditsDialog from "@/components/BuyCreditsDialog";
 
 interface SearchLead {
+  id?: string; // DB id; present when the backend auto-saved the lead
   name: string;
   phone: string;
   email: string;
@@ -210,6 +211,10 @@ const UserSearch = () => {
               setLeads((prev) => [...prev, msg.lead]);
               setProgress(Math.round(((msg.index + 1) / (total || msg.index + 1)) * 100));
               setLiveCreditsUsed((prev) => prev + 1);
+              // Backend now auto-saves each lead to DB and returns its id — mark
+              // it as saved so the UI reflects persistence without requiring
+              // a manual "Salvar no CRM" click.
+              if (msg.lead?.id) setSavedLeadIds((prev) => [...prev, msg.lead.id]);
             } else if (msg.type === "done") {
               setProgress(100);
             }
@@ -506,20 +511,20 @@ const UserSearch = () => {
               {locationMode === "estado_cidade" && state && city && <Badge variant="secondary" className="text-xs">{city}, {state}</Badge>}
               {locationMode === "pais" && country && <Badge variant="secondary" className="text-xs">🌎 {country}{countryCity ? `, ${countryCity}` : ""}</Badge>}
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2 items-center">
+              {savedLeadIds.length > 0 && !searching && (
+                <Badge variant="outline" className="text-xs border-emerald-500/30 text-emerald-500">
+                  ✅ Salvos no CRM automaticamente
+                </Badge>
+              )}
               <Button variant="outline" size="sm" onClick={handleExportCSV} disabled={searching}>
                 <Download className="h-4 w-4 mr-1" /> CSV
               </Button>
               {savedLeadIds.length > 0 && (
                 <Button variant="outline" size="sm" onClick={() => setShowListDialog(true)}>
-                  <FolderOpen className="h-4 w-4 mr-1" /> Lista
+                  <FolderOpen className="h-4 w-4 mr-1" /> Adicionar a lista
                 </Button>
               )}
-              <Button size="sm" onClick={handleSave} disabled={saving || searching}
-                className="gradient-bg text-primary-foreground">
-                {saving ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Save className="h-4 w-4 mr-1" />}
-                Salvar
-              </Button>
             </div>
           </div>
 
