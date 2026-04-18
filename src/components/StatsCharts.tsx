@@ -33,11 +33,17 @@ const COLORS = [
 ];
 
 const tooltipStyle = {
-  backgroundColor: "hsl(var(--card))",
+  backgroundColor: "hsl(var(--popover))",
   border: "1px solid hsl(var(--border))",
   borderRadius: "8px",
   fontSize: "12px",
+  color: "hsl(var(--popover-foreground))",
+  boxShadow: "0 4px 12px rgba(0,0,0,0.25)",
+  padding: "8px 12px",
 };
+
+const tooltipLabelStyle = { color: "hsl(var(--foreground))", fontWeight: 600, marginBottom: 4 };
+const tooltipItemStyle = { color: "hsl(var(--foreground))" };
 
 const axisTickStyle = { fontSize: 10, fill: "hsl(var(--muted-foreground))" };
 
@@ -132,7 +138,7 @@ export const StatsCharts = ({ leads }: { leads: Lead[] }) => {
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                 <XAxis dataKey="0" tick={axisTickStyle} tickLine={false} axisLine={false} interval={isMobile ? 3 : 2} />
                 <YAxis allowDecimals={false} tick={axisTickStyle} tickLine={false} axisLine={false} width={35} />
-                <Tooltip contentStyle={tooltipStyle} formatter={(value: number) => [`${value} leads`, "Total"]} />
+                <Tooltip contentStyle={tooltipStyle} labelStyle={tooltipLabelStyle} itemStyle={tooltipItemStyle} formatter={(value: number) => [`${value} leads`, "Total"]} />
                 <Area type="monotone" dataKey="1" stroke="hsl(var(--primary))" fill="hsl(var(--primary) / 0.15)" strokeWidth={2} />
               </AreaChart>
             </ResponsiveContainer>
@@ -169,7 +175,7 @@ export const StatsCharts = ({ leads }: { leads: Lead[] }) => {
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                 <XAxis dataKey="day" tick={axisTickStyle} tickLine={false} axisLine={false} />
                 <YAxis allowDecimals={false} tick={axisTickStyle} tickLine={false} axisLine={false} width={30} />
-                <Tooltip contentStyle={tooltipStyle} formatter={(value: number) => [`${value} leads`]} />
+                <Tooltip contentStyle={tooltipStyle} labelStyle={tooltipLabelStyle} itemStyle={tooltipItemStyle} formatter={(value: number) => [`${value} leads`]} />
                 <Bar dataKey="count" radius={[6, 6, 0, 0]}>
                   {weekdayData.map((entry, i) => (
                     <Cell key={i} fill={entry.fill} />
@@ -193,7 +199,7 @@ export const StatsCharts = ({ leads }: { leads: Lead[] }) => {
                   <Cell fill="hsl(var(--primary))" />
                   <Cell fill="hsl(340, 75%, 55%)" />
                 </Pie>
-                <Tooltip contentStyle={tooltipStyle} formatter={(value: number, name: string) => [`${value} leads`, name]} />
+                <Tooltip contentStyle={tooltipStyle} labelStyle={tooltipLabelStyle} itemStyle={tooltipItemStyle} formatter={(value: number, name: string) => [`${value} leads`, name]} />
                 <Legend wrapperStyle={{ fontSize: "10px" }} formatter={(value) => <span style={{ color: "hsl(var(--muted-foreground))" }}>{value}</span>} />
               </PieChart>
             </ResponsiveContainer>
@@ -213,7 +219,7 @@ export const StatsCharts = ({ leads }: { leads: Lead[] }) => {
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                 <XAxis dataKey="hour" tick={axisTickStyle} tickLine={false} axisLine={false} interval={isMobile ? 3 : 2} />
                 <YAxis allowDecimals={false} tick={axisTickStyle} tickLine={false} axisLine={false} width={30} />
-                <Tooltip contentStyle={tooltipStyle} formatter={(value: number) => [`${value} leads`]} />
+                <Tooltip contentStyle={tooltipStyle} labelStyle={tooltipLabelStyle} itemStyle={tooltipItemStyle} formatter={(value: number) => [`${value} leads`]} />
                 <Area type="monotone" dataKey="count" stroke="hsl(160, 60%, 45%)" fill="hsl(160, 60%, 45% / 0.15)" strokeWidth={2} />
               </AreaChart>
             </ResponsiveContainer>
@@ -231,7 +237,7 @@ export const StatsCharts = ({ leads }: { leads: Lead[] }) => {
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                 <XAxis dataKey="week" tick={axisTickStyle} tickLine={false} axisLine={false} />
                 <YAxis allowDecimals={false} tick={axisTickStyle} tickLine={false} axisLine={false} width={30} />
-                <Tooltip contentStyle={tooltipStyle} formatter={(value: number) => [`${value} leads`]} />
+                <Tooltip contentStyle={tooltipStyle} labelStyle={tooltipLabelStyle} itemStyle={tooltipItemStyle} formatter={(value: number) => [`${value} leads`]} />
                 <Bar dataKey="count" fill="hsl(var(--primary))" radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
