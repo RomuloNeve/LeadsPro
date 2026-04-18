@@ -541,6 +541,15 @@ const Dashboard = () => {
             </Badge>
           </div>
           <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate("/user-dashboard")}
+              className="border-primary/40 text-primary hover:bg-primary/10"
+              title="Acessar área do usuário"
+            >
+              <Eye className="h-4 w-4 mr-2" /> Ver como usuário
+            </Button>
             <Button variant="ghost" size="icon" onClick={fetchAdminData} title="Atualizar">
               <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
             </Button>

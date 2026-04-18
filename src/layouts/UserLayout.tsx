@@ -8,7 +8,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, ArrowRight, Clock, Timer, LogOut, Coins, ArrowUpRight } from "lucide-react";
+import { AlertTriangle, ArrowRight, Clock, Timer, LogOut, Coins, ArrowUpRight, Shield } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import BuyCreditsDialog from "@/components/BuyCreditsDialog";
 import logoFull from "@/assets/logo-full-text.png";
@@ -241,7 +241,7 @@ const AffiliateLayout = () => {
 };
 
 const DashboardHeader = () => {
-  const { license } = useUserData();
+  const { license, isAdmin } = useUserData();
   const navigate = useNavigate();
   const [buyCreditsOpen, setBuyCreditsOpen] = useState(false);
 
@@ -268,6 +268,19 @@ const DashboardHeader = () => {
       <header className="h-12 flex items-center justify-between border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-10 px-4">
         <SidebarTrigger />
         <div className="flex items-center gap-2">
+          {/* Admin shortcut */}
+          {isAdmin && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => navigate("/dashboard")}
+              className="h-8 text-xs px-3 border-primary/40 text-primary hover:bg-primary/10"
+              title="Voltar para painel Admin"
+            >
+              <Shield className="h-3.5 w-3.5 mr-1" />
+              Admin
+            </Button>
+          )}
           {/* Credits display */}
           <button
             onClick={() => setBuyCreditsOpen(true)}

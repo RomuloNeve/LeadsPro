@@ -40,6 +40,7 @@ interface UserDataContextType {
   setLeads: React.Dispatch<React.SetStateAction<Lead[]>>;
   loading: boolean;
   hasLicense: boolean | null;
+  isAdmin: boolean;
   fetchLicense: () => Promise<void>;
   refreshCredits: () => Promise<void>;
   fetchLeads: (licenseId: string) => Promise<void>;
@@ -65,6 +66,7 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
   const [hasLicense, setHasLicense] = useState<boolean | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -120,16 +122,14 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
 
+      // Admins can freely browse /user-dashboard to use every feature
+      // (WhatsApp, CRM, campaigns, etc) without being kicked back to /dashboard.
       const { data: profile } = await supabase
         .from("profiles")
         .select("is_admin")
         .eq("user_id", session.user.id)
         .maybeSingle();
-
-      if (profile?.is_admin) {
-        navigate("/dashboard");
-        return;
-      }
+      setIsAdmin(Boolean(profile?.is_admin));
 
       await fetchLicense();
     };
@@ -174,7 +174,7 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
   }, [license?.id]);
 
   return (
-    <UserDataContext.Provider value={{ license, leads, setLeads, loading, hasLicense, fetchLicense, refreshCredits, fetchLeads }}>
+    <UserDataContext.Provider value={{ license, leads, setLeads, loading, hasLicense, isAdmin, fetchLicense, refreshCredits, fetchLeads }}>
       {children}
     </UserDataContext.Provider>
   );
