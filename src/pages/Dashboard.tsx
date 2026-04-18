@@ -832,6 +832,7 @@ const Dashboard = () => {
                               userId={u.user_id}
                               userEmail={u.email || ""}
                               hasLicense={!!u.license}
+                              currentPlan={u.license?.plan_type}
                               onUpdated={fetchAdminData}
                             />
                             <ResetPasswordDialog userId={u.user_id} userEmail={u.email || ""} />

@@ -178,7 +178,7 @@ Deno.serve(async (req) => {
 
       if (!user_id) return json({ error: "user_id obrigatório" }, 400);
 
-      const { data: lic } = await admin
+      let { data: lic } = await admin
         .from("licenses")
         .select("*")
         .eq("assigned_to", user_id)
@@ -186,7 +186,26 @@ Deno.serve(async (req) => {
         .limit(1)
         .maybeSingle();
 
-      if (!lic) return json({ error: "Usuário não tem licença" }, 404);
+      // If the user has no license yet, create one so admin can upgrade any
+      // user (even "sem licença") into free/mensal/anual/lifetime/etc.
+      if (!lic) {
+        const code = `ADMIN-${Math.random().toString(36).slice(2, 10).toUpperCase()}`;
+        const { data: created, error: createErr } = await admin
+          .from("licenses")
+          .insert({
+            code,
+            plan_type: plan_type || "free",
+            is_active: true,
+            assigned_to: user_id,
+            monthly_credits: 60,
+            used_credits: 0,
+            extra_credits: 0,
+          })
+          .select()
+          .single();
+        if (createErr) return json({ error: `Falha ao criar licença: ${createErr.message}` }, 500);
+        lic = created;
+      }
 
       const patch: Record<string, unknown> = {};
       if (plan_type) patch.plan_type = plan_type;

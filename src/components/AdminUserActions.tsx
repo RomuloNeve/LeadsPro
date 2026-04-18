@@ -240,11 +240,13 @@ export const ExtendLicenseDialog = ({
   userId,
   userEmail,
   hasLicense,
+  currentPlan,
   onUpdated,
 }: {
   userId: string;
   userEmail: string;
   hasLicense: boolean;
+  currentPlan?: string;
   onUpdated: () => void;
 }) => {
   const { toast } = useToast();
@@ -253,6 +255,7 @@ export const ExtendLicenseDialog = ({
   const [days, setDays] = useState(30);
   const [mode, setMode] = useState<"extend" | "set" | "never">("extend");
   const [isActive, setIsActive] = useState<"keep" | "activate" | "deactivate">("keep");
+  const [plan, setPlan] = useState<string>("keep");
 
   const submit = async () => {
     setLoading(true);
@@ -263,10 +266,12 @@ export const ExtendLicenseDialog = ({
       else if (mode === "never") payload.expires_days_from_now = 0;
       if (isActive === "activate") payload.is_active = true;
       if (isActive === "deactivate") payload.is_active = false;
+      if (plan !== "keep") payload.plan_type = plan;
 
       await callAdmin("update-license", payload);
       toast({ title: "✅ Licença atualizada", description: userEmail });
       setOpen(false);
+      setPlan("keep");
       onUpdated();
     } catch (e: any) {
       toast({ title: "Erro", description: e.message, variant: "destructive" });
@@ -274,27 +279,41 @@ export const ExtendLicenseDialog = ({
     setLoading(false);
   };
 
-  if (!hasLicense) {
-    return (
-      <Button size="sm" variant="outline" disabled className="h-7 text-[10px] opacity-50">
-        <CalendarClock className="h-3 w-3 mr-1" /> Sem licença
-      </Button>
-    );
-  }
-
+  // Even if the user has no license yet, admin can open this dialog to
+  // CREATE one (backend auto-creates when update-license is called without a
+  // pre-existing license). Button label just changes to reflect that.
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button size="sm" variant="outline" className="h-7 text-[10px]">
-          <CalendarClock className="h-3 w-3 mr-1" /> Licença
+          <CalendarClock className="h-3 w-3 mr-1" /> {hasLicense ? "Licença" : "Criar licença"}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Gerenciar licença</DialogTitle>
+          <DialogTitle>{hasLicense ? "Gerenciar licença" : "Criar licença"}</DialogTitle>
           <DialogDescription>{userEmail}</DialogDescription>
         </DialogHeader>
         <div className="space-y-3 py-2">
+          <div className="space-y-1.5">
+            <Label className="text-xs">Tipo de plano {currentPlan && <span className="text-muted-foreground">(atual: {currentPlan})</span>}</Label>
+            <Select value={plan} onValueChange={setPlan}>
+              <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="keep">Manter plano atual</SelectItem>
+                <SelectItem value="free">Free (teste)</SelectItem>
+                <SelectItem value="mensal">Mensal</SelectItem>
+                <SelectItem value="anual">Anual</SelectItem>
+                <SelectItem value="starter">Starter</SelectItem>
+                <SelectItem value="profissional">Profissional</SelectItem>
+                <SelectItem value="enterprise">Enterprise</SelectItem>
+                <SelectItem value="lifetime">Vitalício</SelectItem>
+              </SelectContent>
+            </Select>
+            {plan === "lifetime" && (
+              <p className="text-[10px] text-muted-foreground">💡 Dica: para vitalício, escolha "Sem expiração" abaixo.</p>
+            )}
+          </div>
           <div className="space-y-1.5">
             <Label className="text-xs">Expiração</Label>
             <Select value={mode} onValueChange={(v: any) => setMode(v)}>
