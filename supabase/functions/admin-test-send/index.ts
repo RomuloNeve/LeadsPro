@@ -279,7 +279,16 @@ Deno.serve(async (req) => {
 
     // ============ WHATSAPP TEST ============
     if (type === "whatsapp") {
-      const phones = ["551153041013"];
+      // Send to the logged-in admin's own WhatsApp phone
+      const adminPhone = (profile.whatsapp_phone || "").replace(/\D/g, "");
+      if (!adminPhone) {
+        return new Response(
+          JSON.stringify({ error: "Seu WhatsApp não está cadastrado no perfil. Preencha em Configurações." }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      // Ensure Brazilian country code prefix
+      const phones = [adminPhone.startsWith("55") ? adminPhone : `55${adminPhone}`];
 
       // Get admin's whatsapp instance
       const { data: instance } = await serviceClient
@@ -353,7 +362,15 @@ Deno.serve(async (req) => {
 
     // ============ EMAIL TEST ============
     if (type === "email") {
-      const emails = ["lucassilvasimoes23@gmail.com", "appmarquei@gmail.com", "l.florianom@hotmail.com"];
+      // Send to the logged-in admin's own email
+      const adminEmail = profile.email || user.email || "";
+      if (!adminEmail || !adminEmail.includes("@")) {
+        return new Response(
+          JSON.stringify({ error: "Seu email não está cadastrado no perfil." }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      const emails = [adminEmail];
 
       if (!RESEND_API_KEY) {
         return new Response(JSON.stringify({ error: "RESEND_API_KEY não configurada" }), {

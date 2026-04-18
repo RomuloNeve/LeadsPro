@@ -1404,7 +1404,7 @@ const Dashboard = () => {
                 <Target className="h-4 w-4 text-primary" /> Disparo em Massa — Usuários da Plataforma
               </h3>
               <p className="text-xs text-muted-foreground">
-                Envia WhatsApp (via +55 11 5304-1013) e email para usuários cadastrados. Use <code className="bg-muted px-1 rounded">{"{nome}"}</code> para personalizar.
+                Envia WhatsApp (pela sua instância conectada) e email para usuários cadastrados. Use <code className="bg-muted px-1 rounded">{"{nome}"}</code> para personalizar.
               </p>
               <div className="flex flex-wrap gap-3">
                 <div className="space-y-1.5">
