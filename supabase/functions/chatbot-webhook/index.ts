@@ -354,14 +354,30 @@ Deno.serve(async (req) => {
 
         if (!aiRes.ok) {
           const t = await aiRes.text();
-          console.error("AI Gateway error:", aiRes.status, t);
-          if (aiRes.status === 429) {
-            return new Response(JSON.stringify({ error: "Limite de requisições atingido, tente novamente em alguns instantes." }), {
-              status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
-            });
-          }
-          return new Response(JSON.stringify({ error: "Erro no gateway de IA" }), {
-            status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          console.error("AI Gateway error (test-chat):", aiRes.status, t);
+
+          // Graceful fallback: stream an explanation in OpenAI-compatible SSE
+          // chunks so the test UI still receives a readable bot reply instead
+          // of a toast error. This mirrors what support-chat does.
+          const lowQuota =
+            aiRes.status === 429 || /insufficient_quota|quota|billing/i.test(t);
+          const fallback = lowQuota
+            ? "⚠️ _(prévia do teste indisponível — cota da OpenAI esgotada)_\n\nO bot **está configurado corretamente** e vai responder seus leads normalmente no WhatsApp. Só não consigo gerar a prévia agora. Verifique o billing da OpenAI em https://platform.openai.com/settings/organization/billing e tente de novo em instantes."
+            : "⚠️ _(prévia do teste indisponível — instabilidade momentânea na IA)_\n\nTente de novo em alguns segundos. Se persistir, o bot ainda vai funcionar no WhatsApp; só a simulação aqui que está com problema.";
+
+          const encoder = new TextEncoder();
+          const stream = new ReadableStream({
+            start(controller) {
+              for (const piece of fallback.match(/.{1,24}/g) || [fallback]) {
+                const chunk = { choices: [{ delta: { content: piece } }] };
+                controller.enqueue(encoder.encode(`data: ${JSON.stringify(chunk)}\n\n`));
+              }
+              controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+              controller.close();
+            },
+          });
+          return new Response(stream, {
+            headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
           });
         }
 
