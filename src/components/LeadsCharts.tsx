@@ -31,11 +31,19 @@ const COLORS = [
 ];
 
 const tooltipStyle = {
-  backgroundColor: "hsl(var(--card))",
+  backgroundColor: "hsl(var(--popover))",
   border: "1px solid hsl(var(--border))",
   borderRadius: "8px",
   fontSize: "12px",
+  color: "hsl(var(--popover-foreground))",
+  boxShadow: "0 4px 12px rgba(0,0,0,0.25)",
+  padding: "8px 12px",
 };
+
+// Recharts applies colors per-series on label/item text. Force both to
+// follow the theme foreground so tooltips stay readable on dark mode.
+const tooltipLabelStyle = { color: "hsl(var(--foreground))", fontWeight: 600, marginBottom: 4 };
+const tooltipItemStyle = { color: "hsl(var(--foreground))" };
 
 const axisTickStyle = { fontSize: 10, fill: "hsl(var(--muted-foreground))" };
 
@@ -156,7 +164,7 @@ export const LeadsCharts = ({ leads }: { leads: Lead[] }) => {
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                 <XAxis dataKey="date" tick={axisTickStyle} tickLine={false} axisLine={false} interval={isMobile ? Math.max(Math.floor(dailyData.length / 5), 1) : period === "30d" ? 4 : period === "14d" ? 2 : 0} />
                 <YAxis allowDecimals={false} tick={axisTickStyle} tickLine={false} axisLine={false} width={30} />
-                <Tooltip contentStyle={tooltipStyle} labelStyle={{ color: "hsl(var(--foreground))" }} />
+                <Tooltip contentStyle={tooltipStyle} labelStyle={tooltipLabelStyle} itemStyle={tooltipItemStyle} />
                 <Line type="monotone" dataKey="leads" stroke="hsl(var(--primary))" strokeWidth={2.5} dot={isMobile ? false : { fill: "hsl(var(--primary))", r: 3 }} activeDot={{ r: 5 }} />
               </LineChart>
             </ResponsiveContainer>
@@ -176,7 +184,7 @@ export const LeadsCharts = ({ leads }: { leads: Lead[] }) => {
                     <Cell key={i} fill={COLORS[i % COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip contentStyle={tooltipStyle} formatter={(value: number, name: string) => [`${value} leads`, name]} />
+                <Tooltip contentStyle={tooltipStyle} labelStyle={tooltipLabelStyle} itemStyle={tooltipItemStyle} formatter={(value: number, name: string) => [`${value} leads`, name]} />
                 <Legend wrapperStyle={{ fontSize: "10px" }} formatter={(value) => <span style={{ color: "hsl(var(--muted-foreground))" }}>{value}</span>} />
               </PieChart>
             </ResponsiveContainer>
@@ -197,7 +205,7 @@ export const LeadsCharts = ({ leads }: { leads: Lead[] }) => {
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                 <XAxis dataKey="source" tick={axisTickStyle} tickLine={false} axisLine={false} />
                 <YAxis allowDecimals={false} tick={axisTickStyle} tickLine={false} axisLine={false} width={30} />
-                <Tooltip contentStyle={tooltipStyle} formatter={(value: number) => [`${value} leads`]} />
+                <Tooltip contentStyle={tooltipStyle} labelStyle={tooltipLabelStyle} itemStyle={tooltipItemStyle} formatter={(value: number) => [`${value} leads`]} />
                 <Bar dataKey="count" radius={[6, 6, 0, 0]}>
                   {sourceData.map((entry, i) => (
                     <Cell key={i} fill={entry.fill} />
@@ -245,7 +253,7 @@ export const LeadsCharts = ({ leads }: { leads: Lead[] }) => {
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                 <XAxis dataKey="label" tick={axisTickStyle} tickLine={false} axisLine={false} />
                 <YAxis tick={axisTickStyle} tickLine={false} axisLine={false} width={45} tickFormatter={(v) => `R$${v}`} />
-                <Tooltip contentStyle={tooltipStyle} formatter={(value: number) => [`R$ ${value.toLocaleString("pt-BR")}`]} />
+                <Tooltip contentStyle={tooltipStyle} labelStyle={tooltipLabelStyle} itemStyle={tooltipItemStyle} formatter={(value: number) => [`R$ ${value.toLocaleString("pt-BR")}`]} />
                 <Bar dataKey="value" radius={[6, 6, 0, 0]}>
                   {economyData.map((entry, i) => (
                     <Cell key={i} fill={entry.fill} />
@@ -270,7 +278,7 @@ export const LeadsCharts = ({ leads }: { leads: Lead[] }) => {
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                 <XAxis type="number" tick={axisTickStyle} tickLine={false} axisLine={false} allowDecimals={false} />
                 <YAxis type="category" dataKey="name" tick={axisTickStyle} tickLine={false} axisLine={false} width={isMobile ? 80 : 110} />
-                <Tooltip contentStyle={tooltipStyle} formatter={(value: number, _: any, props: any) => [`${value} leads`, props.payload.fullName]} />
+                <Tooltip contentStyle={tooltipStyle} labelStyle={tooltipLabelStyle} itemStyle={tooltipItemStyle} formatter={(value: number, _: any, props: any) => [`${value} leads`, props.payload.fullName]} />
                 <Bar dataKey="value" radius={[0, 6, 6, 0]}>
                   {segmentData.map((_, i) => (
                     <Cell key={i} fill={COLORS[i % COLORS.length]} />
