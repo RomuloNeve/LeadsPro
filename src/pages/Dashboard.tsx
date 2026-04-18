@@ -311,6 +311,19 @@ const Dashboard = () => {
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) { navigate("/auth"); return; }
+
+      // Guard: only admins can access this page
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("is_admin")
+        .eq("user_id", session.user.id)
+        .maybeSingle();
+
+      if (!profile?.is_admin) {
+        navigate("/user-dashboard", { replace: true });
+        return;
+      }
+
       fetchAdminData();
       fetchBlogPosts();
       fetchApiCredits();
