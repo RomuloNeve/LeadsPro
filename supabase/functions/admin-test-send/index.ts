@@ -206,7 +206,10 @@ Deno.serve(async (req) => {
       if (RESEND_API_KEY && (subject || body)) {
         const userEmail = profile.email || user.email || "";
         const userName = profile.display_name || userEmail.split("@")[0] || "Admin";
-        const fromAddress = `${userName} via LeadsPro <contato@leadspro.app>`;
+        const FROM_DOMAIN = Deno.env.get("RESEND_FROM_DOMAIN") || "onboarding@resend.dev";
+        const fromAddress = FROM_DOMAIN.includes("resend.dev")
+          ? `LeadsPro <${FROM_DOMAIN}>`
+          : `${userName} via LeadsPro <${FROM_DOMAIN}>`;
         const emailSubject = subject || "Novidade do LeadsPro";
         const emailBody = body || baseMsg;
 
@@ -381,7 +384,12 @@ Deno.serve(async (req) => {
 
       const userEmail = profile.email || user.email || "";
       const userName = profile.display_name || userEmail.split("@")[0] || "Admin";
-      const fromAddress = `${userName} via LeadsPro <contato@leadspro.app>`;
+      // Use Resend's pre-verified domain (onboarding@resend.dev) as fallback
+      // until leadspro.app is verified in the Resend dashboard (DNS SPF/DKIM).
+      const FROM_DOMAIN = Deno.env.get("RESEND_FROM_DOMAIN") || "onboarding@resend.dev";
+      const fromAddress = FROM_DOMAIN.includes("resend.dev")
+        ? `LeadsPro Admin <${FROM_DOMAIN}>`
+        : `${userName} via LeadsPro <${FROM_DOMAIN}>`;
       const emailSubject = subject || "Teste de email - LeadsPro Admin";
       const emailBody = body || "Este é um email de teste enviado pelo painel administrativo do LeadsPro.";
 
