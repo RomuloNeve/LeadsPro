@@ -1,5 +1,12 @@
 import { useEffect, useState, useCallback } from "react";
 import UtmGenerator from "@/components/UtmGenerator";
+import {
+  CreateUserDialog,
+  EditCreditsDialog,
+  ExtendLicenseDialog,
+  ResetPasswordDialog,
+  DeleteUserDialog,
+} from "@/components/AdminUserActions";
 import { useNavigate } from "react-router-dom";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { supabase } from "@/integrations/supabase/client";
@@ -689,6 +696,7 @@ const Dashboard = () => {
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input placeholder="Buscar por email..." value={userSearch} onChange={(e) => setUserSearch(e.target.value)} className="pl-9 h-9" />
               </div>
+              <CreateUserDialog onCreated={fetchAdminData} />
             </div>
 
             {/* Quick stats */}
@@ -811,6 +819,29 @@ const Dashboard = () => {
                             )}
                           </div>
                         </div>
+                        {!u.is_admin && (
+                          <div className="flex items-center gap-1.5 mt-3 pt-3 border-t border-border flex-wrap">
+                            <EditCreditsDialog
+                              userId={u.user_id}
+                              userEmail={u.email || ""}
+                              currentMonthly={(u.license as any)?.monthly_credits ?? 0}
+                              currentExtra={(u.license as any)?.extra_credits ?? 0}
+                              onUpdated={fetchAdminData}
+                            />
+                            <ExtendLicenseDialog
+                              userId={u.user_id}
+                              userEmail={u.email || ""}
+                              hasLicense={!!u.license}
+                              onUpdated={fetchAdminData}
+                            />
+                            <ResetPasswordDialog userId={u.user_id} userEmail={u.email || ""} />
+                            <DeleteUserDialog
+                              userId={u.user_id}
+                              userEmail={u.email || ""}
+                              onDeleted={fetchAdminData}
+                            />
+                          </div>
+                        )}
                       </div>
                     );
                   })}

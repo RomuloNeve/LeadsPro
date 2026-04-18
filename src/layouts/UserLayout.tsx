@@ -105,13 +105,14 @@ const FreeTrialCountdown = () => {
 };
 
 const ExpiredTrialModal = () => {
-  const { license } = useUserData();
+  const { license, isAdmin } = useUserData();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
+    if (isAdmin) return; // Admin never gets blocked by expiration
     if (!license) return;
-    
+
     // Free trial expired
     if (license.plan_type === "free" && license.expires_at) {
       const now = new Date();
@@ -138,6 +139,7 @@ const ExpiredTrialModal = () => {
 
   // Periodic check every 30s
   useEffect(() => {
+    if (isAdmin) return; // Admin never gets blocked
     if (!license) return;
     const interval = setInterval(() => {
       if (!license.is_active) {

@@ -81,10 +81,21 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchLicense = async () => {
     setLoading(true);
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      setHasLicense(false);
+      setLoading(false);
+      return;
+    }
+
+    // Fetch ONLY the current user's own license (previous query fetched any
+    // license in the system, which leaked other users' data and caused admin
+    // to load the wrong license in /user-dashboard).
     const { data, error } = await supabase
       .from("licenses")
       .select("*")
-      .not("assigned_to", "is", null)
+      .eq("assigned_to", session.user.id)
+      .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
 
