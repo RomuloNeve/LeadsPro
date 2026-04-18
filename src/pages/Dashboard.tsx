@@ -226,6 +226,8 @@ const Dashboard = () => {
   const [testWhatsAppMsg, setTestWhatsAppMsg] = useState("Mensagem de teste do painel admin 🚀");
   const [testEmailSubject, setTestEmailSubject] = useState("Teste de email - LeadsPro Admin");
   const [testEmailBody, setTestEmailBody] = useState("Este é um email de teste enviado pelo painel administrativo do LeadsPro.");
+  const [adminEmail, setAdminEmail] = useState<string>("");
+  const [adminPhone, setAdminPhone] = useState<string>("");
   const [sendingWhatsApp, setSendingWhatsApp] = useState(false);
   const [sendingEmail, setSendingEmail] = useState(false);
   const [testResults, setTestResults] = useState<string[]>([]);
@@ -315,7 +317,7 @@ const Dashboard = () => {
       // Guard: only admins can access this page
       const { data: profile } = await supabase
         .from("profiles")
-        .select("is_admin")
+        .select("is_admin, email, whatsapp_phone")
         .eq("user_id", session.user.id)
         .maybeSingle();
 
@@ -323,6 +325,9 @@ const Dashboard = () => {
         navigate("/user-dashboard", { replace: true });
         return;
       }
+
+      setAdminEmail(profile.email || session.user.email || "");
+      setAdminPhone(profile.whatsapp_phone || "");
 
       fetchAdminData();
       fetchBlogPosts();
@@ -1538,7 +1543,7 @@ const Dashboard = () => {
                   <MessageSquare className="h-4 w-4 text-primary" /> Teste WhatsApp em Massa
                 </h3>
                 <p className="text-xs text-muted-foreground">
-                  Envia para: <strong>+55 27 99813-3374</strong> e <strong>+55 27 99501-7187</strong>
+                  Envia para o seu WhatsApp: <strong>{adminPhone ? `+55 ${adminPhone.replace(/\D/g, "").replace(/^55/, "").replace(/(\d{2})(\d{5})(\d{4})/, "$1 $2-$3")}` : "(não cadastrado no seu perfil)"}</strong>
                 </p>
                 <div className="space-y-2">
                   <label className="text-xs font-medium text-foreground">Mensagem</label>
@@ -1585,7 +1590,7 @@ const Dashboard = () => {
                   <Mail className="h-4 w-4 text-primary" /> Teste Email em Massa
                 </h3>
                 <p className="text-xs text-muted-foreground">
-                  Envia para: <strong>lucassilvasimoes23@gmail.com</strong>, <strong>appmarquei@gmail.com</strong>, <strong>l.florianom@hotmail.com</strong>
+                  Envia para o seu email: <strong>{adminEmail || "(não cadastrado)"}</strong>
                 </p>
                 <div className="space-y-2">
                   <label className="text-xs font-medium text-foreground">Assunto</label>
