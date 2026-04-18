@@ -1622,8 +1622,11 @@ const Dashboard = () => {
                       });
                       if (error) throw error;
                       setTestResults(data.results || []);
+                      const firstErr = (data.results || []).find((r: string) => r.startsWith("❌"));
                       toast({
                         title: `✉️ Email: ${data.sent} enviados, ${data.errors} erros`,
+                        description: firstErr || undefined,
+                        variant: data.errors > 0 ? "destructive" : "default",
                       });
                     } catch (e: any) {
                       toast({ title: "Erro", description: e.message, variant: "destructive" });
