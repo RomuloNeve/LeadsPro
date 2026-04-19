@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, ArrowRight, Code, Globe, Palette, MessageCircle, Database, Zap, Bot, Send } from "lucide-react";
 import { motion } from "framer-motion";
 import { useDocumentMeta } from "@/hooks/useDocumentMeta";
+import { FeaturePreview } from "@/components/FeaturePreview";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 24 },
@@ -41,9 +42,9 @@ const FeatureWidget = () => {
             Instale um formulário flutuante no seu site com <strong>apenas uma linha de código</strong>. Os visitantes preenchem nome, WhatsApp, e-mail e mensagem — o lead cai automaticamente no seu CRM e <strong>nosso agente de IA envia a primeira mensagem no WhatsApp do lead usando o seu próprio número</strong>, garantindo o primeiro contato instantâneo.
           </motion.p>
 
-          {/* Screenshot */}
-          <motion.div variants={fadeUp} custom={3} className="mb-16 rounded-2xl border border-border/60 overflow-hidden shadow-xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center h-48 sm:h-64">
-            <Code className="h-16 w-16 sm:h-24 sm:w-24 text-primary/40" strokeWidth={1} />
+          {/* Preview */}
+          <motion.div variants={fadeUp} custom={3} className="mb-16">
+            <FeaturePreview variant="widget-preview" />
           </motion.div>
 
           {/* How it works */}

@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, ArrowRight, BarChart3, TrendingUp, PieChart, Activity, Clock, Radar, Target } from "lucide-react";
 import { motion } from "framer-motion";
 import { useDocumentMeta } from "@/hooks/useDocumentMeta";
+import { FeaturePreview } from "@/components/FeaturePreview";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 24 },
@@ -47,9 +48,7 @@ const FeatureEstatisticas = () => {
             <p className="text-muted-foreground mb-6 leading-relaxed max-w-3xl">
               A aba de Estatísticas oferece 6 gráficos especializados: o <strong>Crescimento Acumulado</strong> mostra a evolução total da sua base ao longo do tempo. A <strong>Qualidade dos Dados</strong> usa um gráfico radar para avaliar a completude dos campos (Telefone, E-mail, Instagram, LinkedIn, Site). O <strong>Leads por Dia da Semana</strong> revela quais dias são mais produtivos. <strong>Únicos vs Duplicatas</strong> mostra a proporção de leads novos. A <strong>Atividade por Horário</strong> identifica os picos de captura, e o <strong>Crescimento Semanal</strong> acompanha a evolução semana a semana.
             </p>
-            <div className="rounded-2xl border border-border/60 overflow-hidden shadow-xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center h-48 sm:h-64">
-              <BarChart3 className="h-16 w-16 sm:h-24 sm:w-24 text-primary/40" strokeWidth={1} />
-            </div>
+            <FeaturePreview variant="stats-chart" />
           </motion.div>
 
           {/* Benefits */}

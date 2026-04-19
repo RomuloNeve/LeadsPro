@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, ArrowRight, LayoutDashboard, TrendingUp, PieChart, DollarSign, Gauge, BarChart3, Activity, Layers } from "lucide-react";
 import { motion } from "framer-motion";
 import { useDocumentMeta } from "@/hooks/useDocumentMeta";
+import { FeaturePreview } from "@/components/FeaturePreview";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 24 },
@@ -47,9 +48,7 @@ const FeatureOverview = () => {
             <p className="text-muted-foreground mb-6 leading-relaxed max-w-3xl">
               No topo, você tem os números que mais importam: <strong>Total de Leads</strong>, <strong>Leads capturados hoje</strong>, <strong>Categorias ativas</strong> e seu <strong>Plano atual</strong>. Logo abaixo, o gráfico <strong>Leads por Período</strong> mostra sua evolução diária (7, 14 ou 30 dias), enquanto a <strong>Distribuição por Tipo de Contato</strong> revela a proporção de e-mails, telefones, Instagram, LinkedIn e sites capturados. Mais abaixo, o gráfico <strong>Leads por Fonte de Dados</strong> mostra o volume por canal, e a <strong>Taxa de Leads Completos</strong> indica a qualidade dos dados capturados.
             </p>
-            <div className="rounded-2xl border border-border/60 overflow-hidden shadow-xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center h-48 sm:h-64">
-              <LayoutDashboard className="h-16 w-16 sm:h-24 sm:w-24 text-primary/40" strokeWidth={1} />
-            </div>
+            <FeaturePreview variant="dashboard-stats" />
           </motion.div>
 
           {/* Screenshot 2 - Economia e segmento */}
@@ -58,9 +57,7 @@ const FeatureOverview = () => {
             <p className="text-muted-foreground mb-6 leading-relaxed max-w-3xl">
               O gráfico de <strong>Economia Gerada</strong> compara o custo do LeadsPro com a compra de bases de dados prontas no mercado — mostrando quanto você está economizando em prospecção. Ao lado, o <strong>Volume por Segmento</strong> exibe um ranking horizontal das categorias com mais leads, ajudando você a identificar quais nichos estão trazendo mais resultados.
             </p>
-            <div className="rounded-2xl border border-border/60 overflow-hidden shadow-xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center h-48 sm:h-64">
-              <LayoutDashboard className="h-16 w-16 sm:h-24 sm:w-24 text-primary/40" strokeWidth={1} />
-            </div>
+            <FeaturePreview variant="stats-chart" />
           </motion.div>
 
           {/* Benefits grid */}

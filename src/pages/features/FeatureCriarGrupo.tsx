@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, ArrowRight, Users, UserPlus, Search, MessageCircle, Shield, Zap } from "lucide-react";
 import { motion } from "framer-motion";
 import { useDocumentMeta } from "@/hooks/useDocumentMeta";
+import { FeaturePreview } from "@/components/FeaturePreview";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 24 },
@@ -47,9 +48,7 @@ const FeatureCriarGrupo = () => {
             <p className="text-muted-foreground mb-6 leading-relaxed max-w-3xl">
               Na caixa de entrada, clique no ícone de grupo, defina o nome, adicione uma descrição opcional e selecione os participantes da sua lista de contatos. Com um clique em <strong>Criar Grupo</strong>, o grupo é criado automaticamente no seu WhatsApp conectado.
             </p>
-            <div className="rounded-2xl border border-border/60 overflow-hidden shadow-xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center h-48 sm:h-64">
-              <Users className="h-16 w-16 sm:h-24 sm:w-24 text-primary/40" strokeWidth={1} />
-            </div>
+            <FeaturePreview variant="group-create" />
           </motion.div>
 
           {/* Benefits */}

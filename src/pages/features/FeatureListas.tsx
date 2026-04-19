@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, ArrowRight, FolderOpen, Palette, Tag, Plus, ListChecks, Target, Eye } from "lucide-react";
 import { motion } from "framer-motion";
 import { useDocumentMeta } from "@/hooks/useDocumentMeta";
+import { FeaturePreview } from "@/components/FeaturePreview";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 24 },
@@ -47,9 +48,7 @@ const FeatureListas = () => {
             <p className="text-muted-foreground mb-6 leading-relaxed max-w-3xl">
               A tela de <strong>Listas de Leads</strong> mostra todas as suas listas criadas. Cada card exibe o <strong>nome da lista</strong>, a <strong>cor identificadora</strong>, a <strong>quantidade de leads</strong> e a <strong>data de criação</strong>. Clique em qualquer lista para ver todos os leads dentro dela.
             </p>
-            <div className="rounded-2xl border border-border/60 overflow-hidden shadow-xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center h-48 sm:h-64">
-              <FolderOpen className="h-16 w-16 sm:h-24 sm:w-24 text-primary/40" strokeWidth={1} />
-            </div>
+            <FeaturePreview variant="lists-grid" />
           </motion.div>
 
           {/* Screenshot 2 - Detalhe */}
@@ -58,10 +57,7 @@ const FeatureListas = () => {
             <p className="text-muted-foreground mb-6 leading-relaxed max-w-3xl">
               Ao abrir uma lista, você vê todos os leads que pertencem a ela em uma tabela com <strong>Categoria</strong>, <strong>Nome</strong>, <strong>Telefone</strong>, <strong>Instagram</strong>, <strong>LinkedIn</strong> e <strong>Site</strong>. Cada ícone é clicável e leva direto ao perfil do lead. Você pode remover leads individualmente clicando no ícone de lixeira.
             </p>
-            <div className="rounded-2xl border border-border/60 overflow-hidden shadow-xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center h-48 sm:h-64">
-              <FolderOpen className="h-16 w-16 sm:h-24 sm:w-24 text-primary/40" strokeWidth={1} />
-            </div>
-          </motion.div>
+            <FeaturePreview variant="lists-detail" />
 
           {/* Benefits */}
           <motion.div variants={fadeUp} custom={5} className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-16">

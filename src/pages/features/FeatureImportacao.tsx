@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, ArrowRight, Upload, Filter, Search, FileSpreadsheet, Zap, ShieldCheck } from "lucide-react";
 import { motion } from "framer-motion";
 import { useDocumentMeta } from "@/hooks/useDocumentMeta";
+import { FeaturePreview } from "@/components/FeaturePreview";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 24 },
@@ -43,9 +44,7 @@ const FeatureImportacao = () => {
 
           {/* Screenshot */}
           <motion.div variants={fadeUp} custom={2.5} className="mb-16">
-            <div className="rounded-2xl border border-border/60 overflow-hidden shadow-xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center h-48 sm:h-64">
-              <Upload className="h-16 w-16 sm:h-24 sm:w-24 text-primary/40" strokeWidth={1} />
-            </div>
+            <FeaturePreview variant="upload-csv" />
           </motion.div>
 
           {/* How it works */}

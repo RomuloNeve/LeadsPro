@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, ArrowRight, Database, Filter, Download, Tag, Copy, Search, Phone, Mail, Upload } from "lucide-react";
 import { motion } from "framer-motion";
 import { useDocumentMeta } from "@/hooks/useDocumentMeta";
+import { FeaturePreview } from "@/components/FeaturePreview";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 24 },
@@ -47,9 +48,7 @@ const FeatureCRM = () => {
             <p className="text-muted-foreground mb-6 leading-relaxed max-w-3xl">
               A tela de <strong>Seus Leads</strong> exibe todos os leads capturados em uma tabela completa com <strong>Categoria</strong>, <strong>Nome</strong>, <strong>Telefone</strong>, <strong>E-mail</strong>, <strong>Instagram</strong>, <strong>Site</strong>, <strong>LinkedIn</strong> e <strong>Data de captura</strong>. Use as abas <strong>Únicos</strong> e <strong>Duplicatas</strong> para separar leads novos dos repetidos. A barra de busca e o filtro por categoria ajudam a encontrar qualquer lead em segundos. Os botões <strong>Exportar</strong> (CSV) e <strong>Excluir Tudo</strong> estão sempre acessíveis no topo. Cada link de e-mail, Instagram, site e LinkedIn é clicável, levando direto ao perfil ou página do lead.
             </p>
-            <div className="rounded-2xl border border-border/60 overflow-hidden shadow-xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center h-48 sm:h-64">
-              <Database className="h-16 w-16 sm:h-24 sm:w-24 text-primary/40" strokeWidth={1} />
-            </div>
+            <FeaturePreview variant="crm-table" />
           </motion.div>
 
           {/* Bulk Import */}

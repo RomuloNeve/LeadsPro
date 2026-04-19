@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, ArrowRight, Smartphone, QrCode, Wifi, Shield, Zap, MessageCircle } from "lucide-react";
 import { motion } from "framer-motion";
 import { useDocumentMeta } from "@/hooks/useDocumentMeta";
+import { FeaturePreview } from "@/components/FeaturePreview";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 24 },
@@ -47,9 +48,7 @@ const FeatureInstancia = () => {
             <p className="text-muted-foreground mb-6 leading-relaxed max-w-3xl">
               Na seção <strong>Integração via QR Code</strong>, escaneie o QR Code com seu celular (WhatsApp → Dispositivos conectados → Conectar dispositivo). Em segundos, seu número estará vinculado e pronto para disparos, follow-ups e a caixa de entrada.
             </p>
-            <div className="rounded-2xl border border-border/60 overflow-hidden shadow-xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center h-48 sm:h-64">
-              <Smartphone className="h-16 w-16 sm:h-24 sm:w-24 text-primary/40" strokeWidth={1} />
-            </div>
+            <FeaturePreview variant="qr-code" />
           </motion.div>
 
           {/* Benefits */}

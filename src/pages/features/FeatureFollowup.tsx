@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, ArrowRight, Repeat, Clock, CalendarDays, Zap, Settings, MessageSquare, Send, Filter } from "lucide-react";
 import { motion } from "framer-motion";
 import { useDocumentMeta } from "@/hooks/useDocumentMeta";
+import { FeaturePreview } from "@/components/FeaturePreview";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 24 },
@@ -47,9 +48,7 @@ const FeatureFollowup = () => {
             <p className="text-muted-foreground mb-6 leading-relaxed max-w-3xl">
               Clique em <strong>+ Nova Sequência</strong> e preencha: <strong>Nome da sequência</strong>, <strong>Nome da sua empresa</strong> e <strong>Serviços que você oferece</strong>. Em seguida, selecione <strong>para quais leads</strong> enviar (todos, por categoria ou por lista). As <strong>mensagens são geradas automaticamente</strong> com base nos seus dados — você não precisa escrever nada. O sistema cria 4 mensagens otimizadas para os dias 1, 3, 5 e 7, cada uma com um tom diferente (primeiro contato, reforço, oferta, última tentativa). Tudo fica registrado e pode ser disparado manualmente por etapa se necessário.
             </p>
-            <div className="rounded-2xl border border-border/60 overflow-hidden shadow-xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center h-48 sm:h-64">
-              <Clock className="h-16 w-16 sm:h-24 sm:w-24 text-primary/40" strokeWidth={1} />
-            </div>
+            <FeaturePreview variant="followup-sequence" />
           </motion.div>
 
           {/* Benefits */}

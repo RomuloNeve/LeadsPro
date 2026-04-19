@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Bot, Clock, MessageCircle, FileText, CalendarDays, Mail, Zap, Shield, Brain, Send, Sparkles, UserCheck } from "lucide-react";
 import { motion } from "framer-motion";
 import { useDocumentMeta } from "@/hooks/useDocumentMeta";
+import { FeaturePreview } from "@/components/FeaturePreview";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 24 },
@@ -113,11 +114,9 @@ const FeatureChatbot = () => {
             Qualifica leads, envia propostas, agenda reuniões e conduz vendas — tudo automaticamente, enquanto você dorme.
           </motion.p>
 
-          {/* Screenshot */}
+          {/* Preview */}
           <motion.div variants={fadeUp} custom={2.5} className="mb-12">
-            <div className="rounded-2xl border border-border/60 overflow-hidden shadow-xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center h-48 sm:h-64">
-              <Bot className="h-16 w-16 sm:h-24 sm:w-24 text-primary/40" strokeWidth={1} />
-            </div>
+            <FeaturePreview variant="chatbot-conversation" />
           </motion.div>
 
           {/* 24/7 Hero highlight */}
@@ -197,9 +196,7 @@ const FeatureChatbot = () => {
             <p className="text-muted-foreground mb-8 max-w-3xl leading-relaxed">
               Quando o lead pedir para falar com uma pessoa real, o bot transfere automaticamente. Você recebe notificação por <strong>e-mail</strong> e <strong>WhatsApp</strong>, e atende direto pela Caixa de Entrada com um clique.
             </p>
-            <div className="rounded-2xl border border-border/60 overflow-hidden shadow-xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center h-48 sm:h-64">
-              <Bot className="h-16 w-16 sm:h-24 sm:w-24 text-primary/40" strokeWidth={1} />
-            </div>
+            <FeaturePreview variant="chatbot-handoff" />
           </motion.div>
 
           {/* Differentials */}
