@@ -16,6 +16,9 @@ import {
   X,
   Bot,
   Kanban,
+  Headphones,
+  Code,
+  Gift,
 } from "lucide-react";
 import { WhatsAppIcon } from "@/components/WhatsAppIcon";
 import { supabase } from "@/integrations/supabase/client";
@@ -38,6 +41,9 @@ const moreItems = [
   { title: "Email Marketing", url: "/user-dashboard/email-campaigns", icon: Mail },
   { title: "Follow-ups", url: "/user-dashboard/followups", icon: Clock },
   { title: "Chatbot IA", url: "/user-dashboard/chatbot", icon: Bot },
+  { title: "Atendimento Humano", url: "/user-dashboard/human-support", icon: Headphones },
+  { title: "Widget de Captura", url: "/user-dashboard/widget", icon: Code },
+  { title: "Programa de Afiliados", url: "/user-dashboard/afiliados", icon: Gift },
   { title: "Faturamento", url: "/user-dashboard/billing", icon: Mail },
   { title: "Perfil", url: "/user-dashboard/profile", icon: User },
 ];
