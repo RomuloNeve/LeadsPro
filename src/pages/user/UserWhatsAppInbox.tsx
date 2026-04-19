@@ -997,33 +997,39 @@ const UserWhatsAppInbox = () => {
     fetchMessages(chatFromLead);
   };
 
-  // Handle URL params (coming from leads page or human support)
+  // Handle URL params (coming from leads page or human support).
+  // Previously this ran ONCE on mount with a 1500ms setTimeout and read
+  // `chats` from the initial closure (always empty at mount) — so finding
+  // an existing chat by JID never worked and it always fell through to
+  // startChatWithLead with the raw JID as phone. Now we wait until chats
+  // have actually loaded, then run the handler exactly once per param set.
+  const urlParamHandledRef = useRef<string | null>(null);
   useEffect(() => {
     const phone = searchParams.get("phone");
     const name = searchParams.get("name");
     const contactJid = searchParams.get("contact");
-    if (phone || contactJid) {
-      // Clear URL params
-      setSearchParams({}, { replace: true });
-      // Wait a bit for chats to load, then select/start chat
-      setTimeout(() => {
-        if (contactJid) {
-          // Find the chat by remoteJid
-          const found = chats.find(c => c.remoteJid === contactJid);
-          if (found) {
-            setSelectedChat(found);
-            fetchMessagesForChat(found);
-          } else {
-            // Extract phone from JID as fallback
-            const jidPhone = contactJid.replace("@s.whatsapp.net", "").replace("@lid", "");
-            startChatWithLead(jidPhone, jidPhone);
-          }
-        } else if (phone) {
-          startChatWithLead(phone, name || phone);
-        }
-      }, 1500);
+    if (!phone && !contactJid) return;
+    if (chats.length === 0) return; // wait for first fetchChats to populate
+
+    const key = `${contactJid || ""}|${phone || ""}|${name || ""}`;
+    if (urlParamHandledRef.current === key) return;
+    urlParamHandledRef.current = key;
+
+    setSearchParams({}, { replace: true });
+
+    if (contactJid) {
+      const found = chats.find((c) => c.remoteJid === contactJid);
+      if (found) {
+        setSelectedChat(found);
+        fetchMessagesForChat(found);
+      } else {
+        const jidPhone = contactJid.replace("@s.whatsapp.net", "").replace("@lid", "");
+        startChatWithLead(jidPhone, jidPhone);
+      }
+    } else if (phone) {
+      startChatWithLead(phone, name || phone);
     }
-  }, []);
+  }, [searchParams, chats, setSearchParams]);
 
   // myPhoneJid is now set from ownerJid in fetchChats response
 

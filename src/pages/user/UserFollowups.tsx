@@ -101,7 +101,6 @@ const UserFollowups = () => {
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [dispatching, setDispatching] = useState<string | null>(null);
   const [lists, setLists] = useState<{ id: string; name: string; color: string }[]>([]);
   const [targetFilter, setTargetFilter] = useState("all");
 

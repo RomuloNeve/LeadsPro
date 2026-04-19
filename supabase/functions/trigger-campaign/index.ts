@@ -67,11 +67,15 @@ async function sendViaEvolution(instanceName: string, phone: string, message: st
   }
 }
 
-async function generateVariations(originalMessage: string, count: number): Promise<string[]> {
+// Returns both the variations and a human-readable warning when we had to
+// fall back to the raw template (no key, quota exhausted, parse failure…).
+// The caller surfaces the warning in the response so users see WHY every
+// message went out identical instead of believing AI-rewrite silently worked.
+async function generateVariations(originalMessage: string, count: number): Promise<{ variations: string[]; warning: string | null }> {
   const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
   if (!OPENAI_API_KEY) {
     console.error("OPENAI_API_KEY not set! Variations will NOT work.");
-    return [];
+    return { variations: [], warning: "Variação por IA desativada (chave OpenAI ausente). Todas as mensagens foram enviadas com o texto original." };
   }
 
   console.log(`Generating ${count} variations...`);
@@ -116,14 +120,20 @@ variação 3 aqui`,
     if (!response.ok) {
       const errText = await response.text();
       console.error("AI variation error:", response.status, errText);
-      return [];
+      const lowQuota = response.status === 429 || /insufficient_quota|quota|billing/i.test(errText);
+      return {
+        variations: [],
+        warning: lowQuota
+          ? "Cota da OpenAI esgotada — mensagens enviadas sem variação (texto original para todos os leads). Recarregue a OpenAI para reativar anti-ban."
+          : `IA indisponível (HTTP ${response.status}) — mensagens enviadas sem variação. Tente novamente em alguns minutos.`,
+      };
     }
 
     const data = await response.json();
     const text = data.choices?.[0]?.message?.content?.trim();
     if (!text) {
       console.error("AI returned empty content");
-      return [];
+      return { variations: [], warning: "IA retornou resposta vazia — mensagens enviadas sem variação." };
     }
 
     // Split by our custom delimiter
@@ -140,14 +150,14 @@ variação 3 aqui`,
 
     if (variations.length === 0) {
       console.error("No valid variations after filtering, using original");
-      return [];
+      return { variations: [], warning: "IA retornou variações inválidas — mensagens enviadas sem variação." };
     }
 
     console.log(`Generated ${variations.length} valid variations (original len: ${originalMessage.length})`);
-    return variations;
+    return { variations, warning: null };
   } catch (e) {
     console.error("AI variation fetch error:", e.message);
-    return [];
+    return { variations: [], warning: `Falha ao chamar IA (${e.message || "erro desconhecido"}) — mensagens enviadas sem variação.` };
   }
 }
 
@@ -389,8 +399,8 @@ Deno.serve(async (req) => {
     const allowLinksInMessage = hasAnyLink(baseMessage);
 
     const variationCount = Math.max(leadsThisCall.length, 6);
-    const variations = await generateVariations(baseMessage, variationCount);
-    console.log(`Variations ready: ${variations.length} for ${leadsThisCall.length} leads`);
+    const { variations, warning: variationWarning } = await generateVariations(baseMessage, variationCount);
+    console.log(`Variations ready: ${variations.length} for ${leadsThisCall.length} leads (warning=${variationWarning || "none"})`);
 
     let sentCount = 0;
     let errorCount = 0;
@@ -510,6 +520,7 @@ Deno.serve(async (req) => {
         total_sent: totalSent || 0,
         total_target: totalTargetLeads,
         remaining: Math.max(0, totalTargetLeads - (totalSent || 0)),
+        variation_warning: variationWarning,
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

@@ -436,6 +436,17 @@ const UserCampaigns = () => {
           allFailedLeads.push(...data.failed_leads);
         }
 
+        // Warn on the FIRST loop that the AI fallback kicked in. Without
+        // this, the user thinks anti-ban variation worked when in fact
+        // every lead got the same raw template.
+        if (data.variation_warning && loopCount === 1) {
+          toast({
+            title: "⚠️ Variação por IA indisponível",
+            description: data.variation_warning,
+            variant: "destructive",
+          });
+        }
+
         if (data.all_sent || !data.has_more || testMode) {
           if (data.all_sent) {
             toast({

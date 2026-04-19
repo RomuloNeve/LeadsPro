@@ -68,14 +68,20 @@ const UserLists = () => {
     const listsData = (data as LeadList[]) || [];
     setLists(listsData);
 
-    // Fetch counts
+    // One round trip instead of N: fetch all list items for these lists,
+    // then count client-side. For a user with 50 lists this drops from
+    // 50 round trips to 1.
     const countsMap: Record<string, number> = {};
-    for (const list of listsData) {
-      const { count } = await supabase
+    if (listsData.length > 0) {
+      const listIds = listsData.map((l) => l.id);
+      const { data: itemsData } = await supabase
         .from("lead_list_items")
-        .select("*", { count: "exact", head: true })
-        .eq("list_id", list.id);
-      countsMap[list.id] = count || 0;
+        .select("list_id")
+        .in("list_id", listIds);
+      for (const id of listIds) countsMap[id] = 0;
+      for (const row of (itemsData || []) as { list_id: string }[]) {
+        countsMap[row.list_id] = (countsMap[row.list_id] || 0) + 1;
+      }
     }
     setCounts(countsMap);
     setLoading(false);
