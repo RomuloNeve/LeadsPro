@@ -5,6 +5,7 @@ import { ArrowLeft, ArrowRight, Calendar, Clock, Loader2, ChevronRight, List } f
 import { motion } from "framer-motion";
 import { useDocumentMeta } from "@/hooks/useDocumentMeta";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useEffect } from "react";
@@ -290,24 +291,41 @@ const BlogPost = () => {
             </span>
           </motion.div>
 
-          <motion.h1 variants={fadeUp} custom={1} className="text-3xl md:text-4xl lg:text-5xl font-bold font-display leading-tight mb-8">
+          <motion.h1 variants={fadeUp} custom={1} className="text-3xl md:text-4xl lg:text-5xl font-bold font-display leading-[1.15] tracking-tight mb-6">
             {article.title}
           </motion.h1>
 
+          {article.excerpt && (
+            <motion.p
+              variants={fadeUp}
+              custom={1.2}
+              className="text-lg md:text-xl text-muted-foreground leading-relaxed mb-10 pb-8 border-b border-border/50"
+            >
+              {article.excerpt}
+            </motion.p>
+          )}
+
           {/* Table of Contents */}
           {headings.length >= 3 && (
-            <motion.nav variants={fadeUp} custom={1.5} className="mb-10 p-5 rounded-2xl border border-border/60 bg-muted/30">
-              <h2 className="flex items-center gap-2 text-base font-bold font-display mb-3">
-                <List className="h-4 w-4 text-primary" /> Índice do Artigo
+            <motion.nav
+              variants={fadeUp}
+              custom={1.5}
+              className="mb-12 p-6 rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/5 via-transparent to-primary/5 shadow-sm"
+            >
+              <h2 className="flex items-center gap-2 text-sm font-bold font-display mb-4 uppercase tracking-wider text-primary">
+                <List className="h-4 w-4" /> Índice do Artigo
               </h2>
-              <ul className="space-y-1.5">
-                {headings.map((h) => (
-                  <li key={h.id} className={h.level === 3 ? "ml-4" : ""}>
+              <ul className="space-y-2">
+                {headings.map((h, i) => (
+                  <li key={h.id} className={h.level === 3 ? "ml-5" : ""}>
                     <a
                       href={`#${h.id}`}
-                      className="text-sm text-muted-foreground hover:text-primary transition-colors leading-relaxed"
+                      className="group flex items-baseline gap-3 text-sm text-muted-foreground hover:text-primary transition-colors leading-relaxed"
                     >
-                      {h.text}
+                      <span className="text-xs font-mono text-primary/60 group-hover:text-primary shrink-0">
+                        {String(i + 1).padStart(2, "0")}
+                      </span>
+                      <span className="group-hover:translate-x-0.5 transition-transform">{h.text}</span>
                     </a>
                   </li>
                 ))}
@@ -315,34 +333,133 @@ const BlogPost = () => {
             </motion.nav>
           )}
 
-          <motion.div variants={fadeUp} custom={2} className="prose prose-lg dark:prose-invert max-w-none prose-headings:font-display prose-h2:text-2xl prose-h2:mt-10 prose-h2:mb-4 prose-h3:text-xl prose-h3:mt-6 prose-h3:mb-3 prose-p:text-muted-foreground prose-p:leading-relaxed prose-li:text-muted-foreground prose-strong:text-foreground prose-blockquote:border-primary prose-blockquote:text-muted-foreground prose-a:text-primary prose-a:underline">
+          <motion.div variants={fadeUp} custom={2} className="max-w-none">
             {article.hero_image_url && (
               <img
                 src={article.hero_image_url}
                 alt={article.title}
-                className="w-full rounded-2xl shadow-lg mb-8 aspect-video object-cover"
+                className="w-full rounded-2xl shadow-lg mb-10 aspect-video object-cover"
                 loading="eager"
                 fetchPriority="high"
                 decoding="async"
               />
             )}
             <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
               components={{
+                // Premium typography: explicit classes on every element so
+                // the article looks polished regardless of the prose plugin.
                 h2: ({ children, ...props }) => {
                   const text = String(children).replace(/\*\*/g, "");
                   const id = text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
-                  return <h2 id={id} {...props}>{children}</h2>;
+                  return (
+                    <h2
+                      id={id}
+                      className="scroll-mt-24 mt-14 mb-5 text-3xl md:text-4xl font-bold font-display text-foreground tracking-tight leading-tight"
+                      {...props}
+                    >
+                      <span className="bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+                        {children}
+                      </span>
+                    </h2>
+                  );
                 },
                 h3: ({ children, ...props }) => {
                   const text = String(children).replace(/\*\*/g, "");
                   const id = text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
-                  return <h3 id={id} {...props}>{children}</h3>;
+                  return (
+                    <h3
+                      id={id}
+                      className="scroll-mt-24 mt-10 mb-3 text-xl md:text-2xl font-semibold font-display text-foreground flex items-start gap-3"
+                      {...props}
+                    >
+                      <span className="mt-1.5 h-2 w-2 rounded-full bg-primary shrink-0" aria-hidden />
+                      <span>{children}</span>
+                    </h3>
+                  );
                 },
+                h4: ({ children, ...props }) => (
+                  <h4 className="mt-6 mb-2 text-lg font-semibold font-display text-foreground" {...props}>
+                    {children}
+                  </h4>
+                ),
+                p: ({ children, ...props }) => (
+                  <p className="my-5 text-[17px] leading-[1.8] text-muted-foreground" {...props}>
+                    {children}
+                  </p>
+                ),
+                ul: ({ children, ...props }) => (
+                  <ul className="my-5 space-y-2.5 pl-0 list-none" {...props}>
+                    {children}
+                  </ul>
+                ),
+                ol: ({ children, ...props }) => (
+                  <ol className="my-5 space-y-2.5 pl-6 list-decimal marker:text-primary marker:font-bold" {...props}>
+                    {children}
+                  </ol>
+                ),
+                li: ({ children, ...props }) => (
+                  <li
+                    className="relative pl-6 text-[17px] leading-[1.75] text-muted-foreground before:content-[''] before:absolute before:left-0 before:top-[0.75em] before:h-1.5 before:w-1.5 before:rounded-full before:bg-primary/70"
+                    {...props}
+                  >
+                    {children}
+                  </li>
+                ),
+                strong: ({ children, ...props }) => (
+                  <strong className="font-semibold text-foreground" {...props}>{children}</strong>
+                ),
+                em: ({ children, ...props }) => (
+                  <em className="italic text-foreground/90" {...props}>{children}</em>
+                ),
+                blockquote: ({ children, ...props }) => (
+                  <blockquote
+                    className="my-8 pl-6 pr-4 py-4 rounded-r-xl border-l-4 border-primary bg-gradient-to-r from-primary/10 to-transparent italic text-foreground/90"
+                    {...props}
+                  >
+                    {children}
+                  </blockquote>
+                ),
+                hr: (props) => (
+                  <hr className="my-12 border-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" {...props} />
+                ),
+                code: ({ children, ...props }) => (
+                  <code className="px-1.5 py-0.5 rounded-md bg-muted text-foreground font-mono text-[0.9em] border border-border/60" {...props}>
+                    {children}
+                  </code>
+                ),
+                pre: ({ children, ...props }) => (
+                  <pre className="my-6 p-4 rounded-xl bg-muted/60 border border-border overflow-x-auto text-sm" {...props}>
+                    {children}
+                  </pre>
+                ),
+                img: ({ src, alt, ...props }) => (
+                  <img src={src} alt={alt} className="my-8 rounded-2xl shadow-lg w-full" loading="lazy" {...props} />
+                ),
+                table: ({ children, ...props }) => (
+                  <div className="my-8 overflow-x-auto rounded-2xl border border-border shadow-sm">
+                    <table className="w-full border-collapse text-sm" {...props}>{children}</table>
+                  </div>
+                ),
+                thead: ({ children, ...props }) => (
+                  <thead className="bg-muted/60" {...props}>{children}</thead>
+                ),
+                th: ({ children, ...props }) => (
+                  <th className="px-4 py-3 text-left font-semibold font-display text-foreground border-b border-border" {...props}>
+                    {children}
+                  </th>
+                ),
+                td: ({ children, ...props }) => (
+                  <td className="px-4 py-3 text-muted-foreground border-b border-border/40 align-top" {...props}>
+                    {children}
+                  </td>
+                ),
                 a: ({ href, children, ...props }) => {
+                  const className = "text-primary font-medium underline decoration-primary/40 decoration-2 underline-offset-4 hover:decoration-primary transition-colors";
                   if (href?.startsWith("/")) {
-                    return <Link to={href} className="text-primary underline" {...props}>{children}</Link>;
+                    return <Link to={href} className={className} {...props}>{children}</Link>;
                   }
-                  return <a href={href} target="_blank" rel="noopener noreferrer" {...props}>{children}</a>;
+                  return <a href={href} target="_blank" rel="noopener noreferrer" className={className} {...props}>{children}</a>;
                 },
               }}
             >
