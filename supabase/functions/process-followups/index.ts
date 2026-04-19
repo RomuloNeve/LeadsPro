@@ -118,15 +118,21 @@ Deno.serve(async (req) => {
 
       if (!matchingStep) continue;
 
-      // Check if already sent
-      const { data: existingLog } = await supabase
+      // Idempotency: fetch ALL existing logs for this step, then skip leads
+      // that already have a row (regardless of status — a "sending" row means
+      // another invocation is in-flight for that lead; a "sent"/"failed" row
+      // means we already tried). This prevents duplicate sends when the cron
+      // retries or the function is invoked twice concurrently.
+      const { data: existingLogs } = await supabase
         .from("followup_logs")
-        .select("id")
-        .eq("step_id", matchingStep.id)
-        .eq("status", "sent")
-        .limit(1);
+        .select("lead_id, status")
+        .eq("step_id", matchingStep.id);
 
-      if (existingLog && existingLog.length > 0) continue;
+      const processedLeadIds = new Set((existingLogs || []).map((l: any) => l.lead_id));
+
+      // If every targeted lead already has a log, skip the whole step.
+      const pendingLeads = leads.filter((l: any) => l.phone && !processedLeadIds.has(l.id));
+      if (pendingLeads.length === 0) continue;
 
       // Remove {{whatsapp_link}} from template since we send from own number now
       const message = matchingStep.message_template
@@ -134,12 +140,30 @@ Deno.serve(async (req) => {
         .replace(/\n{3,}/g, "\n\n") // clean extra blank lines
         .trim();
 
-      // Send to each lead via Evolution API
+      // Claim the leads BEFORE sending by inserting 'sending' rows. If a
+      // concurrent invocation reaches the idempotency check after this insert,
+      // it sees the rows and skips — avoiding double sends.
+      const nowIso = new Date().toISOString();
+      const claimRows = pendingLeads.map((lead: any) => ({
+        step_id: matchingStep.id,
+        lead_id: lead.id,
+        scheduled_for: nowIso,
+        status: "sending",
+      }));
+      const { error: claimErr } = await supabase.from("followup_logs").insert(claimRows);
+      if (claimErr) {
+        console.error(`Could not claim followup logs for step ${matchingStep.id}:`, claimErr);
+        continue; // another instance likely claimed first — bail out safely
+      }
+
+      // Send to each claimed lead via Evolution API and update per-row status.
       let sentCount = 0;
-      for (const lead of leads) {
-        const phone = lead.phone?.replace(/\D/g, "");
+      for (const lead of pendingLeads) {
+        const phone = lead.phone.replace(/\D/g, "");
         if (!phone) continue;
 
+        let ok = false;
+        let errMsg = "";
         try {
           const sendRes = await fetch(`${EVOLUTION_API_URL}/message/sendText/${instance.instance_name}`, {
             method: "POST",
@@ -148,32 +172,32 @@ Deno.serve(async (req) => {
           });
 
           if (sendRes.ok) {
+            ok = true;
             sentCount++;
           } else {
-            const errData = await sendRes.text();
-            console.error(`Failed to send to ${phone}:`, errData);
+            errMsg = (await sendRes.text()).slice(0, 300);
+            console.error(`Failed to send to ${phone}:`, errMsg);
           }
-
-          // Small delay between messages to avoid rate limiting
-          await new Promise((r) => setTimeout(r, 2000));
         } catch (sendErr) {
+          errMsg = sendErr instanceof Error ? sendErr.message : "unknown";
           console.error(`Error sending to ${phone}:`, sendErr);
-          errors.push(`${phone}: ${sendErr instanceof Error ? sendErr.message : "unknown"}`);
+          errors.push(`${phone}: ${errMsg}`);
         }
+
+        await supabase
+          .from("followup_logs")
+          .update({
+            status: ok ? "sent" : "failed",
+            sent_at: ok ? new Date().toISOString() : null,
+            error_message: ok ? null : errMsg,
+          })
+          .eq("step_id", matchingStep.id)
+          .eq("lead_id", lead.id);
+
+        // Small delay between messages to avoid rate limiting
+        await new Promise((r) => setTimeout(r, 2000));
       }
 
-      // Log sent messages
-      const logs = leads
-        .filter((lead: any) => lead.phone)
-        .map((lead: any) => ({
-          step_id: matchingStep.id,
-          lead_id: lead.id,
-          scheduled_for: new Date().toISOString(),
-          sent_at: new Date().toISOString(),
-          status: "sent",
-        }));
-
-      await supabase.from("followup_logs").insert(logs);
       totalSent += sentCount;
 
       console.log(`Sequence ${sequence.id}, day ${matchingStep.day_number}: sent to ${sentCount}/${leads.length} leads via Evolution API`);

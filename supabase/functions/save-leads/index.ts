@@ -102,6 +102,16 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Hard cap per request to stop a leaked license code from being used to
+    // flood a tenant's CRM with thousands of fake leads in one POST.
+    const MAX_PER_REQUEST = 50;
+    if (leads.length > MAX_PER_REQUEST) {
+      return new Response(
+        JSON.stringify({ error: `Máximo de ${MAX_PER_REQUEST} leads por requisição` }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
@@ -109,6 +119,7 @@ Deno.serve(async (req) => {
 
     let license: any = null;
     let userId: string | null = null;
+    let isAuthenticated = false;
 
     // Try auth token first
     const authHeader = req.headers.get("Authorization");
@@ -117,6 +128,7 @@ Deno.serve(async (req) => {
       const { data: { user } } = await supabase.auth.getUser(token);
       if (user) {
         userId = user.id;
+        isAuthenticated = true;
         const { data } = await supabase
           .from("licenses")
           .select("id, is_active, plan_type, expires_at, assigned_to")
@@ -160,6 +172,24 @@ Deno.serve(async (req) => {
         return new Response(
           JSON.stringify({ valid: false, error: "Licença expirada" }),
           { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+
+    // Rate limit for unauthenticated (code-based) callers: cap inserts per
+    // license to 100 in any rolling 60-second window. Authenticated users
+    // skip this because they already pay per credit.
+    if (!isAuthenticated) {
+      const since = new Date(Date.now() - 60_000).toISOString();
+      const { count } = await supabase
+        .from("leads")
+        .select("id", { count: "exact", head: true })
+        .eq("license_id", license.id)
+        .gte("created_at", since);
+      if ((count || 0) + leads.length > 100) {
+        return new Response(
+          JSON.stringify({ error: "Muitas requisições. Tente novamente em 1 minuto." }),
+          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
     }

@@ -213,8 +213,22 @@ Deno.serve(async (req) => {
           .maybeSingle();
 
         if (!existing) {
-          const { packageId } = body;
-          const pkg = CREDIT_PACKAGES[packageId];
+          // SECURITY: read packageId from the payment metadata stored server-side
+          // when we created the PIX — never trust the client body, which could
+          // request a larger package than was actually paid for.
+          const meta = checkData.metadata || {};
+          const metaPackageId = meta.package_id || meta.packageId;
+          const metaUserId = meta.user_id || meta.userId;
+          const pkg = metaPackageId ? CREDIT_PACKAGES[String(metaPackageId)] : null;
+
+          // Ensure the caller owns this payment.
+          if (metaUserId && metaUserId !== user.id) {
+            return new Response(
+              JSON.stringify({ error: "Pagamento não pertence ao usuário" }),
+              { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+            );
+          }
+
           if (pkg) {
             const { data: license } = await supabase
               .from("licenses")

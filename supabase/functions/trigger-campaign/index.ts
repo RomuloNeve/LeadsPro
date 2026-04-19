@@ -231,6 +231,21 @@ Deno.serve(async (req) => {
         { id: "test2", name: "Teste 2", phone: "5527996922875" },
       ];
     } else if (campaign.target_filter && (campaign.target_filter as any).expired_users) {
+      // SECURITY: expired_users mode pulls phone numbers across ALL tenants
+      // (for admin re-engagement broadcasts). Gate it server-side on is_admin
+      // so any authenticated user can't craft a request that blasts the whole
+      // user base — the client-side `isFlorianoUser` check is not a real guard.
+      const { data: callerProfile } = await serviceClient
+        .from("profiles")
+        .select("is_admin")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (!callerProfile?.is_admin) {
+        return new Response(
+          JSON.stringify({ error: "Recurso disponível apenas para administradores." }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
       // Fetch expired trial users from profiles/licenses
       const { data: profilesData } = await serviceClient
         .from("profiles")

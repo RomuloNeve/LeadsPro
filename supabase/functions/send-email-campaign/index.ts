@@ -70,7 +70,13 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { campaign_id } = await req.json();
+    const { campaign_id, batch_offset, batch_size } = await req.json();
+    // Edge function wall-clock is ~150s. At 500ms/send we can safely do ~200
+    // sends per invocation. Client drives batching by passing batch_offset and
+    // incrementing until has_more === false. Defaults process a single batch
+    // from offset 0, preserving old behaviour for small campaigns.
+    const offset = typeof batch_offset === "number" && batch_offset >= 0 ? batch_offset : 0;
+    const size = typeof batch_size === "number" && batch_size > 0 && batch_size <= 200 ? batch_size : 200;
     if (!campaign_id) {
       return new Response(JSON.stringify({ error: "campaign_id é obrigatório" }), {
         status: 400,
@@ -165,17 +171,20 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Update status to sending
-    await serviceClient
-      .from("email_campaigns")
-      .update({ status: "sending", total_leads: validLeads.length })
-      .eq("id", campaign_id);
+    // Mark as sending + total on first batch only (when offset 0).
+    if (offset === 0) {
+      await serviceClient
+        .from("email_campaigns")
+        .update({ status: "sending", total_leads: validLeads.length, sent_count: 0 })
+        .eq("id", campaign_id);
+    }
 
     const htmlBody = textToHtml(campaign.body);
+    const slice = validLeads.slice(offset, offset + size);
     let sentCount = 0;
     let errors = 0;
 
-    for (const lead of validLeads) {
+    for (const lead of slice) {
       try {
         const result = await sendEmail(fromAddress, userEmail, lead.email, campaign.subject, htmlBody);
         if (result.success) {
@@ -186,21 +195,44 @@ Deno.serve(async (req) => {
         }
       } catch (e) {
         errors++;
-        console.error(`Error sending to ${lead.email}:`, e.message);
+        console.error(`Error sending to ${lead.email}:`, (e as Error).message);
       }
 
       // Rate limit: ~2 emails per second
       await new Promise((r) => setTimeout(r, 500));
     }
 
-    // Update campaign as sent
+    // Load previous sent_count so we can accumulate across batches.
+    const { data: currentCampaign } = await serviceClient
+      .from("email_campaigns")
+      .select("sent_count")
+      .eq("id", campaign_id)
+      .single();
+    const priorSent = currentCampaign?.sent_count || 0;
+    const totalSent = priorSent + sentCount;
+
+    const nextOffset = offset + slice.length;
+    const hasMore = nextOffset < validLeads.length;
+
     await serviceClient
       .from("email_campaigns")
-      .update({ status: "sent", sent_count: sentCount })
+      .update({
+        status: hasMore ? "sending" : "sent",
+        sent_count: totalSent,
+      })
       .eq("id", campaign_id);
 
     return new Response(
-      JSON.stringify({ success: true, sent: sentCount, errors, total: validLeads.length }),
+      JSON.stringify({
+        success: true,
+        sent: sentCount,
+        errors,
+        total: validLeads.length,
+        batch_offset: offset,
+        next_offset: nextOffset,
+        has_more: hasMore,
+        total_sent: totalSent,
+      }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {

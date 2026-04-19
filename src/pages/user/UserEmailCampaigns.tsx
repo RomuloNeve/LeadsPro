@@ -240,20 +240,40 @@ const UserEmailCampaigns = () => {
     setCampaigns((prev) => prev.map((c) => c.id === campaignId ? { ...c, status: "sending" } : c));
 
     try {
-      const { data, error } = await supabase.functions.invoke("send-email-campaign", {
-        body: { campaign_id: campaignId },
-      });
-
-      if (error) throw error;
+      // Edge function has a ~150s wall-clock; 500ms/send caps it at ~200
+      // emails per invocation. We loop client-side so larger lists can go
+      // out without hitting the timeout.
+      let offset = 0;
+      let totalSent = 0;
+      let totalErrors = 0;
+      let grandTotal = 0;
+      // Safety ceiling to prevent runaway loops (200 × 100 = 20k recipients).
+      for (let i = 0; i < 100; i++) {
+        const { data, error } = await supabase.functions.invoke("send-email-campaign", {
+          body: { campaign_id: campaignId, batch_offset: offset, batch_size: 200 },
+        });
+        if (error) throw error;
+        totalSent = data.total_sent ?? (totalSent + (data.sent || 0));
+        totalErrors += data.errors || 0;
+        grandTotal = data.total || grandTotal;
+        if (!data.has_more) break;
+        offset = data.next_offset;
+        // Show progress mid-flight
+        setCampaigns((prev) =>
+          prev.map((c) =>
+            c.id === campaignId ? { ...c, status: "sending", sent_count: totalSent } : c
+          )
+        );
+      }
 
       setCampaigns((prev) =>
         prev.map((c) =>
-          c.id === campaignId ? { ...c, status: "sent", sent_count: data.sent } : c
+          c.id === campaignId ? { ...c, status: "sent", sent_count: totalSent } : c
         )
       );
       toast({
         title: "Campanha enviada! ✉️",
-        description: `${data.sent} emails enviados com sucesso${data.errors > 0 ? `, ${data.errors} erros` : ""}.`,
+        description: `${totalSent}/${grandTotal} emails enviados${totalErrors > 0 ? `, ${totalErrors} erros` : ""}.`,
       });
     } catch (e: any) {
       setCampaigns((prev) => prev.map((c) => c.id === campaignId ? { ...c, status: "draft" } : c));
