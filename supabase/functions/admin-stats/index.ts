@@ -47,7 +47,7 @@ Deno.serve(async (req) => {
         recentErrorsRes,
         authUsersRes,
       ] = await Promise.all([
-        supabase.from("profiles").select("id, user_id, email, created_at, whatsapp_phone, is_admin"),
+        supabase.from("profiles").select("id, user_id, email, created_at, whatsapp_phone, is_admin, display_name"),
         supabase.from("licenses").select("*"),
         supabase.from("leads").select("id, license_id, created_at", { count: "exact", head: true }),
         supabase.from("campaigns").select("id, status, license_id", { count: "exact" }),
@@ -68,8 +68,16 @@ Deno.serve(async (req) => {
         const authUser = authUsers.find((u: any) => u.id === p.user_id);
         const userLicense = licenses.find((l: any) => l.assigned_to === p.user_id);
         const userInstance = instances.find((i: any) => i.user_id === p.user_id);
+        // Fall back to auth metadata (handles legacy users who signed up before
+        // display_name was captured into profiles).
+        const metaName =
+          authUser?.user_metadata?.display_name ||
+          authUser?.user_metadata?.full_name ||
+          authUser?.user_metadata?.name ||
+          null;
         return {
           ...p,
+          display_name: p.display_name || metaName,
           last_sign_in: authUser?.last_sign_in_at || null,
           created_at_auth: authUser?.created_at || p.created_at,
           license: userLicense || null,

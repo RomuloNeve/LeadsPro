@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { CheckCircle2, Eye, EyeOff, ArrowLeft, Gift, Phone } from "lucide-react";
+import { CheckCircle2, Eye, EyeOff, ArrowLeft, Gift, Phone, User } from "lucide-react";
 import logoAuth from "@/assets/logo-auth.png";
 import authHero from "@/assets/auth-hero.jpg";
 import { trackSignup, trackLogin, trackFreeTrialStart } from "@/lib/gtag";
@@ -15,6 +15,7 @@ const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [phone, setPhone] = useState("");
+  const [displayName, setDisplayName] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -54,7 +55,11 @@ const Auth = () => {
           password,
           options: {
             emailRedirectTo: window.location.origin,
-            data: { plan: plan || "mensal", whatsapp_phone: phone },
+            data: {
+              plan: plan || "mensal",
+              whatsapp_phone: phone,
+              display_name: displayName.trim(),
+            },
           },
         });
         if (error) throw error;
@@ -212,6 +217,24 @@ const Auth = () => {
                 </button>
               </div>
             </div>
+
+            {mode === "signup" && (
+              <div className="space-y-1.5">
+                <Label htmlFor="displayName" className="text-sm font-medium">Nome completo</Label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="displayName"
+                    type="text"
+                    value={displayName}
+                    onChange={(e) => setDisplayName(e.target.value)}
+                    placeholder="Seu nome"
+                    required
+                    className="h-11 bg-background border-input pl-10 hover:border-border focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/30 transition-colors"
+                  />
+                </div>
+              </div>
+            )}
 
             {mode === "signup" && (
               <div className="space-y-1.5">

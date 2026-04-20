@@ -77,6 +77,7 @@ interface AdminUser {
   id: string;
   user_id: string;
   email: string | null;
+  display_name: string | null;
   created_at: string;
   whatsapp_phone: string | null;
   is_admin: boolean;
@@ -489,7 +490,7 @@ const Dashboard = () => {
   const filteredUsers = users.filter((u) => {
     if (!userSearch) return true;
     const q = userSearch.toLowerCase();
-    return (u.email?.toLowerCase().includes(q) ?? false) || u.user_id.includes(q);
+    return (u.email?.toLowerCase().includes(q) ?? false) || u.user_id.includes(q) || (u.display_name?.toLowerCase().includes(q) ?? false);
   });
 
   const filteredErrors = errors.filter((e) => {
@@ -694,7 +695,7 @@ const Dashboard = () => {
               </div>
               <div className="relative flex-1 max-w-sm ml-auto">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="Buscar por email..." value={userSearch} onChange={(e) => setUserSearch(e.target.value)} className="pl-9 h-9" />
+                <Input placeholder="Buscar por nome, email ou telefone..." value={userSearch} onChange={(e) => setUserSearch(e.target.value)} className="pl-9 h-9" />
               </div>
               <CreateUserDialog onCreated={fetchAdminData} />
             </div>
@@ -763,7 +764,7 @@ const Dashboard = () => {
                 if (q === "anual") return u.license?.plan_type === "anual";
                 if (q === "lifetime") return u.license?.plan_type === "lifetime";
                 if (q === "sem-licenca") return !u.license;
-                return (u.email?.toLowerCase().includes(q) ?? false) || u.user_id.includes(q) || (u.whatsapp_phone?.includes(q) ?? false);
+                return (u.email?.toLowerCase().includes(q) ?? false) || u.user_id.includes(q) || (u.whatsapp_phone?.includes(q) ?? false) || (u.display_name?.toLowerCase().includes(q) ?? false);
               });
 
               return filtered.length === 0 ? (
@@ -779,17 +780,22 @@ const Dashboard = () => {
                       <div key={u.id} className="rounded-xl border border-border bg-card p-4 card-shadow">
                         <div className="flex flex-col sm:flex-row sm:items-center gap-3">
                           <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-sm font-bold text-primary shrink-0">
-                            {(u.email || "?")[0].toUpperCase()}
+                            {((u.display_name || u.email || "?")[0] || "?").toUpperCase()}
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
-                              <p className="text-sm font-medium text-foreground">{u.email || "⚠️ Sem email"}</p>
+                              <p className="text-sm font-semibold text-foreground">
+                                {u.display_name || <span className="text-muted-foreground italic">Sem nome</span>}
+                              </p>
                               {u.is_admin && <Badge className="gradient-bg text-primary-foreground border-0 text-[10px]">Admin</Badge>}
+                            </div>
+                            <div className="flex items-center gap-3 mt-0.5 text-xs text-muted-foreground flex-wrap">
+                              <span>✉️ {u.email || "⚠️ Sem email"}</span>
+                              {u.whatsapp_phone && <span>📞 {u.whatsapp_phone}</span>}
                             </div>
                             <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground flex-wrap">
                               <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {new Date(u.created_at).toLocaleDateString("pt-BR")}</span>
                               <span className="flex items-center gap-1"><Activity className="h-3 w-3" /> {u.last_sign_in ? timeAgo(u.last_sign_in) : "Nunca acessou"}</span>
-                              {u.whatsapp_phone && <span>📞 {u.whatsapp_phone}</span>}
                             </div>
                           </div>
                           <div className="flex items-center gap-2 shrink-0 flex-wrap">
