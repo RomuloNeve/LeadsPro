@@ -34,7 +34,7 @@ const FeatureInstancia = () => {
             </Badge>
           </motion.div>
 
-          <motion.h1 variants={fadeUp} custom={1} className="text-4xl md:text-5xl lg:text-6xl font-bold font-display leading-tight mb-6">
+          <motion.h1 variants={fadeUp} custom={1} className="text-4xl md:text-5xl lg:text-6xl font-bold font-display leading-[1.05] tracking-tight mb-6">
             Conecte seu <span className="gradient-text">WhatsApp</span>
           </motion.h1>
 

@@ -50,9 +50,21 @@ type Variant =
 
 export function FeaturePreview({ variant }: { variant: Variant }) {
   return (
-    <div className="rounded-2xl border border-border/60 overflow-hidden shadow-xl bg-gradient-to-br from-primary/5 via-background to-accent/5 p-3 sm:p-5">
-      <div className="rounded-xl bg-card border border-border/50 overflow-hidden">
-        {renderVariant(variant)}
+    <div className="group relative">
+      {/* Ambient glow behind the card */}
+      <div
+        aria-hidden
+        className="absolute -inset-6 rounded-[2rem] bg-gradient-to-br from-primary/20 via-transparent to-accent/20 blur-3xl opacity-40 group-hover:opacity-60 transition-opacity duration-500"
+      />
+      <div className="relative rounded-2xl border border-border/60 ring-1 ring-primary/5 overflow-hidden bg-gradient-to-br from-primary/5 via-background to-accent/5 p-3 sm:p-5 shadow-[0_20px_60px_-20px_hsl(var(--primary)/0.25)] hover:shadow-[0_25px_70px_-20px_hsl(var(--primary)/0.4)] hover:-translate-y-0.5 transition-all duration-300">
+        {/* Top-left highlight */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent"
+        />
+        <div className="rounded-xl bg-card border border-border/50 overflow-hidden shadow-sm">
+          {renderVariant(variant)}
+        </div>
       </div>
     </div>
   );
@@ -127,7 +139,7 @@ function SearchLeads() {
             <span className="text-xs font-medium">São Paulo, SP</span>
           </div>
         </div>
-        <div className="rounded-lg bg-primary text-primary-foreground px-3 py-2 flex items-center justify-center gap-1.5 text-xs font-semibold">
+        <div className="rounded-lg bg-primary text-primary-foreground px-3 py-2 flex items-center justify-center gap-1.5 text-xs font-semibold shadow-lg shadow-primary/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.15)]">
           <Search className="h-3.5 w-3.5" />
           Buscar leads
         </div>
@@ -590,7 +602,7 @@ function GroupCreate() {
           <div className="text-sm font-semibold font-display">Leads Qualificados • SP</div>
           <div className="text-[10px] text-muted-foreground">247 participantes • criado agora</div>
         </div>
-        <div className="h-8 px-3 rounded-lg bg-primary text-primary-foreground text-xs font-medium flex items-center">
+        <div className="h-8 px-3 rounded-lg bg-primary text-primary-foreground text-xs font-medium flex items-center shadow-md shadow-primary/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.15)]">
           Criar
         </div>
       </div>
@@ -655,7 +667,7 @@ function EmailComposer() {
             <Paperclip className="h-3.5 w-3.5" />
             <Smile className="h-3.5 w-3.5" />
           </div>
-          <div className="h-7 px-3 rounded-md bg-primary text-primary-foreground text-[10px] font-semibold flex items-center gap-1">
+          <div className="h-7 px-3 rounded-md bg-primary text-primary-foreground shadow-md shadow-primary/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.15)] text-[10px] font-semibold flex items-center gap-1">
             <Send className="h-3 w-3" /> Enviar
           </div>
         </div>
@@ -814,7 +826,7 @@ function WidgetPreview() {
               className="flex-1 h-7 rounded-lg border border-border/60 px-2 text-[10px] bg-background"
               placeholder="Digite sua mensagem..."
             />
-            <div className="h-7 w-7 rounded-lg bg-primary flex items-center justify-center">
+            <div className="h-7 w-7 rounded-lg bg-primary flex items-center justify-center shadow-md shadow-primary/30">
               <Send className="h-3 w-3 text-primary-foreground" />
             </div>
           </div>
@@ -970,7 +982,7 @@ function InboxMulti() {
           <div className="flex-1 h-7 rounded-lg border border-border/50 px-2 flex items-center text-[10px] text-muted-foreground">
             Digite uma mensagem...
           </div>
-          <div className="h-7 w-7 rounded-lg bg-primary flex items-center justify-center">
+          <div className="h-7 w-7 rounded-lg bg-primary flex items-center justify-center shadow-md shadow-primary/30">
             <Send className="h-3 w-3 text-primary-foreground" />
           </div>
         </div>

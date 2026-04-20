@@ -70,7 +70,7 @@ const FeatureDisparo = () => {
             </Badge>
           </motion.div>
 
-          <motion.h1 variants={fadeUp} custom={1} className="text-4xl md:text-5xl lg:text-6xl font-bold font-display leading-tight mb-6">
+          <motion.h1 variants={fadeUp} custom={1} className="text-4xl md:text-5xl lg:text-6xl font-bold font-display leading-[1.05] tracking-tight mb-6">
             Disparo em massa no <span className="gradient-text">WhatsApp</span> sem ser banido
           </motion.h1>
 
@@ -97,8 +97,8 @@ const FeatureDisparo = () => {
               { icon: Target, title: "Campanhas segmentadas", desc: "Filtros avançados para enviar a mensagem certa ao público certo no momento ideal." },
               { icon: FileText, title: "Rascunhos salvos", desc: "Crie campanhas e salve como rascunho. Dispare quando estiver pronto." },
             ].map((b) => (
-              <div key={b.title} className="p-6 rounded-2xl border border-border/60 bg-card hover:border-primary/30 transition-colors">
-                <div className="rounded-xl p-2.5 w-fit mb-4 bg-primary/10">
+              <div key={b.title} className="group p-6 rounded-2xl border border-border/60 bg-card hover:border-primary/30 hover:shadow-lg hover:shadow-primary/10 hover:-translate-y-1 transition-all duration-300">
+                <div className="rounded-xl p-2.5 w-fit mb-4 bg-primary/10 group-hover:bg-primary/15 group-hover:scale-110 transition-all duration-300">
                   <b.icon className="h-5 w-5 text-primary" />
                 </div>
                 <h3 className="font-semibold font-display text-foreground mb-2">{b.title}</h3>
@@ -119,8 +119,8 @@ const FeatureDisparo = () => {
                 { icon: Clock, title: "Intervalos randômicos entre envios", desc: "Cada mensagem é enviada com um delay aleatório entre 30 e 300 segundos, simulando o ritmo natural de uma pessoa digitando e enviando manualmente." },
                 { icon: Shield, title: "Recomendações de segurança", desc: "O sistema sugere lotes pequenos (20-50 leads) e horários ideais de envio. Painel de orientações visível antes de cada disparo para máxima proteção." },
               ].map((b) => (
-                <div key={b.title} className="p-6 rounded-2xl border border-border/60 bg-card hover:border-primary/30 transition-colors">
-                  <div className="rounded-xl p-2.5 w-fit mb-4 bg-primary/10">
+                <div key={b.title} className="group p-6 rounded-2xl border border-border/60 bg-card hover:border-primary/30 hover:shadow-lg hover:shadow-primary/10 hover:-translate-y-1 transition-all duration-300">
+                  <div className="rounded-xl p-2.5 w-fit mb-4 bg-primary/10 group-hover:bg-primary/15 group-hover:scale-110 transition-all duration-300">
                     <b.icon className="h-5 w-5 text-primary" />
                   </div>
                   <h3 className="font-semibold font-display text-foreground mb-2">{b.title}</h3>

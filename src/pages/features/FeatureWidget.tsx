@@ -34,7 +34,7 @@ const FeatureWidget = () => {
             </Badge>
           </motion.div>
 
-          <motion.h1 variants={fadeUp} custom={1} className="text-4xl md:text-5xl lg:text-6xl font-bold font-display leading-tight mb-6">
+          <motion.h1 variants={fadeUp} custom={1} className="text-4xl md:text-5xl lg:text-6xl font-bold font-display leading-[1.05] tracking-tight mb-6">
             Capture leads do seu site <span className="gradient-text">direto no CRM</span>
           </motion.h1>
 
@@ -93,8 +93,8 @@ const FeatureWidget = () => {
               { icon: MessageCircle, title: "Captura WhatsApp e e-mail", desc: "Formulário otimizado com campos de nome, WhatsApp, e-mail e mensagem personalizada." },
               { icon: Zap, title: "Tempo real", desc: "O lead aparece no CRM e recebe a primeira mensagem no WhatsApp instantaneamente. Sem atrasos." },
             ].map((b) => (
-              <div key={b.title} className="p-6 rounded-2xl border border-border/60 bg-card hover:border-primary/30 transition-colors">
-                <div className="rounded-xl p-2.5 w-fit mb-4 bg-primary/10">
+              <div key={b.title} className="group p-6 rounded-2xl border border-border/60 bg-card hover:border-primary/30 hover:shadow-lg hover:shadow-primary/10 hover:-translate-y-1 transition-all duration-300">
+                <div className="rounded-xl p-2.5 w-fit mb-4 bg-primary/10 group-hover:bg-primary/15 group-hover:scale-110 transition-all duration-300">
                   <b.icon className="h-5 w-5 text-primary" />
                 </div>
                 <h3 className="font-semibold font-display text-foreground mb-2">{b.title}</h3>

@@ -108,7 +108,10 @@ const Auth = () => {
   return (
     <div className="flex min-h-screen">
       {/* Left side - Form */}
-      <div className="relative flex w-full lg:w-1/2 flex-col justify-center px-8 sm:px-16 lg:px-20 xl:px-28 bg-background">
+      <div className="relative flex w-full lg:w-1/2 flex-col justify-center px-8 sm:px-16 lg:px-20 xl:px-28 bg-background overflow-hidden">
+        {/* Ambient glow */}
+        <div aria-hidden className="pointer-events-none absolute -top-40 -left-40 h-[28rem] w-[28rem] rounded-full bg-primary/15 blur-3xl" />
+        <div aria-hidden className="pointer-events-none absolute -bottom-40 -right-10 h-80 w-80 rounded-full bg-accent/15 blur-3xl" />
         {/* Back button */}
         <Button
           variant="ghost"
@@ -119,13 +122,13 @@ const Auth = () => {
           <ArrowLeft className="h-4 w-4" /> Voltar
         </Button>
 
-        <div className="w-full max-w-[380px] mx-auto space-y-8">
+        <div className="relative w-full max-w-[380px] mx-auto space-y-8">
           {/* Logo */}
-          <img src={logoAuth} alt="LeadsPro" className="h-32 sm:h-36" />
+          <img src={logoAuth} alt="LeadsPro" className="h-20 sm:h-24 drop-shadow-[0_4px_20px_hsl(var(--primary)/0.25)]" />
 
           {/* Header */}
           <div className="space-y-2">
-            <h1 className="text-2xl font-bold font-display text-foreground">
+            <h1 className="text-2xl md:text-3xl font-bold font-display text-foreground tracking-tight">
               {isFreeTrial ? "Teste Grátis — 2 Horas" : isPaid ? "Crie sua conta" : mode === "login" ? "Acesse nossa Plataforma" : "Crie sua conta"}
             </h1>
             <p className="text-sm text-muted-foreground">
@@ -184,7 +187,7 @@ const Auth = () => {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@exemplo.com"
                 required
-                className="h-11 bg-background border-input"
+                className="h-11 bg-background border-input hover:border-border focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/30 transition-colors"
               />
             </div>
             <div className="space-y-1.5">
@@ -198,7 +201,7 @@ const Auth = () => {
                   placeholder="••••••••"
                   required
                   minLength={6}
-                  className="h-11 bg-background border-input pr-11"
+                  className="h-11 bg-background border-input pr-11 hover:border-border focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/30 transition-colors"
                 />
                 <button
                   type="button"
@@ -222,7 +225,7 @@ const Auth = () => {
                     onChange={(e) => setPhone(e.target.value)}
                     placeholder="(11) 99999-9999"
                     required
-                    className="h-11 bg-background border-input pl-10"
+                    className="h-11 bg-background border-input pl-10 hover:border-border focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/30 transition-colors"
                   />
                 </div>
               </div>
@@ -230,7 +233,7 @@ const Auth = () => {
 
             <Button
               type="submit"
-              className="w-full h-11 gradient-bg text-primary-foreground font-semibold"
+              className="w-full h-11 gradient-bg text-primary-foreground font-semibold shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/40 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300"
               disabled={loading}
             >
               {loading ? "Carregando..." : isFreeTrial ? "Começar teste grátis" : mode === "login" ? "Continuar" : "Cadastrar"}

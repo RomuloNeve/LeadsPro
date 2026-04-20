@@ -34,7 +34,7 @@ const FeatureEmailMarketing = () => {
             </Badge>
           </motion.div>
 
-          <motion.h1 variants={fadeUp} custom={1} className="text-4xl md:text-5xl lg:text-6xl font-bold font-display leading-tight mb-6">
+          <motion.h1 variants={fadeUp} custom={1} className="text-4xl md:text-5xl lg:text-6xl font-bold font-display leading-[1.05] tracking-tight mb-6">
             Campanhas de email <span className="gradient-text">em massa</span>
           </motion.h1>
 
@@ -87,8 +87,8 @@ const FeatureEmailMarketing = () => {
               { icon: Zap, title: "Integração CRM", desc: "Leads do CRM são automaticamente elegíveis para campanhas de email." },
               
             ].map((b) => (
-              <div key={b.title} className="p-6 rounded-2xl border border-border/60 bg-card hover:border-primary/30 transition-colors">
-                <div className="rounded-xl p-2.5 w-fit mb-4 bg-primary/10">
+              <div key={b.title} className="group p-6 rounded-2xl border border-border/60 bg-card hover:border-primary/30 hover:shadow-lg hover:shadow-primary/10 hover:-translate-y-1 transition-all duration-300">
+                <div className="rounded-xl p-2.5 w-fit mb-4 bg-primary/10 group-hover:bg-primary/15 group-hover:scale-110 transition-all duration-300">
                   <b.icon className="h-5 w-5 text-primary" />
                 </div>
                 <h3 className="font-semibold font-display text-foreground mb-2">{b.title}</h3>

@@ -469,17 +469,18 @@ const BlogPost = () => {
 
           {/* Related articles */}
           {relatedPosts && relatedPosts.length > 0 && (
-            <motion.div variants={fadeUp} custom={3} className="mt-12 p-6 rounded-2xl border border-border/60 bg-muted/30">
-              <h3 className="text-xl font-bold font-display mb-4">Artigos Relacionados</h3>
-              <div className="grid gap-3">
+            <motion.div variants={fadeUp} custom={3} className="mt-12 p-6 rounded-2xl border border-border/60 bg-gradient-to-br from-muted/40 via-muted/20 to-transparent backdrop-blur-sm">
+              <h3 className="text-xl font-bold font-display mb-4 tracking-tight">Artigos Relacionados</h3>
+              <div className="grid gap-1">
                 {relatedPosts.map((rp) => (
                   <Link
                     key={rp.slug}
                     to={`/blog/${rp.slug}`}
-                    className="flex items-center justify-between p-3 rounded-xl hover:bg-muted transition-colors group"
+                    className="group flex items-center justify-between py-3 pl-3 pr-3 rounded-xl border-l-2 border-transparent hover:border-primary hover:pl-5 hover:bg-muted/60 transition-all duration-300"
                   >
-                    <span className="text-sm font-medium text-foreground group-hover:text-primary transition-colors line-clamp-1">
+                    <span className="flex items-center gap-2 text-sm font-medium text-foreground group-hover:text-primary transition-colors line-clamp-1">
                       {rp.title}
+                      <ChevronRight className="h-3.5 w-3.5 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300" />
                     </span>
                     <span className="text-xs text-muted-foreground shrink-0 ml-3">{rp.read_time}</span>
                   </Link>
@@ -489,12 +490,19 @@ const BlogPost = () => {
           )}
 
           {/* CTA */}
-          <motion.div variants={fadeUp} custom={4} className="mt-12 p-8 rounded-2xl border border-primary/30 bg-primary/5 text-center">
-            <h3 className="text-2xl font-bold font-display mb-3">Pronto para capturar mais leads?</h3>
-            <p className="text-muted-foreground mb-6">Comece gratuitamente e veja resultados nas primeiras horas.</p>
-            <Button size="lg" onClick={() => navigate("/auth?plan=free")} className="gradient-bg text-primary-foreground hover:opacity-90 text-lg px-10 h-14 glow-shadow group">
-              Começar agora <ArrowRight className="ml-2.5 h-5 w-5 group-hover:translate-x-1 transition-transform" />
-            </Button>
+          <motion.div variants={fadeUp} custom={4} className="relative mt-12 p-8 md:p-12 rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/10 via-background to-accent/10 text-center overflow-hidden ring-1 ring-primary/10">
+            {/* Top glow */}
+            <div
+              aria-hidden
+              className="pointer-events-none absolute -top-24 left-1/2 -translate-x-1/2 h-48 w-[80%] bg-primary/25 blur-3xl rounded-full"
+            />
+            <div className="relative">
+              <h3 className="text-2xl md:text-3xl font-bold font-display mb-3 tracking-tight">Pronto para capturar mais leads?</h3>
+              <p className="text-muted-foreground mb-6 max-w-md mx-auto">Comece gratuitamente e veja resultados nas primeiras horas.</p>
+              <Button size="lg" onClick={() => navigate("/auth?plan=free")} className="gradient-bg text-primary-foreground hover:opacity-95 text-lg px-10 h-14 shadow-lg shadow-primary/30 hover:shadow-xl hover:shadow-primary/40 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300 group">
+                Começar agora <ArrowRight className="ml-2.5 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+              </Button>
+            </div>
           </motion.div>
 
           {/* Nav prev/next */}
