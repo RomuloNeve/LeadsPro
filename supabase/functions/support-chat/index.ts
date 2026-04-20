@@ -252,10 +252,24 @@ Deno.serve(async (req) => {
     return new Response(aiRes.body, {
       headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
     });
-  } catch (e) {
-    console.error("support-chat error:", e);
-    return new Response(JSON.stringify({ error: e.message }), {
-      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+  } catch (e: any) {
+    // Sempre devolver um stream SSE com fallback — nunca 500.
+    // O frontend espera text/event-stream; devolver JSON com 500 fazia o chat
+    // mostrar "probleminha técnico" para o usuário.
+    console.error("support-chat fatal:", e?.message, e?.stack);
+    const fallback = `Oi! 👋 Deu uma instabilidade aqui no meu lado agora. 😅\n\nFala com a gente direto:\n\n📱 **WhatsApp:** [(11) 99734-5749](https://wa.me/5511997345749)\n✉️ **Email:** suporte@leadspro.app\n\nErro: ${(e?.message || "desconhecido").slice(0, 120)}`;
+    const encoder = new TextEncoder();
+    const stream = new ReadableStream({
+      start(controller) {
+        for (const piece of fallback.match(/.{1,24}/g) || [fallback]) {
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ choices: [{ delta: { content: piece } }] })}\n\n`));
+        }
+        controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+        controller.close();
+      },
+    });
+    return new Response(stream, {
+      headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
     });
   }
 });
