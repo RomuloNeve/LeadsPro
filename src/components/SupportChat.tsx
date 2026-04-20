@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { X, Send, ImagePlus, AlertTriangle, Minimize2, Phone, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import leandroAvatar from "@/assets/logo-icon.png";
+import { SupportAvatar } from "@/components/SupportAvatar";
 import ReactMarkdown from "react-markdown";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -201,7 +201,7 @@ export function SupportChat() {
       const name = displayName?.split(" ")[0] || "";
       const greetMsg: Message = {
         role: "assistant",
-        content: `Oi${name ? ` ${name}` : ""}! 👋 Eu sou o Leandro, do suporte do LeadsPro. Como posso te ajudar?`,
+        content: `Oi${name ? ` ${name}` : ""}! 👋 Eu sou o Rômulo, do suporte do LeadsPro. Como posso te ajudar?`,
       };
       setMessages([greetMsg]);
       setDisplayMessages([toDisplay(greetMsg)]);
@@ -363,11 +363,10 @@ export function SupportChat() {
         )}
         <button
           onClick={() => setOpen(true)}
-          className="h-14 w-14 rounded-full bg-primary shadow-lg hover:scale-105 transition-transform flex items-center justify-center group relative"
+          className="rounded-full hover:scale-105 transition-transform flex items-center justify-center group relative"
           aria-label="Abrir suporte"
         >
-          <img src={leandroAvatar} alt="Leandro - Suporte" className="h-14 w-14 rounded-full object-cover border-2 border-primary" />
-          <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-green-500 border-2 border-background" />
+          <SupportAvatar size="lg" />
         </button>
       </div>
     );
@@ -377,12 +376,9 @@ export function SupportChat() {
     <div className={`fixed ${bubbleBottom} right-4 z-50 w-[370px] max-w-[calc(100vw-2rem)] h-[520px] max-h-[calc(100vh-6rem)] flex flex-col rounded-2xl shadow-2xl border border-border bg-background overflow-hidden animate-in slide-in-from-bottom-4 duration-300`}>
       {/* Header */}
       <div className="flex items-center gap-3 px-4 py-3 bg-primary text-primary-foreground">
-        <div className="relative">
-          <img src={leandroAvatar} alt="Leandro" className="h-10 w-10 rounded-full object-cover border-2 border-primary-foreground/30" />
-          <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-green-400 border-2 border-primary" />
-        </div>
+        <SupportAvatar size="md" />
         <div className="flex-1 min-w-0">
-          <p className="font-semibold text-sm leading-tight">Leandro</p>
+          <p className="font-semibold text-sm leading-tight">Rômulo</p>
           <p className="text-xs opacity-80">
             {isTyping ? "digitando..." : showTicketForm ? "Formulário de ticket" : "Suporte Nível I • Online"}
           </p>
@@ -423,7 +419,7 @@ export function SupportChat() {
             {displayMessages.map((msg, i) => (
               <div key={i} className={`flex gap-2 ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
                 {msg.role === "assistant" && (
-                  <img src={leandroAvatar} alt="Leandro" className="h-7 w-7 rounded-full object-cover mt-1 shrink-0" />
+                  <SupportAvatar size="sm" showBadge={false} className="mt-1" />
                 )}
                 <div
                   className={`max-w-[80%] rounded-2xl px-3 py-2 text-sm leading-relaxed ${
@@ -447,7 +443,7 @@ export function SupportChat() {
             ))}
             {isTyping && (
               <div className="flex gap-2 justify-start">
-                <img src={leandroAvatar} alt="Leandro" className="h-7 w-7 rounded-full object-cover mt-1 shrink-0" />
+                <SupportAvatar size="sm" showBadge={false} className="mt-1" />
                 <div className="bg-card border border-border rounded-2xl rounded-bl-md px-4 py-3">
                   <div className="flex gap-1.5">
                     <span className="h-2 w-2 rounded-full bg-muted-foreground/50 animate-bounce [animation-delay:0ms]" />
