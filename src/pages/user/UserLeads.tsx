@@ -146,37 +146,83 @@ const UserLeads = () => {
   };
 
   const scoreLeads = async () => {
-    const unscoredLeads = currentLeads.filter((l) => l.lead_score === null && l.name);
-    if (unscoredLeads.length === 0) {
+    // Classifica TODOS os leads sem score — de TODAS as abas (busca, widget, duplicados).
+    // Roda em lotes de 50 automaticamente até terminar.
+    const allUnscored = leads.filter((l) => l.lead_score === null);
+    if (allUnscored.length === 0) {
       toast({ title: "Todos os leads já têm score!" });
       return;
     }
+
     setScoring(true);
     try {
-      const batch = unscoredLeads.slice(0, 50).map((l) => l.id);
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/score-leads`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify({ lead_ids: batch }),
+
+      const BATCH_SIZE = 50;
+      const totalBatches = Math.ceil(allUnscored.length / BATCH_SIZE);
+      let totalClassified = 0;
+      const scoreMap = new Map<string, number>();
+
+      for (let i = 0; i < totalBatches; i++) {
+        const batch = allUnscored
+          .slice(i * BATCH_SIZE, (i + 1) * BATCH_SIZE)
+          .map((l) => l.id);
+
+        if (totalBatches > 1) {
+          toast({
+            title: `Classificando leads com IA...`,
+            description: `Lote ${i + 1} de ${totalBatches} (${batch.length} leads)`,
+          });
         }
-      );
-      const result = await response.json();
-      if (result.success && result.scores) {
-        const scoreMap = new Map<string, number>(result.scores.map((s: any) => [s.id, s.score as number]));
-        setLeads((prev) =>
-          prev.map((l) => scoreMap.has(l.id) ? { ...l, lead_score: scoreMap.get(l.id) ?? null, scored_at: new Date().toISOString() } : l)
+
+        const response = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/score-leads`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${session.access_token}`,
+            },
+            body: JSON.stringify({ lead_ids: batch }),
+          }
         );
-        toast({ title: `✨ ${result.scores.length} leads classificados com IA!` });
-      } else {
-        toast({ title: "Erro", description: result.error || "Erro ao classificar", variant: "destructive" });
+        const result = await response.json();
+
+        if (result.success && result.scores) {
+          for (const s of result.scores) scoreMap.set(s.id, s.score as number);
+          totalClassified += result.scores.length;
+        } else if (result.ai_unavailable) {
+          toast({
+            title: "IA indisponível",
+            description: result.error || "Tente novamente mais tarde.",
+            variant: "destructive",
+          });
+          break;
+        } else {
+          // soft-fail on a single batch — continue with the next one
+          console.error("Batch error:", result.error);
+        }
       }
+
+      if (scoreMap.size > 0) {
+        const now = new Date().toISOString();
+        setLeads((prev) =>
+          prev.map((l) =>
+            scoreMap.has(l.id)
+              ? { ...l, lead_score: scoreMap.get(l.id) ?? null, scored_at: now }
+              : l
+          )
+        );
+      }
+
+      toast({
+        title: `✨ ${totalClassified} leads classificados com IA!`,
+        description:
+          totalClassified < allUnscored.length
+            ? `${allUnscored.length - totalClassified} não puderam ser classificados. Tente novamente.`
+            : "Todos os leads pendentes foram classificados.",
+      });
     } catch (error) {
       console.error("Score error:", error);
       toast({ title: "Erro ao classificar leads", variant: "destructive" });

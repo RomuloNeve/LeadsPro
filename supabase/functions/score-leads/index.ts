@@ -71,13 +71,14 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Fetch leads that belong to the user (scoped by license_id)
+    // Fetch leads that belong to the user (scoped by license_id).
+    // IMPORTANT: we do NOT filter by `name IS NOT NULL` — leads without a name
+    // are still scored (low, based on remaining fields) so nothing is left behind.
     const { data: leads, error: leadsError } = await supabase
       .from("leads")
       .select("id, name, email, instagram, phone, category, website, linkedin, notes, lead_status, created_at, license_id")
       .in("id", ids)
-      .in("license_id", licenseIds)
-      .not("name", "is", null);
+      .in("license_id", licenseIds);
 
     if (leadsError || !leads || leads.length === 0) {
       return new Response(JSON.stringify({ error: "Nenhum lead encontrado" }), {
@@ -112,7 +113,11 @@ Critérios de scoring:
 - Status "quente" ou "agendado" = já qualificado previamente (+pontos)
 - Notas indicando interesse = +pontos
 - Apenas telefone sem outros dados = lead frio (score baixo)
-- Sem nome = score muito baixo
+- Sem nome = score muito baixo (5-20), mas AINDA ASSIM atribua um score
+
+REGRA CRÍTICA: VOCÊ DEVE retornar um objeto para CADA lead enviado, sem exceção.
+Mesmo leads com pouquíssima informação DEVEM receber um score (baixo).
+NUNCA omita um lead do resultado. Se tiver dúvida, atribua 10.
 
 Responda APENAS com um JSON array no formato: [{"id": "uuid", "score": 85}, ...]
 Sem explicações adicionais.`;
@@ -169,20 +174,49 @@ Sem explicações adicionais.`;
       });
     }
 
+    // Deterministic fallback score — used when the AI omits a lead from its
+    // JSON response. Guarantees every lead sent in gets a score.
+    const heuristicScore = (l: any): number => {
+      let score = 0;
+      const has = (v: any) => !!v && String(v).trim() !== "" && String(v).toLowerCase() !== "não encontrado";
+      if (has(l.name)) score += 15;
+      if (has(l.phone)) score += 20;
+      if (has(l.email)) {
+        score += 15;
+        const domain = String(l.email).split("@")[1]?.toLowerCase() || "";
+        const isCorporate = domain && !/(gmail|hotmail|yahoo|outlook|icloud|live|uol|bol|terra)\./.test(domain);
+        if (isCorporate) score += 10;
+      }
+      if (has(l.website)) score += 15;
+      if (has(l.linkedin)) score += 10;
+      if (has(l.instagram)) score += 8;
+      if (has(l.notes)) score += 5;
+      if (l.lead_status === "quente" || l.lead_status === "agendado") score += 10;
+      return Math.max(5, Math.min(100, score));
+    };
+
+    // Map AI scores by id for quick lookup; anything missing gets heuristic fallback.
+    const aiScoreMap = new Map<string, number>();
+    for (const item of scores) {
+      if (item?.id) aiScoreMap.set(item.id, Math.max(0, Math.min(100, Math.round(item.score))));
+    }
+
     // Update each lead with its score — scoped to caller's licenses so the
     // AI can't be coaxed into writing scores for other tenants' leads.
     const now = new Date().toISOString();
-    const results = [];
-    for (const item of scores) {
-      const score = Math.max(0, Math.min(100, Math.round(item.score)));
+    const results: { id: string; score: number; source: "ai" | "fallback" }[] = [];
+    for (const lead of leads) {
+      const aiScore = aiScoreMap.get(lead.id);
+      const score = aiScore ?? heuristicScore(lead);
+      const source: "ai" | "fallback" = aiScore !== undefined ? "ai" : "fallback";
       const { error: updateError } = await supabase
         .from("leads")
         .update({ lead_score: score, scored_at: now })
-        .eq("id", item.id)
+        .eq("id", lead.id)
         .in("license_id", licenseIds);
 
       if (!updateError) {
-        results.push({ id: item.id, score });
+        results.push({ id: lead.id, score, source });
       }
     }
 
