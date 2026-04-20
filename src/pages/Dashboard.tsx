@@ -635,9 +635,17 @@ const Dashboard = () => {
                               <td className="py-2 px-2">
                                 <div className="flex items-center gap-2">
                                   <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary shrink-0">
-                                    {(u.email || "?")[0].toUpperCase()}
+                                    {((u.display_name || u.email || "?")[0] || "?").toUpperCase()}
                                   </div>
-                                  <span className="text-xs font-medium text-foreground truncate max-w-[180px]">{u.email || "Sem email"}</span>
+                                  <div className="flex flex-col min-w-0">
+                                    <span className="text-xs font-semibold text-foreground truncate max-w-[220px]">
+                                      {u.display_name || <span className="italic text-muted-foreground">Sem nome</span>}
+                                    </span>
+                                    <span className="text-[10px] text-muted-foreground truncate max-w-[220px]">
+                                      {u.email || "Sem email"}
+                                      {u.whatsapp_phone ? ` · ${u.whatsapp_phone}` : ""}
+                                    </span>
+                                  </div>
                                   {u.is_admin && <Badge className="gradient-bg text-primary-foreground border-0 text-[8px] px-1 py-0">Admin</Badge>}
                                 </div>
                               </td>
