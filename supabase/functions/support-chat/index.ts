@@ -124,30 +124,43 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Fetch user context
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("display_name, email")
-      .eq("user_id", user.id)
-      .maybeSingle();
+    // Fetch user context — each query wrapped so a single DB hiccup doesn't
+    // kill the whole chat request. Any failure just falls back to "não informado".
+    const safeQuery = async <T>(fn: () => Promise<T>): Promise<T | null> => {
+      try { return await fn(); } catch (err) { console.error("ctx query failed:", err); return null; }
+    };
 
-    const { data: license } = await supabase
-      .from("licenses")
-      .select("plan_type, expires_at, is_active")
-      .eq("assigned_to", user.id)
-      .eq("is_active", true)
-      .maybeSingle();
+    const profileRes = await safeQuery(() =>
+      supabase.from("profiles").select("display_name, email").eq("user_id", user.id).maybeSingle()
+    );
+    const profile: any = profileRes?.data || null;
 
-    const { data: instance } = await supabase
-      .from("whatsapp_instances")
-      .select("status, instance_name")
-      .eq("user_id", user.id)
-      .maybeSingle();
+    const licenseRes = await safeQuery(() =>
+      supabase
+        .from("licenses")
+        .select("id, plan_type, expires_at, is_active")
+        .eq("assigned_to", user.id)
+        .eq("is_active", true)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle()
+    );
+    const license: any = licenseRes?.data || null;
 
-    const leadsCount = await supabase
-      .from("leads")
-      .select("id", { count: "exact", head: true })
-      .eq("license_id", license?.id || "");
+    const instanceRes = await safeQuery(() =>
+      supabase.from("whatsapp_instances").select("status, instance_name").eq("user_id", user.id).maybeSingle()
+    );
+    const instance: any = instanceRes?.data || null;
+
+    // Only query leadsCount if we have a valid license.id (otherwise an empty
+    // string becomes an invalid UUID and Postgres returns 22P02, killing the request)
+    let leadsCountValue = 0;
+    if (license?.id) {
+      const leadsCountRes = await safeQuery(() =>
+        supabase.from("leads").select("id", { count: "exact", head: true }).eq("license_id", license.id)
+      );
+      leadsCountValue = (leadsCountRes as any)?.count || 0;
+    }
 
     // Build context-aware prompt
     let contextPrompt = FERNANDO_SYSTEM_PROMPT;
@@ -159,7 +172,7 @@ Deno.serve(async (req) => {
 - Licença ativa: ${license?.is_active ? "sim" : "não"}
 - Expira em: ${license?.expires_at || "não definido"}
 - WhatsApp: ${instance ? `instância "${instance.instance_name}" com status "${instance.status}"` : "nenhuma instância configurada"}
-- Total de leads: ${leadsCount?.count || 0}`;
+- Total de leads: ${leadsCountValue}`;
 
     // Check if any message has image content - use gpt-4o for vision
     const hasImages = messages.some((m: any) =>
@@ -167,6 +180,22 @@ Deno.serve(async (req) => {
     );
 
     const model = hasImages ? "gpt-4o" : "gpt-4o-mini";
+
+    // Guard: if no API key is configured, stream a friendly fallback instead of 500.
+    if (!OPENAI_API_KEY) {
+      const fallback = `Oi! 👋 Estou com uma instabilidade aqui neste momento. 😅\n\nEnquanto isso, fala direto com a nossa equipe humana:\n\n📱 **WhatsApp:** [(11) 99734-5749](https://wa.me/5511997345749)\n✉️ **Email:** suporte@leadspro.app`;
+      const encoder = new TextEncoder();
+      const stream = new ReadableStream({
+        start(controller) {
+          for (const piece of fallback.match(/.{1,24}/g) || [fallback]) {
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ choices: [{ delta: { content: piece } }] })}\n\n`));
+          }
+          controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+          controller.close();
+        },
+      });
+      return new Response(stream, { headers: { ...corsHeaders, "Content-Type": "text/event-stream" } });
+    }
 
     // Stream response
     const aiRes = await fetch("https://api.openai.com/v1/chat/completions", {
