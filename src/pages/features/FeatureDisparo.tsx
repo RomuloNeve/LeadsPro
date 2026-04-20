@@ -5,6 +5,7 @@ import { ArrowLeft, ArrowRight, MessageCircle, Users, Sparkles, Image, Send, Tar
 import { motion } from "framer-motion";
 import { useDocumentMeta } from "@/hooks/useDocumentMeta";
 import { useStructuredData } from "@/hooks/useStructuredData";
+import { FeaturePreview } from "@/components/FeaturePreview";
 
 import { useState } from "react";
 
@@ -83,12 +84,7 @@ const FeatureDisparo = () => {
             <p className="text-muted-foreground mb-6 leading-relaxed max-w-3xl">
               Clique em <strong>+ Nova Campanha</strong>, defina o nome, selecione os leads por categoria, escreva sua mensagem e opcionalmente anexe uma <strong>imagem</strong>. Use o botão <strong>Melhorar com IA</strong> para gerar mensagens profissionais e persuasivas. Quando estiver pronto, clique em <strong>Disparar</strong>, escolha o tamanho do lote e o sistema envia todas as mensagens com variação automática e intervalos randômicos.
             </p>
-            <div className="rounded-2xl border border-border/60 overflow-hidden shadow-xl">
-              <video className="w-full aspect-video block" controls preload="metadata" playsInline>
-                <source src="/videos/disparo-em-massa.mp4" type="video/mp4" />
-                Seu navegador não suporta vídeo HTML5.
-              </video>
-            </div>
+            <FeaturePreview variant="mass-send" />
           </motion.div>
 
           {/* Benefits */}

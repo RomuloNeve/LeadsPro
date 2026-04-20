@@ -5,6 +5,7 @@ import { ArrowLeft, ArrowRight, Search, MapPin, Globe, Building, Phone, Instagra
 import { motion } from "framer-motion";
 import { useDocumentMeta } from "@/hooks/useDocumentMeta";
 import { useStructuredData } from "@/hooks/useStructuredData";
+import { FeaturePreview } from "@/components/FeaturePreview";
 
 import { useState } from "react";
 
@@ -83,12 +84,7 @@ const FeatureBusca = () => {
             <p className="text-muted-foreground mb-6 leading-relaxed max-w-3xl">
               Comece selecionando a <strong>Categoria / Atividade (CNAE)</strong> — você pode buscar pelo código oficial ou <strong>digitar livremente</strong> qualquer nicho como "pizzaria", "clínica estética" ou "advocacia trabalhista". Em seguida, escolha a <strong>localização</strong>: Todo Brasil (capitais), Estado inteiro, Cidade específica ou até Outro País. Clique em <strong>Buscar Leads</strong> e os resultados aparecem instantaneamente com dados completos. Exporte para <strong>CSV</strong> ou salve no <strong>CRM</strong> com um clique.
             </p>
-            <div className="rounded-2xl border border-border/60 overflow-hidden shadow-xl">
-              <video className="w-full aspect-video block" controls preload="metadata" playsInline>
-                <source src="/videos/busca-de-leads.mp4" type="video/mp4" />
-                Seu navegador não suporta vídeo HTML5.
-              </video>
-            </div>
+            <FeaturePreview variant="search-leads" />
           </motion.div>
 
           {/* What you capture */}

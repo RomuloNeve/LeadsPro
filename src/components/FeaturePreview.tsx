@@ -44,7 +44,9 @@ type Variant =
   | "upload-csv"
   | "widget-preview"
   | "stats-chart"
-  | "inbox-multi";
+  | "inbox-multi"
+  | "search-leads"
+  | "mass-send";
 
 export function FeaturePreview({ variant }: { variant: Variant }) {
   return (
@@ -90,9 +92,174 @@ function renderVariant(variant: Variant) {
       return <StatsChart />;
     case "inbox-multi":
       return <InboxMulti />;
+    case "search-leads":
+      return <SearchLeads />;
+    case "mass-send":
+      return <MassSend />;
     default:
       return null;
   }
+}
+
+/* ---------------- SEARCH LEADS ---------------- */
+function SearchLeads() {
+  const results = [
+    { name: "Padaria Pão Dourado", cat: "Padaria", city: "São Paulo, SP", phone: "(11) 98765-4321", verified: true },
+    { name: "Panificadora Vovó Maria", cat: "Padaria", city: "São Paulo, SP", phone: "(11) 97654-3210", verified: true },
+    { name: "Doce Fornada", cat: "Confeitaria", city: "Guarulhos, SP", phone: "(11) 96543-2109", verified: false },
+    { name: "Pão & Cia", cat: "Padaria", city: "Osasco, SP", phone: "(11) 95432-1098", verified: true },
+  ];
+  return (
+    <div className="p-4 sm:p-6">
+      {/* Filters row */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-3">
+        <div className="rounded-lg border border-border/50 bg-background/50 px-3 py-2">
+          <div className="text-[9px] font-semibold text-muted-foreground uppercase mb-0.5">Categoria (CNAE)</div>
+          <div className="flex items-center gap-1.5">
+            <Search className="h-3 w-3 text-primary" />
+            <span className="text-xs font-medium">Padaria</span>
+          </div>
+        </div>
+        <div className="rounded-lg border border-border/50 bg-background/50 px-3 py-2">
+          <div className="text-[9px] font-semibold text-muted-foreground uppercase mb-0.5">Localização</div>
+          <div className="flex items-center gap-1.5">
+            <MapPin className="h-3 w-3 text-primary" />
+            <span className="text-xs font-medium">São Paulo, SP</span>
+          </div>
+        </div>
+        <div className="rounded-lg bg-primary text-primary-foreground px-3 py-2 flex items-center justify-center gap-1.5 text-xs font-semibold">
+          <Search className="h-3.5 w-3.5" />
+          Buscar leads
+        </div>
+      </div>
+      {/* Meta */}
+      <div className="flex items-center justify-between mb-2 px-1">
+        <div className="text-[10px] text-muted-foreground">
+          <span className="font-semibold text-foreground">847</span> resultados em <span className="text-emerald-500 font-medium">2.1s</span>
+        </div>
+        <div className="flex items-center gap-1 text-[10px] text-primary">
+          <Filter className="h-3 w-3" />
+          Filtros
+        </div>
+      </div>
+      {/* Results */}
+      <div className="rounded-lg border border-border/50 overflow-hidden">
+        {results.map((r, i) => (
+          <div
+            key={i}
+            className={`flex items-center gap-3 px-3 py-2.5 ${i > 0 ? "border-t border-border/50" : ""}`}
+          >
+            <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center text-[11px] font-bold text-primary shrink-0">
+              {r.name.charAt(0)}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-1.5">
+                <div className="text-xs font-semibold truncate">{r.name}</div>
+                {r.verified && <CheckCircle2 className="h-3 w-3 text-emerald-500 shrink-0" />}
+              </div>
+              <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                <span>{r.cat}</span>
+                <span>•</span>
+                <span className="truncate">{r.city}</span>
+              </div>
+            </div>
+            <div className="hidden sm:flex items-center gap-1 text-[10px] text-muted-foreground">
+              <Phone className="h-3 w-3" />
+              {r.phone}
+            </div>
+            <div className="h-6 w-6 rounded-md bg-primary/10 text-primary flex items-center justify-center shrink-0">
+              <ArrowRight className="h-3 w-3" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ---------------- MASS SEND ---------------- */
+function MassSend() {
+  return (
+    <div className="p-4 sm:p-6">
+      <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
+        {/* Composer */}
+        <div className="sm:col-span-3 rounded-lg border border-border/50 bg-background/50 p-3">
+          <div className="flex items-center justify-between mb-2">
+            <div className="text-[10px] font-semibold uppercase text-muted-foreground">Mensagem</div>
+            <div className="text-[9px] text-muted-foreground">147 / 1024</div>
+          </div>
+          <div className="text-[11px] leading-relaxed space-y-1">
+            <div>Olá <span className="px-1 rounded bg-primary/15 text-primary font-medium">{"{{nome}}"}</span>! 👋</div>
+            <div>Vi que a <span className="px-1 rounded bg-primary/15 text-primary font-medium">{"{{empresa}}"}</span> é referência em padaria aqui em <span className="px-1 rounded bg-primary/15 text-primary font-medium">{"{{cidade}}"}</span>.</div>
+            <div className="h-2 bg-muted/40 rounded w-full" />
+            <div className="h-2 bg-muted/40 rounded w-4/5" />
+          </div>
+          <div className="mt-3 flex items-center gap-1 text-muted-foreground">
+            <Paperclip className="h-3.5 w-3.5" />
+            <Smile className="h-3.5 w-3.5" />
+            <div className="flex-1" />
+            <div className="text-[10px] px-2 py-1 rounded bg-emerald-500/10 text-emerald-600 font-medium flex items-center gap-1">
+              <Zap className="h-3 w-3" />
+              3 variações
+            </div>
+          </div>
+        </div>
+        {/* Settings */}
+        <div className="sm:col-span-2 space-y-2">
+          <div className="rounded-lg border border-border/50 bg-background/50 p-2.5">
+            <div className="text-[9px] font-semibold uppercase text-muted-foreground mb-1">Lista</div>
+            <div className="flex items-center gap-1.5">
+              <Users className="h-3.5 w-3.5 text-primary" />
+              <span className="text-xs font-medium">Padarias SP</span>
+              <span className="ml-auto text-[10px] text-muted-foreground">847</span>
+            </div>
+          </div>
+          <div className="rounded-lg border border-border/50 bg-background/50 p-2.5">
+            <div className="text-[9px] font-semibold uppercase text-muted-foreground mb-1">Intervalo aleatório</div>
+            <div className="flex items-center gap-1.5">
+              <Clock className="h-3.5 w-3.5 text-primary" />
+              <span className="text-xs font-medium">30s – 90s</span>
+            </div>
+          </div>
+          <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-2.5">
+            <div className="flex items-center gap-1.5">
+              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+              <span className="text-[11px] font-semibold text-emerald-600">Anti-ban ativo</span>
+            </div>
+            <div className="text-[9px] text-muted-foreground mt-0.5">Comportamento humanizado</div>
+          </div>
+        </div>
+      </div>
+      {/* Progress */}
+      <div className="mt-3 rounded-lg border border-border/50 bg-background/50 p-3">
+        <div className="flex items-center justify-between mb-1.5">
+          <div className="text-[11px] font-semibold">Enviando campanha</div>
+          <div className="text-[10px] text-muted-foreground">312 / 847</div>
+        </div>
+        <div className="h-1.5 rounded-full bg-muted overflow-hidden mb-2">
+          <div className="h-full rounded-full bg-gradient-to-r from-primary to-emerald-500" style={{ width: "37%" }} />
+        </div>
+        <div className="grid grid-cols-4 gap-2 text-center">
+          <div>
+            <div className="text-sm font-bold">312</div>
+            <div className="text-[9px] text-muted-foreground">Enviadas</div>
+          </div>
+          <div>
+            <div className="text-sm font-bold text-emerald-500">287</div>
+            <div className="text-[9px] text-muted-foreground">Entregues</div>
+          </div>
+          <div>
+            <div className="text-sm font-bold text-blue-500">142</div>
+            <div className="text-[9px] text-muted-foreground">Lidas</div>
+          </div>
+          <div>
+            <div className="text-sm font-bold text-primary">38</div>
+            <div className="text-[9px] text-muted-foreground">Responderam</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 /* ---------------- DASHBOARD STATS ---------------- */
