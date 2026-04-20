@@ -58,6 +58,7 @@ const FeatureListas = () => {
               Ao abrir uma lista, você vê todos os leads que pertencem a ela em uma tabela com <strong>Categoria</strong>, <strong>Nome</strong>, <strong>Telefone</strong>, <strong>Instagram</strong>, <strong>LinkedIn</strong> e <strong>Site</strong>. Cada ícone é clicável e leva direto ao perfil do lead. Você pode remover leads individualmente clicando no ícone de lixeira.
             </p>
             <FeaturePreview variant="lists-detail" />
+          </motion.div>
 
           {/* Benefits */}
           <motion.div variants={fadeUp} custom={5} className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-16">
