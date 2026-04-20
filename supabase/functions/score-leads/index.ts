@@ -119,59 +119,74 @@ REGRA CRÍTICA: VOCÊ DEVE retornar um objeto para CADA lead enviado, sem exceç
 Mesmo leads com pouquíssima informação DEVEM receber um score (baixo).
 NUNCA omita um lead do resultado. Se tiver dúvida, atribua 10.
 
-Responda APENAS com um JSON array no formato: [{"id": "uuid", "score": 85}, ...]
-Sem explicações adicionais.`;
+Responda APENAS com um JSON object no formato: {"scores": [{"id": "uuid", "score": 85}, ...]}
+Inclua TODOS os leads recebidos. Sem explicações adicionais.`;
 
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${openaiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "gpt-4o-mini",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: leadsText },
-        ],
-        temperature: 0.3,
-      }),
-    });
+    // Call OpenAI with forced JSON mode. If the call fails or the parse fails,
+    // we fall through to the heuristic fallback below — nothing is thrown away.
+    let scores: { id: string; score: number }[] = [];
+    let aiFailureReason: string | null = null;
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("OpenAI error:", response.status, errorText);
-      const lowQuota =
-        response.status === 429 || /insufficient_quota|quota|billing/i.test(errorText);
-      const friendly = lowQuota
-        ? "A IA de qualificação está temporariamente indisponível (cota esgotada)."
-        : "Erro ao processar com IA.";
-      return new Response(JSON.stringify({ error: friendly, ai_unavailable: true }), {
-        status: 503,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const aiData = await response.json();
-    const content: string | undefined = aiData.choices?.[0]?.message?.content?.trim();
-    if (!content) {
-      return new Response(JSON.stringify({ error: "Resposta vazia da IA" }), {
-        status: 502,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    let scores: { id: string; score: number }[];
     try {
-      // Extract JSON from potential markdown code blocks
-      const jsonStr = content.replace(/```json?\n?/g, "").replace(/```/g, "").trim();
-      scores = JSON.parse(jsonStr);
-    } catch {
-      console.error("Failed to parse AI response:", content);
-      return new Response(JSON.stringify({ error: "Erro ao interpretar resposta da IA" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      const response = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${openaiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "gpt-4o-mini",
+          response_format: { type: "json_object" },
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: leadsText },
+          ],
+          temperature: 0.2,
+        }),
       });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("OpenAI error:", response.status, errorText);
+        const lowQuota =
+          response.status === 429 || /insufficient_quota|quota|billing/i.test(errorText);
+        if (lowQuota) {
+          // Out of quota → bail with 503 so frontend stops the loop
+          return new Response(
+            JSON.stringify({
+              error: "A IA de qualificação está temporariamente indisponível (cota esgotada).",
+              ai_unavailable: true,
+            }),
+            { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        aiFailureReason = `openai_status_${response.status}`;
+      } else {
+        const aiData = await response.json();
+        const content: string = aiData.choices?.[0]?.message?.content?.trim() || "";
+        if (!content) {
+          aiFailureReason = "empty_response";
+        } else {
+          try {
+            const jsonStr = content.replace(/```json?\n?/g, "").replace(/```/g, "").trim();
+            const parsed = JSON.parse(jsonStr);
+            // Accept either {"scores":[...]} or a bare array for backwards compat
+            const arr = Array.isArray(parsed) ? parsed : parsed?.scores;
+            if (Array.isArray(arr)) {
+              scores = arr.filter((x: any) => x && typeof x.id === "string" && typeof x.score === "number");
+            } else {
+              aiFailureReason = "unexpected_shape";
+              console.error("Unexpected AI shape:", content.slice(0, 300));
+            }
+          } catch (e) {
+            aiFailureReason = "parse_error";
+            console.error("Failed to parse AI response:", content.slice(0, 300));
+          }
+        }
+      }
+    } catch (e) {
+      aiFailureReason = "fetch_error";
+      console.error("OpenAI fetch error:", e);
     }
 
     // Deterministic fallback score — used when the AI omits a lead from its
@@ -220,9 +235,16 @@ Sem explicações adicionais.`;
       }
     }
 
-    return new Response(JSON.stringify({ success: true, scores: results }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return new Response(
+      JSON.stringify({
+        success: true,
+        scores: results,
+        ai_failure_reason: aiFailureReason,
+        ai_count: scores.length,
+        fallback_count: results.filter((r) => r.source === "fallback").length,
+      }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
   } catch (error) {
     console.error("score-leads error:", error);
     return new Response(
