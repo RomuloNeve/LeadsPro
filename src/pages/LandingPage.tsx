@@ -465,8 +465,8 @@ const LandingPage = () => {
         </div>
 
         <div className="container mx-auto px-5 sm:px-6 lg:px-8 relative z-10 pt-28 sm:pt-36 lg:pt-32 pb-16 sm:pb-20">
-          <div className="grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-10 lg:gap-12 xl:gap-16 items-center">
-          <motion.div className="max-w-2xl" initial="hidden" animate="visible">
+          <div className="grid lg:grid-cols-[1.05fr_1fr] gap-10 lg:gap-10 xl:gap-14 items-center">
+          <motion.div className="max-w-xl" initial="hidden" animate="visible">
             <motion.div variants={fadeUp} custom={0} className="flex flex-wrap items-center gap-2 mb-5 sm:mb-8">
               <Badge variant="outline" className="border-white/30 text-white/90 bg-white/10 backdrop-blur-sm px-3 sm:px-4 py-1.5 text-[11px] sm:text-xs tracking-wide">
                 <Zap className="h-3 w-3 sm:h-3.5 sm:w-3.5 mr-1.5 sm:mr-2" />
@@ -481,7 +481,7 @@ const LandingPage = () => {
             <motion.h1
               variants={fadeUp}
               custom={1}
-              className="text-[1.85rem] leading-[1.12] sm:text-5xl sm:leading-[1.08] md:text-6xl lg:text-7xl xl:text-8xl font-bold font-display tracking-tight mb-4 sm:mb-6 text-white"
+              className="text-[1.85rem] leading-[1.12] sm:text-4xl sm:leading-[1.08] md:text-5xl lg:text-[2.75rem] lg:leading-[1.06] xl:text-[3.25rem] 2xl:text-6xl font-bold font-display tracking-tight mb-4 sm:mb-6 text-white"
             >
               Encontre clientes.{" "}
               <span className="inline sm:hidden">Dispare em massa.</span>
@@ -492,7 +492,7 @@ const LandingPage = () => {
             <motion.p
               variants={fadeUp}
               custom={2}
-              className="text-sm sm:text-base md:text-xl text-white/75 max-w-2xl mb-3 sm:mb-4 leading-relaxed"
+              className="text-sm sm:text-base lg:text-base xl:text-lg text-white/75 max-w-xl mb-3 sm:mb-4 leading-relaxed"
             >
               Capture leads do Google Maps em 3 segundos. Dispare mensagens no WhatsApp sem ser banido. Automatize follow-ups. CRM, chatbot IA e pipeline de vendas — tudo numa única plataforma.
             </motion.p>
@@ -511,19 +511,19 @@ const LandingPage = () => {
               <Button
                 size="lg"
                 onClick={() => scrollTo("pricing")}
-                className="gradient-bg text-primary-foreground hover:opacity-90 text-sm sm:text-base md:text-lg px-6 sm:px-10 h-12 sm:h-14 glow-shadow group"
+                className="gradient-bg text-primary-foreground hover:opacity-90 text-sm sm:text-base px-5 sm:px-7 h-11 sm:h-12 glow-shadow group"
               >
-                Quero dominar meu mercado agora
-                <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5 shrink-0 group-hover:translate-x-1 transition-transform" />
+                Quero dominar meu mercado
+                <ArrowRight className="ml-2 h-4 w-4 shrink-0 group-hover:translate-x-1 transition-transform" />
               </Button>
               {!isAffiliateRef && (
                 <Button
                   size="lg"
                   variant="outline"
                   onClick={() => navigate("/auth?plan=free")}
-                  className="border-green-500/50 bg-green-500/10 text-green-400 hover:bg-green-500/20 text-sm sm:text-base md:text-lg px-6 sm:px-10 h-12 sm:h-14"
+                  className="border-green-500/50 bg-green-500/10 text-green-400 hover:bg-green-500/20 text-sm sm:text-base px-5 sm:px-7 h-11 sm:h-12"
                 >
-                  <Gift className="h-4 w-4 sm:h-5 sm:w-5 mr-2 shrink-0" /> Testar Grátis — 2 Horas
+                  <Gift className="h-4 w-4 mr-2 shrink-0" /> Testar Grátis — 2h
                 </Button>
               )}
             </motion.div>
