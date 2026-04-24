@@ -1,81 +1,74 @@
 import { motion, useInView, useReducedMotion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
-import { Search, MapPin, MessageCircle, Database, Zap } from "lucide-react";
+import {
+  Search, MapPin, Phone, Mail, Instagram, Linkedin, Globe,
+  Download, FolderOpen, Loader2, CheckCircle2,
+  LayoutDashboard, Users, Send, MessageCircle, Kanban, Settings,
+} from "lucide-react";
 
 /**
- * HeroProductMockup
- * ------------------------------------------------------------
- * Interactive, animated preview of the LeadsPro product used in the
- * landing page hero — replaces the stock background photo.
+ * HeroProductMockup — faithful recreation of the real LeadsPro UserSearch
+ * screen (src/pages/user/UserSearch.tsx) rendered as pure HTML so we can
+ * animate rows streaming in as if the search is running live.
  *
- * Design tokens follow the spec:
- *  - container: #0f1a18 bg, subtle teal border, deep shadow
- *  - pins:      #1D9E75 with 2px white ring + 4px teal glow
- *  - grid:      18px × 18px faint teal grid on map
- *
- * All non-essential motion is gated behind `prefers-reduced-motion`.
+ * Honors `prefers-reduced-motion` throughout.
  */
 
-interface Pin {
-  id: number;
-  x: number; // % left
-  y: number; // % top
-  pulsing?: boolean;
+interface FakeLead {
+  category: string;
+  name: string;
+  phone: string;
+  hasEmail: boolean;
+  hasInstagram: boolean;
+  hasLinkedin: boolean;
+  hasSite: boolean;
 }
 
-// Deterministic pin positions — feels organic but is stable across reloads
-const PINS: Pin[] = [
-  { id: 1, x: 18, y: 28 },
-  { id: 2, x: 32, y: 42, pulsing: true },
-  { id: 3, x: 46, y: 22 },
-  { id: 4, x: 58, y: 54 },
-  { id: 5, x: 70, y: 36 },
-  { id: 6, x: 26, y: 66 },
-  { id: 7, x: 50, y: 72, pulsing: true },
-  { id: 8, x: 78, y: 62 },
-  { id: 9, x: 38, y: 84 },
-  { id: 10, x: 82, y: 24 },
+const FAKE_LEADS: FakeLead[] = [
+  { category: "Dentista", name: "Clínica Sorriso Perfeito",   phone: "(11) 3456-7890", hasEmail: true,  hasInstagram: true,  hasLinkedin: false, hasSite: true  },
+  { category: "Dentista", name: "Odonto Center Premium",       phone: "(11) 4567-8901", hasEmail: true,  hasInstagram: true,  hasLinkedin: true,  hasSite: true  },
+  { category: "Dentista", name: "Dental Arts Vila Olímpia",    phone: "(11) 5678-9012", hasEmail: false, hasInstagram: true,  hasLinkedin: false, hasSite: true  },
+  { category: "Dentista", name: "Sorri Mais Ortodontia",       phone: "(11) 6789-0123", hasEmail: true,  hasInstagram: true,  hasLinkedin: true,  hasSite: false },
+  { category: "Dentista", name: "Clínica OdontoVita",          phone: "(11) 7890-1234", hasEmail: true,  hasInstagram: false, hasLinkedin: false, hasSite: true  },
+  { category: "Dentista", name: "Espaço Odontológico Jardins", phone: "(11) 8901-2345", hasEmail: true,  hasInstagram: true,  hasLinkedin: true,  hasSite: true  },
+  { category: "Dentista", name: "Dr. Pedro Martins — Odonto",  phone: "(11) 9012-3456", hasEmail: true,  hasInstagram: true,  hasLinkedin: false, hasSite: true  },
+  { category: "Dentista", name: "Instituto Dental Moema",      phone: "(11) 2345-6789", hasEmail: false, hasInstagram: true,  hasLinkedin: true,  hasSite: true  },
 ];
-
-const LEADS_PREVIEW = [
-  { name: "Clínica Sorriso Perfeito", phone: "(11) 9••••-4523", badge: "Novo" },
-  { name: "Odonto Center Premium", phone: "(11) 9••••-8891", badge: "Novo" },
-];
-
-function useCounter(end: number, duration = 1500, start = false) {
-  const [value, setValue] = useState(0);
-  useEffect(() => {
-    if (!start) return;
-    let raf = 0;
-    const t0 = performance.now();
-    const tick = (now: number) => {
-      const p = Math.min(1, (now - t0) / duration);
-      const eased = 1 - Math.pow(1 - p, 3);
-      setValue(Math.floor(eased * end));
-      if (p < 1) raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [end, duration, start]);
-  return value;
-}
 
 export default function HeroProductMockup() {
   const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { once: true, margin: "-100px" });
   const reduce = useReducedMotion();
 
-  // Counter: 0 → 127 on first view
-  const count = useCounter(127, 1500, inView);
+  // Progressive row reveal — simulates live search streaming
+  const [visibleRows, setVisibleRows] = useState(reduce ? FAKE_LEADS.length : 0);
+  const [progress, setProgress] = useState(reduce ? 100 : 0);
+  const [searching, setSearching] = useState(!reduce);
 
-  // Subtle perspective tilt on hover (desktop only; disabled under reduce-motion)
-  const [tilt, setTilt] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  useEffect(() => {
+    if (!inView || reduce) return;
+    let i = 0;
+    const total = FAKE_LEADS.length;
+    const tick = setInterval(() => {
+      i += 1;
+      setVisibleRows(i);
+      setProgress(Math.round((i / total) * 100));
+      if (i >= total) {
+        clearInterval(tick);
+        setTimeout(() => setSearching(false), 300);
+      }
+    }, 220);
+    return () => clearInterval(tick);
+  }, [inView, reduce]);
+
+  // Subtle hover tilt (desktop)
+  const [tilt, setTilt] = useState({ x: 0, y: 0 });
   const onMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (reduce) return;
     const rect = e.currentTarget.getBoundingClientRect();
     const px = (e.clientX - rect.left) / rect.width - 0.5;
     const py = (e.clientY - rect.top) / rect.height - 0.5;
-    setTilt({ x: py * -3, y: px * 3 });
+    setTilt({ x: py * -2, y: px * 2 });
   };
   const onLeave = () => setTilt({ x: 0, y: 0 });
 
@@ -84,152 +77,232 @@ export default function HeroProductMockup() {
       ref={ref}
       onMouseMove={onMove}
       onMouseLeave={onLeave}
-      className="relative w-full max-w-[560px] mx-auto"
+      className="relative w-full max-w-[620px] mx-auto"
       style={{
-        transform: `perspective(1400px) rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)`,
-        transition: "transform 0.4s cubic-bezier(0.25, 0.1, 0.25, 1)",
+        transform: `perspective(1600px) rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)`,
+        transition: "transform 0.5s cubic-bezier(0.25, 0.1, 0.25, 1)",
       }}
-      aria-label="Prévia interativa do produto LeadsPro"
+      aria-label="Prévia da plataforma LeadsPro"
     >
-      {/* Radial glow behind the card */}
+      {/* Glow behind card */}
       <div
-        className="absolute -inset-8 rounded-[32px] pointer-events-none"
-        aria-hidden="true"
+        aria-hidden
+        className="absolute -inset-10 rounded-[32px] pointer-events-none"
         style={{
-          background:
-            "radial-gradient(60% 60% at 50% 40%, rgba(29,158,117,0.25), transparent 70%)",
-          filter: "blur(22px)",
+          background: "radial-gradient(60% 60% at 50% 40%, rgba(29,158,117,0.28), transparent 70%)",
+          filter: "blur(26px)",
         }}
       />
 
-      {/* ── Mockup card ── */}
       <motion.div
         initial={reduce ? false : { opacity: 0, y: 24, scale: 0.98 }}
         animate={inView ? { opacity: 1, y: 0, scale: 1 } : undefined}
-        transition={{ duration: 0.6, ease: [0.25, 0.1, 0.25, 1] }}
-        className="relative rounded-[12px] overflow-hidden"
+        transition={{ duration: 0.6 }}
+        className="relative rounded-[14px] overflow-hidden flex"
         style={{
-          background: "#0f1a18",
-          border: "0.5px solid rgba(93,202,165,0.22)",
-          boxShadow:
-            "0 30px 80px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.03) inset",
+          background: "hsl(240 10% 3.9%)",
+          border: "1px solid hsl(240 3.7% 15.9% / 0.8)",
+          boxShadow: "0 30px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.03) inset",
         }}
       >
-        {/* window chrome */}
-        <div className="flex items-center gap-1.5 px-3 h-7 border-b border-white/[0.06] bg-white/[0.015]">
-          <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-          <span className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-          <span className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-          <span className="ml-3 text-[10px] font-mono text-white/40 tracking-wide">
-            app.leadspro.com.br
-          </span>
-        </div>
-
-        {/* tabs */}
-        <div className="flex items-center gap-1 px-3 pt-3 border-b border-white/[0.04]">
-          <Tab icon={<Search className="h-3 w-3" />} label="Busca de leads" active />
-          <Tab icon={<MessageCircle className="h-3 w-3" />} label="Disparos" />
-          <Tab icon={<Database className="h-3 w-3" />} label="CRM" />
-        </div>
-
-        {/* search bar */}
-        <div className="px-4 pt-3.5 pb-2">
-          <div className="flex items-center gap-2 px-3 h-9 rounded-lg bg-black/30 border border-white/[0.06]">
-            <Search className="h-3.5 w-3.5 text-[#5DCAA5] shrink-0" />
-            <span className="text-[11px] font-mono text-white/75 truncate">
-              CNAE: 8630-5 · <span className="text-white">Dentistas</span> · São Paulo, SP
-            </span>
-            <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded bg-[#1D9E75]/15 text-[#5DCAA5] font-semibold">
-              BUSCAR
-            </span>
+        {/* ── Sidebar ── */}
+        <div className="hidden sm:flex flex-col w-[52px] border-r border-white/5 bg-black/30 py-3 shrink-0">
+          <div className="flex flex-col items-center gap-2 mb-3 px-2">
+            <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-[#1D9E75] to-[#0f6b4e] flex items-center justify-center text-white font-bold text-[11px]">
+              L
+            </div>
+          </div>
+          <SidebarIcon icon={<LayoutDashboard className="h-3.5 w-3.5" />} />
+          <SidebarIcon icon={<Search className="h-3.5 w-3.5" />} active />
+          <SidebarIcon icon={<Users className="h-3.5 w-3.5" />} />
+          <SidebarIcon icon={<Send className="h-3.5 w-3.5" />} />
+          <SidebarIcon icon={<MessageCircle className="h-3.5 w-3.5" />} />
+          <SidebarIcon icon={<Kanban className="h-3.5 w-3.5" />} />
+          <div className="mt-auto flex flex-col items-center">
+            <SidebarIcon icon={<Settings className="h-3.5 w-3.5" />} />
           </div>
         </div>
 
-        {/* map */}
-        <div className="px-4 pb-3">
-          <div
-            className="relative aspect-[16/9] rounded-lg overflow-hidden border border-white/[0.06]"
-            style={{
-              backgroundColor: "#0a1210",
-              backgroundImage:
-                "linear-gradient(rgba(93,202,165,0.065) 1px, transparent 1px), linear-gradient(90deg, rgba(93,202,165,0.065) 1px, transparent 1px)",
-              backgroundSize: "18px 18px",
-            }}
-          >
-            {/* soft glow hotspots */}
-            <div
-              className="absolute top-1/3 left-1/4 w-40 h-40 rounded-full pointer-events-none"
-              aria-hidden="true"
-              style={{
-                background: "radial-gradient(circle, rgba(29,158,117,0.18), transparent 70%)",
-              }}
-            />
-            <div
-              className="absolute bottom-1/4 right-1/4 w-32 h-32 rounded-full pointer-events-none"
-              aria-hidden="true"
-              style={{
-                background: "radial-gradient(circle, rgba(29,158,117,0.12), transparent 70%)",
-              }}
-            />
+        {/* ── Main column ── */}
+        <div className="flex-1 min-w-0 flex flex-col">
+          {/* Top bar */}
+          <div className="flex items-center gap-1.5 px-3 h-7 border-b border-white/5 bg-white/[0.02]">
+            <span className="h-2 w-2 rounded-full bg-[#ff5f57]" />
+            <span className="h-2 w-2 rounded-full bg-[#febc2e]" />
+            <span className="h-2 w-2 rounded-full bg-[#28c840]" />
+            <span className="ml-3 text-[9px] font-mono text-white/35 tracking-wide">
+              app.leadspro.com.br/user-dashboard/search
+            </span>
+          </div>
 
-            {/* leads counter badge */}
-            <div className="absolute top-2.5 right-2.5 flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-black/60 backdrop-blur-md border border-[#1D9E75]/30">
-              <span
-                className={`h-1.5 w-1.5 rounded-full bg-[#1D9E75] ${reduce ? "" : "animate-pulse"}`}
-                aria-hidden="true"
-              />
-              <span className="text-[10px] font-bold text-[#5DCAA5] tabular-nums">
-                {count} leads
-              </span>
+          {/* Page content */}
+          <div className="p-3.5 space-y-3 bg-[#0a0a0b]">
+            {/* Page header */}
+            <div>
+              <h1 className="text-[13px] font-bold text-white">Busca de Leads</h1>
+              <p className="text-[10px] text-white/45 mt-0.5">
+                Encontre empresas por categoria e localização
+              </p>
             </div>
 
-            {/* pins */}
-            {PINS.map((p, i) => (
-              <Pin key={p.id} pin={p} index={i} inView={inView} reduce={!!reduce} />
-            ))}
-          </div>
-        </div>
+            {/* Search form card */}
+            <div className="rounded-lg border border-white/8 bg-[#111113] p-3 space-y-2.5">
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-[9px] font-medium text-white/60">Categoria(s) *</label>
+                  <div className="mt-1 flex items-center gap-1 flex-wrap min-h-[28px] px-2 py-1 rounded-md bg-black/30 border border-white/10">
+                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-[#1D9E75]/15 text-[#5DCAA5] font-semibold">
+                      Dentista ×
+                    </span>
+                  </div>
+                </div>
+                <div>
+                  <label className="text-[9px] font-medium text-white/60">Localização</label>
+                  <div className="mt-1 flex items-center gap-1.5 px-2 h-[28px] rounded-md bg-black/30 border border-white/10">
+                    <MapPin className="h-2.5 w-2.5 text-[#5DCAA5]" />
+                    <span className="text-[10px] text-white/80 truncate">São Paulo, SP</span>
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center justify-between gap-2 pt-1">
+                <div className="flex-1">
+                  {(searching || progress > 0) && (
+                    <div className="space-y-1">
+                      <div className="h-1 w-full rounded-full bg-white/8 overflow-hidden">
+                        <div
+                          className="h-full bg-gradient-to-r from-[#1D9E75] to-[#5DCAA5] transition-all duration-300"
+                          style={{ width: `${progress}%` }}
+                        />
+                      </div>
+                      <p className="text-[9px] text-white/50 flex items-center gap-1">
+                        {searching ? (
+                          <>
+                            <Loader2 className={`h-2.5 w-2.5 ${reduce ? "" : "animate-spin"}`} />
+                            {visibleRows}/{FAKE_LEADS.length} leads encontrados...
+                          </>
+                        ) : (
+                          <><CheckCircle2 className="h-2.5 w-2.5 text-[#5DCAA5]" /> Busca concluída!</>
+                        )}
+                      </p>
+                    </div>
+                  )}
+                </div>
+                <button
+                  className="shrink-0 flex items-center gap-1 px-3 h-7 rounded-md text-[10px] font-semibold text-white"
+                  style={{
+                    background: "linear-gradient(135deg, #1D9E75 0%, #0f6b4e 100%)",
+                    boxShadow: "0 4px 14px rgba(29,158,117,0.35)",
+                  }}
+                >
+                  <Search className="h-2.5 w-2.5" />
+                  Buscar Leads
+                </button>
+              </div>
+            </div>
 
-        {/* leads list */}
-        <div className="px-4 pb-4 space-y-1.5">
-          {LEADS_PREVIEW.map((l, i) => (
-            <motion.div
-              key={l.name}
-              initial={reduce ? false : { opacity: 0, x: -8 }}
-              animate={inView ? { opacity: 1, x: 0 } : undefined}
-              transition={{ delay: 1.3 + i * 0.15, duration: 0.4 }}
-              className="flex items-center gap-2.5 p-2 rounded-lg bg-white/[0.025] border border-white/[0.04]"
-            >
-              <div className="h-8 w-8 rounded-md bg-gradient-to-br from-[#1D9E75] to-[#0f6b4e] flex items-center justify-center shrink-0">
-                <MapPin className="h-3.5 w-3.5 text-white" />
+            {/* Results card */}
+            <div className="rounded-lg border border-white/8 bg-[#111113] p-3">
+              <div className="flex items-center justify-between gap-2 mb-2.5 flex-wrap">
+                <div className="flex items-center gap-1.5">
+                  <MapPin className="h-3 w-3 text-[#5DCAA5]" />
+                  <span className="text-[11px] font-semibold text-white">
+                    {visibleRows} leads
+                  </span>
+                  <span className="text-[9px] px-1.5 py-0.5 rounded border border-white/15 text-white/60">
+                    São Paulo, SP
+                  </span>
+                  {!searching && visibleRows > 0 && (
+                    <span className="text-[9px] px-1.5 py-0.5 rounded border border-emerald-500/30 text-emerald-400 font-semibold">
+                      ✅ Salvos no CRM
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-1">
+                  <MiniButton icon={<Download className="h-2.5 w-2.5" />} label="CSV" />
+                  <MiniButton icon={<FolderOpen className="h-2.5 w-2.5" />} label="Lista" />
+                </div>
               </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-[11px] font-semibold text-white truncate">{l.name}</p>
-                <p className="text-[10px] font-mono text-white/45">{l.phone}</p>
+
+              {/* Table */}
+              <div className="rounded border border-white/8 overflow-hidden">
+                {/* Head */}
+                <div className="grid grid-cols-[70px_1fr_90px_24px_24px_24px_24px] gap-2 px-2 py-1.5 bg-black/30 border-b border-white/5 text-[8px] font-semibold text-white/50 uppercase tracking-wider">
+                  <span>Categoria</span>
+                  <span>Nome</span>
+                  <span>Telefone</span>
+                  <span className="text-center">✉</span>
+                  <span className="text-center">IG</span>
+                  <span className="text-center">IN</span>
+                  <span className="text-center">🌐</span>
+                </div>
+                {/* Rows */}
+                <div className="divide-y divide-white/5 max-h-[220px] overflow-hidden">
+                  {FAKE_LEADS.slice(0, visibleRows).map((lead, i) => (
+                    <motion.div
+                      key={i}
+                      initial={reduce ? false : { opacity: 0, y: -4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.25 }}
+                      className="grid grid-cols-[70px_1fr_90px_24px_24px_24px_24px] gap-2 px-2 py-1.5 items-center hover:bg-white/[0.02]"
+                    >
+                      <span className="text-[8px] px-1 py-0.5 rounded border border-white/15 text-white/65 truncate justify-self-start">
+                        {lead.category}
+                      </span>
+                      <span className="text-[10px] font-medium text-white truncate">
+                        {lead.name}
+                      </span>
+                      <span className="text-[9px] text-[#5DCAA5] font-mono flex items-center gap-1 truncate">
+                        <Phone className="h-2 w-2 shrink-0" />
+                        <span className="truncate">{lead.phone}</span>
+                      </span>
+                      <span className="flex justify-center">
+                        {lead.hasEmail ? <Mail className="h-2.5 w-2.5 text-[#5DCAA5]" /> : <span className="text-white/20 text-[8px]">—</span>}
+                      </span>
+                      <span className="flex justify-center">
+                        {lead.hasInstagram ? <Instagram className="h-2.5 w-2.5 text-[#5DCAA5]" /> : <span className="text-white/20 text-[8px]">—</span>}
+                      </span>
+                      <span className="flex justify-center">
+                        {lead.hasLinkedin ? <Linkedin className="h-2.5 w-2.5 text-[#5DCAA5]" /> : <span className="text-white/20 text-[8px]">—</span>}
+                      </span>
+                      <span className="flex justify-center">
+                        {lead.hasSite ? <Globe className="h-2.5 w-2.5 text-[#5DCAA5]" /> : <span className="text-white/20 text-[8px]">—</span>}
+                      </span>
+                    </motion.div>
+                  ))}
+                </div>
               </div>
-              <span className="text-[9px] px-1.5 py-0.5 rounded bg-[#1D9E75]/15 text-[#5DCAA5] font-bold uppercase tracking-wide shrink-0">
-                {l.badge}
-              </span>
-            </motion.div>
-          ))}
+            </div>
+          </div>
         </div>
       </motion.div>
 
-      {/* Floating capture badge (bottom-left) */}
+      {/* Floating "3s per lead" badge */}
       <motion.div
         initial={reduce ? false : { opacity: 0, y: 16 }}
         animate={inView ? { opacity: 1, y: 0 } : undefined}
-        transition={{ delay: 1.6, duration: 0.5 }}
-        className="absolute -bottom-4 -left-3 sm:-left-6 flex items-center gap-2 px-3 py-2 rounded-xl bg-[#0f1a18] border border-[#1D9E75]/30 shadow-xl"
-        style={{ boxShadow: "0 10px 30px rgba(29,158,117,0.25)" }}
+        transition={{ delay: 1.2, duration: 0.5 }}
+        className="absolute -bottom-4 -left-3 sm:-left-5 flex items-center gap-2 px-3 py-2 rounded-xl bg-[#0f1a18] border border-[#1D9E75]/30"
+        style={{ boxShadow: "0 12px 32px rgba(29,158,117,0.28)" }}
       >
         <div className="h-7 w-7 rounded-lg bg-[#1D9E75]/15 flex items-center justify-center">
-          <Zap className="h-3.5 w-3.5 text-[#5DCAA5]" />
+          <Search className="h-3.5 w-3.5 text-[#5DCAA5]" />
         </div>
         <div className="leading-tight">
-          <p className="text-[10px] text-white/55">Capturando</p>
+          <p className="text-[9px] text-white/55">Velocidade</p>
           <p className="text-[11px] font-bold text-white">3s por lead</p>
         </div>
+      </motion.div>
+
+      {/* Floating "Salvos no CRM" badge (top-right) */}
+      <motion.div
+        initial={reduce ? false : { opacity: 0, scale: 0.8 }}
+        animate={inView ? { opacity: 1, scale: 1 } : undefined}
+        transition={{ delay: 1.5, duration: 0.4 }}
+        className="absolute -top-3 -right-2 sm:-right-4 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#0f1a18] border border-emerald-500/30"
+        style={{ boxShadow: "0 10px 24px rgba(0,0,0,0.4)" }}
+      >
+        <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
+        <span className="text-[10px] font-bold text-white">Salvos no CRM</span>
       </motion.div>
     </div>
   );
@@ -237,56 +310,23 @@ export default function HeroProductMockup() {
 
 /* ── Subcomponents ── */
 
-function Tab({ icon, label, active = false }: { icon: React.ReactNode; label: string; active?: boolean }) {
+function SidebarIcon({ icon, active = false }: { icon: React.ReactNode; active?: boolean }) {
   return (
     <div
-      className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-t-md text-[10px] font-medium transition-colors ${
-        active
-          ? "bg-white/[0.04] text-white border-b-2 border-[#1D9E75]"
-          : "text-white/45"
+      className={`mx-auto mb-1 h-7 w-7 rounded-md flex items-center justify-center transition-colors ${
+        active ? "bg-[#1D9E75]/20 text-[#5DCAA5]" : "text-white/30 hover:text-white/60"
       }`}
     >
       {icon}
-      <span>{label}</span>
     </div>
   );
 }
 
-function Pin({ pin, index, inView, reduce }: { pin: Pin; index: number; inView: boolean; reduce: boolean }) {
-  // Stagger entry: 200ms base + 90ms per pin
-  const delay = 0.2 + index * 0.09;
-
+function MiniButton({ icon, label }: { icon: React.ReactNode; label: string }) {
   return (
-    <motion.div
-      className="absolute"
-      style={{ left: `${pin.x}%`, top: `${pin.y}%`, transform: "translate(-50%, -50%)" }}
-      initial={reduce ? false : { opacity: 0, scale: 0 }}
-      animate={inView ? { opacity: 1, scale: 1 } : undefined}
-      transition={{ delay, duration: 0.35, ease: [0.34, 1.56, 0.64, 1] }}
-      aria-hidden="true"
-    >
-      {/* outer glow ring */}
-      {pin.pulsing && !reduce && (
-        <span
-          className="absolute inset-0 rounded-full animate-ping"
-          style={{
-            background: "rgba(29,158,117,0.35)",
-            width: "100%",
-            height: "100%",
-            animationDuration: "2s",
-          }}
-        />
-      )}
-      <span
-        className="relative block rounded-full"
-        style={{
-          width: 10,
-          height: 10,
-          background: "#1D9E75",
-          border: "2px solid #ffffff",
-          boxShadow: "0 0 0 4px rgba(29,158,117,0.25), 0 2px 6px rgba(0,0,0,0.4)",
-        }}
-      />
-    </motion.div>
+    <div className="flex items-center gap-1 px-2 h-6 rounded border border-white/10 text-[9px] font-medium text-white/70">
+      {icon}
+      {label}
+    </div>
   );
 }
