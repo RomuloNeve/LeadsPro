@@ -60,6 +60,7 @@ import {
 import { WhatsAppIcon } from "@/components/WhatsAppIcon";
 import ExitIntentPopup from "@/components/ExitIntentPopup";
 import FloatingCTA from "@/components/FloatingCTA";
+import HeroProductMockup from "@/components/HeroProductMockup";
 
 /* ── Animations (lightweight for scroll perf) ── */
 const fadeUp = {
@@ -449,14 +450,23 @@ const LandingPage = () => {
       {/* ═══ HERO ═══ */}
       <header className="relative min-h-[100dvh] flex items-center">
         <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
-          <img src={headerBg} alt="" className="absolute inset-0 w-full h-full object-cover object-top hidden lg:block" fetchPriority="high" decoding="async" loading="eager" />
+          <img src={headerBg} alt="" className="absolute inset-0 w-full h-full object-cover object-top hidden lg:block opacity-30" fetchPriority="high" decoding="async" loading="eager" />
           <img src={headerBgMobile} alt="" className="absolute inset-0 w-full h-full object-cover object-center lg:hidden" fetchPriority="high" decoding="async" loading="eager" />
-          <div className="absolute inset-0 bg-black/65" />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/85" />
+          <div className="absolute inset-0 bg-black/75 lg:bg-black/80" />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/90" />
+          {/* Teal radial glow (desktop only) — anchored top-right behind the mockup */}
+          <div
+            className="absolute top-0 right-0 w-[55%] h-[70%] pointer-events-none hidden lg:block"
+            style={{
+              background:
+                "radial-gradient(60% 60% at 70% 30%, rgba(29,158,117,0.18), transparent 70%)",
+            }}
+          />
         </div>
 
-        <div className="container mx-auto px-5 sm:px-6 lg:px-8 relative z-10 pt-28 sm:pt-36 lg:pt-44 pb-16 sm:pb-20">
-          <motion.div className="max-w-4xl" initial="hidden" animate="visible">
+        <div className="container mx-auto px-5 sm:px-6 lg:px-8 relative z-10 pt-28 sm:pt-36 lg:pt-32 pb-16 sm:pb-20">
+          <div className="grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-10 lg:gap-12 xl:gap-16 items-center">
+          <motion.div className="max-w-2xl" initial="hidden" animate="visible">
             <motion.div variants={fadeUp} custom={0} className="flex flex-wrap items-center gap-2 mb-5 sm:mb-8">
               <Badge variant="outline" className="border-white/30 text-white/90 bg-white/10 backdrop-blur-sm px-3 sm:px-4 py-1.5 text-[11px] sm:text-xs tracking-wide">
                 <Zap className="h-3 w-3 sm:h-3.5 sm:w-3.5 mr-1.5 sm:mr-2" />
@@ -518,6 +528,12 @@ const LandingPage = () => {
               )}
             </motion.div>
           </motion.div>
+
+          {/* Product mockup (right column on lg+, stacks below on mobile/tablet) */}
+          <div className="flex items-center justify-center lg:justify-end mt-8 lg:mt-0">
+            <HeroProductMockup />
+          </div>
+          </div>
         </div>
       </header>
 
