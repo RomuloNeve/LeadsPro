@@ -1,3 +1,4 @@
+Initialising login role...
 export type Json =
   | string
   | number
@@ -10,7 +11,32 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.1"
+    PostgrestVersion: "14.5"
+  }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
   }
   public: {
     Tables: {
@@ -139,6 +165,215 @@ export type Database = {
           word_count?: number | null
         }
         Relationships: []
+      }
+      cadence_enrollments: {
+        Row: {
+          cadence_id: string
+          created_at: string
+          current_step: number
+          id: string
+          last_error: string | null
+          last_step_at: string | null
+          lead_id: string
+          license_id: string
+          next_run_at: string
+          paused_reason: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          cadence_id: string
+          created_at?: string
+          current_step?: number
+          id?: string
+          last_error?: string | null
+          last_step_at?: string | null
+          lead_id: string
+          license_id: string
+          next_run_at?: string
+          paused_reason?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          cadence_id?: string
+          created_at?: string
+          current_step?: number
+          id?: string
+          last_error?: string | null
+          last_step_at?: string | null
+          lead_id?: string
+          license_id?: string
+          next_run_at?: string
+          paused_reason?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cadence_enrollments_cadence_id_fkey"
+            columns: ["cadence_id"]
+            isOneToOne: false
+            referencedRelation: "cadences"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cadence_enrollments_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cadence_enrollments_license_id_fkey"
+            columns: ["license_id"]
+            isOneToOne: false
+            referencedRelation: "licenses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cadence_step_logs: {
+        Row: {
+          channel: string | null
+          enrollment_id: string
+          error_message: string | null
+          executed_at: string
+          id: string
+          status: string
+          step_id: string | null
+        }
+        Insert: {
+          channel?: string | null
+          enrollment_id: string
+          error_message?: string | null
+          executed_at?: string
+          id?: string
+          status: string
+          step_id?: string | null
+        }
+        Update: {
+          channel?: string | null
+          enrollment_id?: string
+          error_message?: string | null
+          executed_at?: string
+          id?: string
+          status?: string
+          step_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cadence_step_logs_enrollment_id_fkey"
+            columns: ["enrollment_id"]
+            isOneToOne: false
+            referencedRelation: "cadence_enrollments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cadence_step_logs_step_id_fkey"
+            columns: ["step_id"]
+            isOneToOne: false
+            referencedRelation: "cadence_steps"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cadence_steps: {
+        Row: {
+          cadence_id: string
+          channel: string
+          created_at: string
+          delay_hours: number
+          id: string
+          message: string
+          send_window_end: string
+          send_window_start: string
+          skip_weekends: boolean
+          step_order: number
+          subject: string | null
+        }
+        Insert: {
+          cadence_id: string
+          channel: string
+          created_at?: string
+          delay_hours?: number
+          id?: string
+          message: string
+          send_window_end?: string
+          send_window_start?: string
+          skip_weekends?: boolean
+          step_order: number
+          subject?: string | null
+        }
+        Update: {
+          cadence_id?: string
+          channel?: string
+          created_at?: string
+          delay_hours?: number
+          id?: string
+          message?: string
+          send_window_end?: string
+          send_window_start?: string
+          skip_weekends?: boolean
+          step_order?: number
+          subject?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cadence_steps_cadence_id_fkey"
+            columns: ["cadence_id"]
+            isOneToOne: false
+            referencedRelation: "cadences"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cadences: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          is_active: boolean
+          license_id: string
+          name: string
+          stop_on_reply: boolean
+          stop_on_status: string[]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          license_id: string
+          name: string
+          stop_on_reply?: boolean
+          stop_on_status?: string[]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          license_id?: string
+          name?: string
+          stop_on_reply?: boolean
+          stop_on_status?: string[]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cadences_license_id_fkey"
+            columns: ["license_id"]
+            isOneToOne: false
+            referencedRelation: "licenses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       campaign_sent_leads: {
         Row: {
@@ -1018,6 +1253,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {},
   },

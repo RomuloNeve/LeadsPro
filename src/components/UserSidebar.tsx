@@ -37,6 +37,7 @@ import {
   Coins,
   Gift,
   CreditCard,
+  Zap,
 } from "lucide-react";
 
 const WhatsAppIcon = ({ className }: { className?: string }) => (
@@ -63,6 +64,7 @@ const mainItems = [
   { title: "Caixa de Entrada", url: "/user-dashboard/inbox", icon: WhatsAppIcon },
   { title: "Email Marketing", url: "/user-dashboard/email-campaigns", icon: Mail },
   { title: "Follow-ups", url: "/user-dashboard/followups", icon: Clock },
+  { title: "Cadências", url: "/user-dashboard/cadences", icon: Zap },
   { title: "Chatbot IA", url: "/user-dashboard/chatbot", icon: Bot },
   { title: "Atendimento Humano", url: "/user-dashboard/human-support", icon: Headphones },
   { title: "Widget de Captura", url: "/user-dashboard/widget", icon: Code },

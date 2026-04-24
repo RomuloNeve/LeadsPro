@@ -22,6 +22,7 @@ const UserStats = lazy(() => import("./pages/user/UserStats"));
 const UserProfile = lazy(() => import("./pages/user/UserProfile"));
 const UserCampaigns = lazy(() => import("./pages/user/UserCampaigns"));
 const UserFollowups = lazy(() => import("./pages/user/UserFollowups"));
+const UserCadences = lazy(() => import("./pages/user/UserCadences"));
 const UserSearch = lazy(() => import("./pages/user/UserSearch"));
 const UserLists = lazy(() => import("./pages/user/UserLists"));
 const UserEmailCampaigns = lazy(() => import("./pages/user/UserEmailCampaigns"));
@@ -104,6 +105,7 @@ const App = () => (
               <Route path="profile" element={<UserProfile />} />
               <Route path="campaigns" element={<UserCampaigns />} />
               <Route path="followups" element={<UserFollowups />} />
+              <Route path="cadences" element={<UserCadences />} />
               <Route path="email-campaigns" element={<UserEmailCampaigns />} />
               <Route path="whatsapp-instance" element={<UserWhatsAppInstance />} />
               <Route path="inbox" element={<UserWhatsAppInbox />} />
