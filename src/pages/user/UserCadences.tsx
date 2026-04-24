@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { useUserData } from "@/hooks/useUserData";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -66,6 +67,95 @@ const newStep = (order: number, channel: Channel = "whatsapp"): CadenceStep => (
   send_window_end: "18:00",
   skip_weekends: true,
 });
+
+/* ------------------------------------------------------------------
+   Pre-built cadence templates — loaded as starting point for new cadence
+------------------------------------------------------------------ */
+interface CadenceTemplate {
+  key: string;
+  label: string;
+  description: string;
+  build: () => { name: string; description: string; steps: CadenceStep[] };
+}
+
+const TEMPLATES: CadenceTemplate[] = [
+  {
+    key: "prospeccao-fria",
+    label: "Prospecção fria (5 dias · 3 toques)",
+    description: "Primeiro contato + 2 follow-ups progressivos para leads que ainda não te conhecem.",
+    build: () => ({
+      name: "Prospecção fria",
+      description: "Sequência de 3 toques para abrir conversa com leads novos.",
+      steps: [
+        {
+          step_order: 1, channel: "whatsapp", delay_hours: 0, subject: null,
+          message: "Olá {nome}! Tudo bem?\n\nAqui é da nossa equipe — vi seu contato e queria entender rapidamente se o que fazemos faz sentido pra você.\n\nTem 2 minutinhos pra uma conversa?",
+          send_window_start: "09:00", send_window_end: "18:00", skip_weekends: true,
+        },
+        {
+          step_order: 2, channel: "whatsapp", delay_hours: 48, subject: null,
+          message: "Oi {nome}, passando só pra confirmar se minha mensagem de ontem chegou 🙂\n\nSe preferir, posso te mandar um resumo rápido por aqui mesmo. O que acha?",
+          send_window_start: "10:00", send_window_end: "17:00", skip_weekends: true,
+        },
+        {
+          step_order: 3, channel: "email", delay_hours: 72,
+          subject: "Última tentativa — {nome}",
+          message: "Olá {nome},\n\nTentei te chamar no WhatsApp nos últimos dias e não tive retorno — imagino que esteja numa correria.\n\nSe fizer sentido retomarmos, é só responder esse email. Caso contrário, entendo e paramos por aqui.\n\nAbraço!",
+          send_window_start: "08:00", send_window_end: "19:00", skip_weekends: false,
+        },
+      ],
+    }),
+  },
+  {
+    key: "reengajamento",
+    label: "Reengajamento (leads frios há +30 dias)",
+    description: "Reconquistar leads que pararam de responder com abordagem leve.",
+    build: () => ({
+      name: "Reengajamento",
+      description: "Reativar conversa com leads que sumiram.",
+      steps: [
+        {
+          step_order: 1, channel: "whatsapp", delay_hours: 0, subject: null,
+          message: "Oi {nome}, tudo certo?\n\nFaz um tempo que conversamos — queria só entender se você ainda tem interesse ou se o momento mudou.\n\nQualquer resposta ajuda 🙏",
+          send_window_start: "10:00", send_window_end: "18:00", skip_weekends: true,
+        },
+        {
+          step_order: 2, channel: "email", delay_hours: 96,
+          subject: "Ainda faz sentido, {nome}?",
+          message: "Olá {nome},\n\nNão quero ser insistente — só queria confirmar se ainda há espaço pra conversarmos ou se você prefere que eu não volte a te procurar.\n\nMe avisa, por favor. Prometo respeitar.\n\nAbraço!",
+          send_window_start: "08:00", send_window_end: "19:00", skip_weekends: false,
+        },
+      ],
+    }),
+  },
+  {
+    key: "pos-venda",
+    label: "Pós-venda (onboarding + NPS)",
+    description: "Acompanhamento de cliente novo: boas-vindas, check-in e pesquisa.",
+    build: () => ({
+      name: "Pós-venda",
+      description: "Onboarding de cliente recém-fechado com check-in e NPS.",
+      steps: [
+        {
+          step_order: 1, channel: "whatsapp", delay_hours: 1, subject: null,
+          message: "Oi {nome}! Seja muito bem-vindo(a) 🎉\n\nFicamos felizes em ter você com a gente. Se precisar de qualquer ajuda para começar, é só responder por aqui.",
+          send_window_start: "09:00", send_window_end: "20:00", skip_weekends: false,
+        },
+        {
+          step_order: 2, channel: "whatsapp", delay_hours: 168, subject: null,
+          message: "Oi {nome}, tudo bem?\n\nPassando só pra saber como tem sido sua experiência até aqui. Tem algo que eu posso ajudar ou explicar melhor?",
+          send_window_start: "10:00", send_window_end: "18:00", skip_weekends: true,
+        },
+        {
+          step_order: 3, channel: "email", delay_hours: 336,
+          subject: "Como estamos indo, {nome}?",
+          message: "Olá {nome},\n\nJá faz algumas semanas desde que começamos juntos — adoraríamos ouvir sua opinião.\n\nNuma escala de 0 a 10, o quanto você recomendaria a gente para um amigo ou colega?\n\nÉ só responder esse email com o número e, se quiser, um comentário rápido. Isso nos ajuda demais!\n\nObrigado 🙏",
+          send_window_start: "08:00", send_window_end: "19:00", skip_weekends: false,
+        },
+      ],
+    }),
+  },
+];
 
 export default function UserCadences() {
   const { license } = useUserData();
@@ -370,7 +460,12 @@ export default function UserCadences() {
                   <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {c.steps?.length || 0} passo(s)</span>
                 </div>
                 <div className="flex items-center gap-2 pt-2 border-t border-border">
-                  <Button size="sm" variant="outline" className="flex-1" onClick={() => openEdit(c)}>Editar</Button>
+                  <Button asChild size="sm" variant="outline" className="flex-1">
+                    <Link to={`/user-dashboard/cadences/${c.id}`}>Ver detalhes</Link>
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={() => openEdit(c)} title="Editar">
+                    <Sparkles className="h-4 w-4" />
+                  </Button>
                   <Button size="sm" variant="ghost" onClick={() => toggleActive(c)} title={c.is_active ? "Pausar" : "Ativar"}>
                     <Power className={`h-4 w-4 ${c.is_active ? "text-emerald-500" : "text-muted-foreground"}`} />
                   </Button>
@@ -399,6 +494,40 @@ export default function UserCadences() {
 
           {editing && (
             <div className="space-y-5">
+              {/* Templates (only for new cadence) */}
+              {!editing.id && (
+                <div className="rounded-lg border border-dashed border-primary/30 bg-primary/5 p-3 space-y-2">
+                  <div className="flex items-center gap-2 text-sm font-medium">
+                    <Sparkles className="h-4 w-4 text-primary" />
+                    Começar a partir de um template
+                  </div>
+                  <Select
+                    onValueChange={(key) => {
+                      const tpl = TEMPLATES.find((t) => t.key === key);
+                      if (!tpl) return;
+                      const built = tpl.build();
+                      setEditing((prev) => prev ? { ...prev, name: prev.name || built.name, description: prev.description || built.description } : prev);
+                      setEditSteps(built.steps.map((s) => ({ ...s })));
+                      toast({ title: "Template carregado", description: `${built.steps.length} passo(s) preenchidos — ajuste à vontade.` });
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Escolha um modelo pronto (opcional)..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {TEMPLATES.map((t) => (
+                        <SelectItem key={t.key} value={t.key}>
+                          <div className="flex flex-col">
+                            <span className="font-medium">{t.label}</span>
+                            <span className="text-xs text-muted-foreground">{t.description}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
               {/* Meta */}
               <div className="grid gap-3">
                 <div className="space-y-1.5">
