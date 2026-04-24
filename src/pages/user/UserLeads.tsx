@@ -28,6 +28,7 @@ import {
 import { WhatsAppIcon } from "@/components/WhatsAppIcon";
 import { PageTutorial } from "@/components/PageTutorial";
 import { BulkImportDialog } from "@/components/BulkImportDialog";
+import { EnrollInCadenceDialog } from "@/components/EnrollInCadenceDialog";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { LeadStatusBadge, LeadStatus } from "@/components/LeadStatusBadge";
 import { LeadScoreBadge } from "@/components/LeadScoreBadge";
@@ -345,6 +346,12 @@ const UserLeads = () => {
               {scoring ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
               <span className="hidden sm:inline">{scoring ? "Classificando..." : "Score IA"}</span>
             </Button>
+            {license?.id && (
+              <EnrollInCadenceDialog
+                licenseId={license.id}
+                leadIds={filteredLeads.map((l) => l.id)}
+              />
+            )}
             <Button variant="destructive" size="sm" onClick={deleteAllLeads} disabled={leads.length === 0} className="min-w-0">
               <Trash2 className="h-4 w-4 sm:mr-1" />
               <span className="hidden sm:inline">Excluir Tudo</span>

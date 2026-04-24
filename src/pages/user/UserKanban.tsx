@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { useUserData, Lead } from "@/hooks/useUserData";
+import { EnrollInCadenceDialog } from "@/components/EnrollInCadenceDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { LEAD_STATUSES, LeadStatus } from "@/components/LeadStatusBadge";
@@ -27,7 +28,7 @@ const STALE_DAYS = 7; // Lead in non-"novo" status without update for N days = s
 
 const UserKanban = () => {
   const navigate = useNavigate();
-  const { leads, setLeads, loading } = useUserData();
+  const { leads, setLeads, loading, license } = useUserData();
   const { toast } = useToast();
   const [period, setPeriod] = useState<Period>("30");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
@@ -162,6 +163,13 @@ const UserKanban = () => {
                 ))}
               </SelectContent>
             </Select>
+          )}
+
+          {license?.id && (
+            <EnrollInCadenceDialog
+              licenseId={license.id}
+              leadIds={filteredLeads.map((l) => l.id)}
+            />
           )}
         </div>
       </div>
