@@ -60,7 +60,7 @@ import {
 import { WhatsAppIcon } from "@/components/WhatsAppIcon";
 import ExitIntentPopup from "@/components/ExitIntentPopup";
 import FloatingCTA from "@/components/FloatingCTA";
-import HeroProductMockup from "@/components/HeroProductMockup";
+import HeroProductMockup, { HeroMockupMobile } from "@/components/HeroProductMockup";
 import RoiCalculator from "@/components/RoiCalculator";
 import HowItWorks3Steps from "@/components/HowItWorks3Steps";
 import Features3DStack from "@/components/Features3DStack";
@@ -542,8 +542,12 @@ const LandingPage = () => {
             </motion.div>
           </motion.div>
 
-          {/* Product mockup — tablet (md) and up. On phones we keep the hero
-              tight (headline + CTAs) so the visitor reaches the action faster. */}
+          {/* Mobile: compact static mockup (single search screen, no cycling) */}
+          <div className="md:hidden flex items-center justify-center mt-6">
+            <HeroMockupMobile />
+          </div>
+
+          {/* Tablet/desktop: full interactive mockup with cycling 5 views */}
           <div className="hidden md:flex items-center justify-center lg:justify-end mt-8 lg:mt-0">
             <HeroProductMockup />
           </div>

@@ -791,3 +791,126 @@ function KanbanView() {
     </div>
   );
 }
+
+/* ════════════════════════════════════════════════════════════════════════
+   HeroMockupMobile — compact, single-screen variant for phones.
+   Shows the search results card animation only; no sidebar, no chrome,
+   no cycling. ~ half the visual weight of the full mockup.
+════════════════════════════════════════════════════════════════════════ */
+
+export function HeroMockupMobile() {
+  const ref = useRef<HTMLDivElement>(null);
+  const inView = useInView(ref, { once: true, margin: "-50px" });
+  const reduce = useReducedMotion();
+
+  const [visibleRows, setVisibleRows] = useState(reduce ? FAKE_LEADS.length : 0);
+  const [progress, setProgress] = useState(reduce ? 100 : 0);
+  const [done, setDone] = useState(reduce);
+
+  useEffect(() => {
+    if (!inView || reduce) return;
+    let i = 0;
+    const total = FAKE_LEADS.length;
+    const tick = setInterval(() => {
+      i += 1;
+      setVisibleRows(i);
+      setProgress(Math.round((i / total) * 100));
+      if (i >= total) {
+        clearInterval(tick);
+        setTimeout(() => setDone(true), 250);
+      }
+    }, 220);
+    return () => clearInterval(tick);
+  }, [inView, reduce]);
+
+  return (
+    <div ref={ref} className="relative w-full max-w-[380px] mx-auto">
+      <div
+        aria-hidden
+        className="absolute -inset-6 rounded-[28px] pointer-events-none"
+        style={{
+          background: "radial-gradient(60% 60% at 50% 50%, rgba(29,158,117,0.28), transparent 70%)",
+          filter: "blur(22px)",
+        }}
+      />
+
+      <motion.div
+        initial={reduce ? false : { opacity: 0, y: 16, scale: 0.97 }}
+        animate={inView ? { opacity: 1, y: 0, scale: 1 } : undefined}
+        transition={{ duration: 0.5 }}
+        className="relative rounded-2xl overflow-hidden border border-border bg-background shadow-2xl"
+      >
+        <div className="flex items-center gap-2 px-3 h-9 border-b border-border bg-card/80">
+          <img src={logoIcon} alt="LeadsPro" className="h-5 w-5" />
+          <span className="text-[11px] font-bold text-foreground">Buscar Leads</span>
+          <div className="ml-auto flex items-center gap-1 px-1.5 h-5 rounded border border-border bg-background">
+            <Coins className="h-2.5 w-2.5 text-primary" />
+            <span className="text-[9px] font-bold text-foreground tabular-nums">9.745</span>
+          </div>
+        </div>
+
+        <div className="p-3 space-y-2.5 dark">
+          <div className="flex items-center gap-2 px-2.5 h-9 rounded-md bg-muted/40 border border-border">
+            <Search className="h-3.5 w-3.5 text-primary" />
+            <span className="text-[11px] text-foreground/85 truncate flex-1">Dentista · São Paulo, SP</span>
+          </div>
+
+          <div className="space-y-1">
+            <div className="h-1 w-full rounded-full bg-muted overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-primary to-accent transition-all duration-200"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+            <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+              {!done ? (
+                <>
+                  <Loader2 className={`h-2.5 w-2.5 ${reduce ? "" : "animate-spin"}`} />
+                  {visibleRows}/{FAKE_LEADS.length} leads encontrados
+                </>
+              ) : (
+                <><CheckCircle2 className="h-2.5 w-2.5 text-primary" /> Salvos no CRM</>
+              )}
+            </p>
+          </div>
+
+          <div className="rounded-md border border-border overflow-hidden divide-y divide-border">
+            {FAKE_LEADS.slice(0, Math.min(visibleRows, 5)).map((lead, i) => (
+              <motion.div
+                key={i}
+                initial={reduce ? false : { opacity: 0, y: -3 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.2 }}
+                className="flex items-center gap-2 px-2 py-1.5"
+              >
+                <div className="h-7 w-7 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-[9px] font-bold text-primary-foreground shrink-0">
+                  {lead.name.split(" ").map((w) => w[0]).slice(0, 2).join("")}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[10px] font-semibold text-foreground truncate leading-tight">{lead.name}</p>
+                  <p className="text-[9px] text-primary font-mono truncate">{lead.phone}</p>
+                </div>
+                <div className="flex items-center gap-0.5 shrink-0">
+                  {lead.hasEmail && <Mail className="h-2.5 w-2.5 text-primary" />}
+                  {lead.hasInstagram && <Instagram className="h-2.5 w-2.5 text-primary" />}
+                  {lead.hasSite && <Globe className="h-2.5 w-2.5 text-primary" />}
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </motion.div>
+
+      <motion.div
+        initial={reduce ? false : { opacity: 0, scale: 0.85 }}
+        animate={inView ? { opacity: 1, scale: 1 } : undefined}
+        transition={{ delay: 0.6, duration: 0.4 }}
+        className="absolute -top-2 -right-2 flex items-center gap-1.5 px-2 py-1 rounded-lg bg-card border border-primary/30"
+        style={{ boxShadow: "0 8px 20px rgba(29,158,117,0.35)" }}
+      >
+        <Search className="h-3 w-3 text-primary" />
+        <span className="text-[9px] font-bold text-foreground">3s por lead</span>
+      </motion.div>
+    </div>
+  );
+}
