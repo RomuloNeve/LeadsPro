@@ -69,6 +69,8 @@ const UserAffiliate = () => {
   const [saving, setSaving] = useState(false);
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState("config");
+  /** Beginner mode: only Pro plan visible. Toggleable via "Avançado". */
+  const [advancedMode, setAdvancedMode] = useState(false);
 
   const [slug, setSlug] = useState("");
   const [starterLink, setStarterLink] = useState("");
@@ -91,6 +93,9 @@ const UserAffiliate = () => {
         setStarterLink(aff.starter_link || "");
         setProfissionalLink(aff.profissional_link || "");
         setEnterpriseLink(aff.enterprise_link || "");
+        // Auto-enable advanced mode for users that already configured the
+        // extra plans previously, so we don't visually drop their setup.
+        if (aff.starter_link || aff.enterprise_link) setAdvancedMode(true);
         setStep(2);
         setActiveTab("minha-url");
       }
@@ -204,8 +209,8 @@ const UserAffiliate = () => {
           <div className="grid sm:grid-cols-2 gap-3">
             {[
               { n: "1", t: "Crie sua conta na Cakto",     d: "Plataforma gratuita que processa as comissões. Leva 2 minutos." },
-              { n: "2", t: "Afilie-se aos 3 planos",      d: "Clique em \"Afiliar-se\" em cada plano abaixo (Starter, Pro e Enterprise)." },
-              { n: "3", t: "Cole seus links aqui",         d: "A Cakto te dá 3 links de checkout. Você cola eles aqui pra gerar sua URL única." },
+              { n: "2", t: "Afilie-se ao plano Pro",       d: "Um clique. É o plano mais vendido (R$59,10 de comissão por venda)." },
+              { n: "3", t: "Cole 1 link aqui",             d: "A Cakto te dá um link de checkout. Você cola aqui e geramos sua URL única." },
               { n: "4", t: "Compartilhe e receba",          d: "Divulgue sua URL. A cada compra, você ganha 30% recorrente todo mês." },
             ].map((s) => (
               <div key={s.n} className="flex gap-2.5 sm:gap-3 p-2.5 sm:p-3 rounded-lg border border-border bg-muted/30">
@@ -292,15 +297,21 @@ const UserAffiliate = () => {
                       B
                     </div>
                     <div className="min-w-0 flex-1">
-                      <h3 className="text-sm sm:text-base font-bold text-foreground">Afilie-se aos 3 planos</h3>
+                      <h3 className="text-sm sm:text-base font-bold text-foreground">
+                        {advancedMode ? "Afilie-se aos 3 planos" : "Afilie-se ao plano Pro"}
+                      </h3>
                       <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-                        <strong className="text-foreground">Clique nos 3 botões abaixo</strong> (um pra cada plano). Você não paga nada — só está se cadastrando como afiliado.
+                        {advancedMode ? (
+                          <>Clique nos 3 botões abaixo (um pra cada plano). Você não paga nada.</>
+                        ) : (
+                          <>Um clique é tudo. <strong className="text-foreground">Pro é o plano mais vendido</strong> — comissão de R$59,10 por cliente, todo mês.</>
+                        )}
                       </p>
                     </div>
                   </div>
 
                   <div className="grid gap-2.5">
-                    {AFFILIATE_PLANS.map((item) => (
+                    {(advancedMode ? AFFILIATE_PLANS : AFFILIATE_PLANS.filter((p) => p.plan === "Pro")).map((item) => (
                       <div
                         key={item.plan}
                         className={`relative rounded-xl border-2 ${item.border} p-3 sm:p-4`}
@@ -357,6 +368,18 @@ const UserAffiliate = () => {
                       <strong className="text-foreground">Exemplo:</strong> 10 clientes no plano Pro = <strong className="text-emerald-500 tabular-nums">R$ 591/mês</strong> recorrentes — todo mês, automático.
                     </p>
                   </div>
+
+                  {/* Advanced toggle */}
+                  <button
+                    onClick={() => setAdvancedMode((v) => !v)}
+                    className="w-full text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center justify-center gap-1.5 py-1"
+                  >
+                    {advancedMode ? (
+                      <>← Voltar pro modo simples (só Pro)</>
+                    ) : (
+                      <>+ Quero também Starter e Enterprise (avançado)</>
+                    )}
+                  </button>
                 </CardContent>
               </Card>
 
@@ -401,18 +424,17 @@ const UserAffiliate = () => {
                       <Link2 className="h-4 w-4" />
                     </div>
                     <div className="min-w-0">
-                      <h2 className="text-sm sm:text-base font-bold text-foreground">Cole seus links da Cakto</h2>
+                      <h2 className="text-sm sm:text-base font-bold text-foreground">
+                        {advancedMode ? "Cole seus links da Cakto" : "Cole seu link da Cakto"}
+                      </h2>
                       <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-                        Os 3 links exclusivos que você copiou em <strong className="text-foreground">"Minhas Afiliações"</strong> na Cakto.
+                        {advancedMode ? (
+                          <>Os links exclusivos que você copiou em <strong className="text-foreground">"Minhas Afiliações"</strong> na Cakto.</>
+                        ) : (
+                          <>O link exclusivo do <strong className="text-foreground">plano Pro</strong> que você copiou em <strong className="text-foreground">"Minhas Afiliações"</strong> na Cakto.</>
+                        )}
                       </p>
                     </div>
-                  </div>
-
-                  <div className="rounded-lg border border-amber-500/30 bg-amber-500/[0.04] p-2.5 flex items-start gap-2 text-xs">
-                    <Info className="h-3.5 w-3.5 text-amber-500 shrink-0 mt-0.5" />
-                    <span className="text-muted-foreground leading-relaxed">
-                      Não precisa colar todos. Pode começar com 1 ou 2 e atualizar depois.
-                    </span>
                   </div>
 
                   <div className="space-y-3">
@@ -431,11 +453,25 @@ const UserAffiliate = () => {
                       </p>
                     </div>
 
-                    {[
-                      { label: "Plano Starter", value: starterLink, set: setStarterLink, color: "text-blue-500" },
-                      { label: "Plano Pro", value: profissionalLink, set: setProfissionalLink, color: "text-primary" },
-                      { label: "Plano Enterprise", value: enterpriseLink, set: setEnterpriseLink, color: "text-amber-500" },
-                    ].map((field) => (
+                    {!advancedMode && (
+                      <div className="rounded-lg border border-primary/20 bg-primary/[0.04] p-2.5 flex items-start gap-2 text-xs">
+                        <Info className="h-3.5 w-3.5 text-primary shrink-0 mt-0.5" />
+                        <span className="text-muted-foreground leading-relaxed">
+                          Pro é responsável por 80%+ das vendas. Quem visitar seu link e comprar Pro, você ganha. Quem comprar Starter ou Enterprise, a venda acontece normalmente mas a comissão fica com o LeadsPro.
+                        </span>
+                      </div>
+                    )}
+
+                    {(advancedMode
+                      ? [
+                          { label: "Plano Starter", value: starterLink, set: setStarterLink, color: "text-blue-500" },
+                          { label: "Plano Pro", value: profissionalLink, set: setProfissionalLink, color: "text-primary" },
+                          { label: "Plano Enterprise", value: enterpriseLink, set: setEnterpriseLink, color: "text-amber-500" },
+                        ]
+                      : [
+                          { label: "Link de checkout — Plano Pro", value: profissionalLink, set: setProfissionalLink, color: "text-primary" },
+                        ]
+                    ).map((field) => (
                       <div key={field.label} className="space-y-1.5">
                         <label className={`text-xs sm:text-sm font-medium ${field.color}`}>
                           {field.label}
@@ -458,6 +494,17 @@ const UserAffiliate = () => {
                     {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Gift className="h-5 w-5" />}
                     {affiliate ? "Atualizar minha URL" : "Gerar minha URL"}
                   </Button>
+
+                  <button
+                    onClick={() => setAdvancedMode((v) => !v)}
+                    className="w-full text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center justify-center gap-1.5"
+                  >
+                    {advancedMode ? (
+                      <>← Voltar pro modo simples (só Pro)</>
+                    ) : (
+                      <>+ Adicionar links de Starter e Enterprise (avançado)</>
+                    )}
+                  </button>
                 </CardContent>
               </Card>
 
