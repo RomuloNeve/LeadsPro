@@ -56,7 +56,7 @@ export default function HowItWorks3Steps() {
   return (
     <div className="max-w-6xl mx-auto">
       {/* Step selector */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4 mb-8 sm:mb-10">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 sm:gap-4 mb-6 sm:mb-10">
         {STEPS.map((s, i) => {
           const Icon = s.icon;
           const isActive = active === s.key;
@@ -111,17 +111,17 @@ export default function HowItWorks3Steps() {
 
       {/* Active step detail */}
       <Card className="overflow-hidden border-primary/20 bg-gradient-to-br from-card via-card to-primary/[0.03]">
-        <CardContent className="p-5 sm:p-6 md:p-8">
-          <div className="grid lg:grid-cols-[1fr_1.2fr] gap-6 lg:gap-10 items-center">
+        <CardContent className="p-4 sm:p-6 md:p-8">
+          <div className="grid lg:grid-cols-[1fr_1.2fr] gap-5 lg:gap-10 items-center">
             {/* Description */}
             <div>
-              <Badge className="mb-3 bg-primary/10 text-primary hover:bg-primary/10 border-primary/30">
+              <Badge className="mb-2 sm:mb-3 bg-primary/10 text-primary hover:bg-primary/10 border-primary/30">
                 Passo {activeStep.number}
               </Badge>
-              <h3 className="text-2xl sm:text-3xl md:text-4xl font-bold font-display tracking-tight mb-3">
+              <h3 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold font-display tracking-tight mb-2 sm:mb-3">
                 {activeStep.title}
               </h3>
-              <p className="text-sm sm:text-base text-muted-foreground leading-relaxed mb-5">
+              <p className="text-sm sm:text-base text-muted-foreground leading-relaxed mb-4 sm:mb-5">
                 {activeStep.description}
               </p>
               <ul className="space-y-2">

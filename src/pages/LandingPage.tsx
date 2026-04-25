@@ -461,7 +461,7 @@ const LandingPage = () => {
       </nav>
 
       {/* ═══ HERO ═══ */}
-      <header className="relative min-h-[100dvh] flex items-center">
+      <header className="relative md:min-h-[100dvh] flex items-center">
         <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
           <img src={headerBg} alt="" className="absolute inset-0 w-full h-full object-cover object-top hidden lg:block opacity-30" fetchPriority="high" decoding="async" loading="eager" />
           <img src={headerBgMobile} alt="" className="absolute inset-0 w-full h-full object-cover object-center lg:hidden" fetchPriority="high" decoding="async" loading="eager" />
@@ -542,8 +542,9 @@ const LandingPage = () => {
             </motion.div>
           </motion.div>
 
-          {/* Product mockup (right column on lg+, stacks below on mobile/tablet) */}
-          <div className="flex items-center justify-center lg:justify-end mt-8 lg:mt-0">
+          {/* Product mockup — tablet (md) and up. On phones we keep the hero
+              tight (headline + CTAs) so the visitor reaches the action faster. */}
+          <div className="hidden md:flex items-center justify-center lg:justify-end mt-8 lg:mt-0">
             <HeroProductMockup />
           </div>
           </div>
@@ -715,7 +716,7 @@ const LandingPage = () => {
           {testimonials.map((t, i) => (
             <motion.article
               key={t.name}
-              className="p-6 rounded-2xl border border-border/60 bg-card card-shadow flex flex-col"
+              className="p-4 sm:p-6 rounded-2xl border border-border/60 bg-card card-shadow flex flex-col"
               initial={{ opacity: 0, y: 16 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
@@ -888,7 +889,7 @@ const LandingPage = () => {
             {/* Free Trial - hidden for affiliate URLs */}
             {!isAffiliateRef && (
               <motion.div
-                className="p-6 rounded-2xl border border-border/60 bg-card card-shadow flex flex-col"
+                className="p-4 sm:p-6 rounded-2xl border border-border/60 bg-card card-shadow flex flex-col"
                 initial={{ opacity: 0, y: 30, scale: 0.96 }}
                 whileInView={{ opacity: 1, y: 0, scale: 1 }}
                 viewport={{ once: true }}
@@ -928,7 +929,7 @@ const LandingPage = () => {
 
             {/* Starter */}
             <motion.div
-              className="p-6 rounded-2xl border border-border/60 bg-card card-shadow flex flex-col"
+              className="p-4 sm:p-6 rounded-2xl border border-border/60 bg-card card-shadow flex flex-col"
               initial={{ opacity: 0, y: 30, scale: 0.96 }}
               whileInView={{ opacity: 1, y: 0, scale: 1 }}
               viewport={{ once: true }}
@@ -968,7 +969,7 @@ const LandingPage = () => {
 
             {/* Pro — Most popular */}
             <motion.div
-              className="p-6 rounded-2xl border-2 border-primary bg-card card-shadow flex flex-col relative overflow-visible"
+              className="p-4 sm:p-6 rounded-2xl border-2 border-primary bg-card card-shadow flex flex-col relative overflow-visible"
               initial={{ opacity: 0, y: 30, scale: 0.96 }}
               whileInView={{ opacity: 1, y: 0, scale: 1 }}
               viewport={{ once: true }}
@@ -1015,7 +1016,7 @@ const LandingPage = () => {
 
             {/* Enterprise */}
             <motion.div
-              className="p-6 rounded-2xl border border-border/60 bg-card card-shadow flex flex-col"
+              className="p-4 sm:p-6 rounded-2xl border border-border/60 bg-card card-shadow flex flex-col"
               initial={{ opacity: 0, y: 30, scale: 0.96 }}
               whileInView={{ opacity: 1, y: 0, scale: 1 }}
               viewport={{ once: true }}
@@ -1140,7 +1141,7 @@ const LandingPage = () => {
             ].map((item, i) => (
               <motion.div
                 key={item.title}
-                className="p-6 rounded-2xl border border-border/60 bg-card card-shadow"
+                className="p-4 sm:p-6 rounded-2xl border border-border/60 bg-card card-shadow"
                 initial={{ opacity: 0, y: 12 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}

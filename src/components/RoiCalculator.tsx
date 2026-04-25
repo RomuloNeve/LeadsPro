@@ -88,7 +88,7 @@ export default function RoiCalculator({ onCta }: Props) {
   return (
     <div ref={ref} className="max-w-5xl mx-auto">
       <Card className="overflow-hidden border-primary/20 bg-gradient-to-br from-card via-card to-primary/[0.04] card-shadow">
-        <CardContent className="p-5 sm:p-8 lg:p-10">
+        <CardContent className="p-4 sm:p-6 md:p-8 lg:p-10">
           {/* Header */}
           <div className="flex flex-col items-center text-center mb-6 sm:mb-8">
             <Badge className="mb-3 bg-destructive/15 text-destructive hover:bg-destructive/15 border-destructive/30">
@@ -138,20 +138,20 @@ export default function RoiCalculator({ onCta }: Props) {
               />
 
               {/* Comparison row */}
-              <div className="grid grid-cols-2 gap-3 pt-2">
-                <div className="rounded-xl border border-destructive/20 bg-destructive/[0.04] p-3">
-                  <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-0.5">Sua receita hoje</p>
-                  <p className="text-lg sm:text-xl font-bold font-display text-destructive tabular-nums">
+              <div className="grid grid-cols-2 gap-2 sm:gap-3 pt-2">
+                <div className="rounded-xl border border-destructive/20 bg-destructive/[0.04] p-2.5 sm:p-3">
+                  <p className="text-[10px] sm:text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-0.5 truncate">Receita hoje</p>
+                  <p className="text-base sm:text-xl font-bold font-display text-destructive tabular-nums break-all">
                     {formatBRL(animatedCurrent)}
                   </p>
-                  <p className="text-[10px] text-muted-foreground mt-0.5">por mês</p>
+                  <p className="text-[9px] sm:text-[10px] text-muted-foreground mt-0.5">por mês</p>
                 </div>
-                <div className="rounded-xl border border-primary/30 bg-primary/[0.06] p-3">
-                  <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-0.5">Com LeadsPro</p>
-                  <p className="text-lg sm:text-xl font-bold font-display text-primary tabular-nums">
+                <div className="rounded-xl border border-primary/30 bg-primary/[0.06] p-2.5 sm:p-3">
+                  <p className="text-[10px] sm:text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-0.5 truncate">Com LeadsPro</p>
+                  <p className="text-base sm:text-xl font-bold font-display text-primary tabular-nums break-all">
                     {formatBRL(animatedPro)}
                   </p>
-                  <p className="text-[10px] text-muted-foreground mt-0.5">por mês</p>
+                  <p className="text-[9px] sm:text-[10px] text-muted-foreground mt-0.5">por mês</p>
                 </div>
               </div>
             </div>
@@ -161,7 +161,7 @@ export default function RoiCalculator({ onCta }: Props) {
               initial={{ opacity: 0, x: 16 }}
               animate={inView ? { opacity: 1, x: 0 } : undefined}
               transition={{ duration: 0.5, delay: 0.2 }}
-              className="rounded-2xl border-2 border-primary/30 bg-gradient-to-br from-primary/[0.06] via-card to-card p-5 sm:p-6 relative overflow-hidden"
+              className="rounded-2xl border-2 border-primary/30 bg-gradient-to-br from-primary/[0.06] via-card to-card p-4 sm:p-5 md:p-6 relative overflow-hidden"
             >
               <div
                 aria-hidden
@@ -178,7 +178,7 @@ export default function RoiCalculator({ onCta }: Props) {
                 </div>
 
                 <div>
-                  <p className="text-3xl sm:text-4xl md:text-5xl font-bold font-display gradient-text tabular-nums leading-none">
+                  <p className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold font-display gradient-text tabular-nums leading-none break-all">
                     {formatBRL(animatedTotal)}
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">por mês — todo mês</p>
