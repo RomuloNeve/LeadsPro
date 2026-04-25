@@ -343,29 +343,61 @@ const UserAffiliate = () => {
                             Afiliar-se <ExternalLink className="h-3 w-3" />
                           </Button>
                         </div>
-                        <div className="mt-2.5 sm:mt-3 pt-2.5 sm:pt-3 border-t border-border/50 grid grid-cols-2 gap-2">
-                          <div>
-                            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Você ganha</p>
-                            <p className={`text-sm sm:text-base font-bold ${item.color} tabular-nums`}>
-                              {item.youEarn}<span className="text-[10px] text-muted-foreground font-normal">/mês</span>
+                        <div className="mt-2.5 sm:mt-3 pt-2.5 sm:pt-3 border-t border-border/50 space-y-2">
+                          <div className="flex items-center justify-between gap-2">
+                            <p className="text-[11px] sm:text-xs text-muted-foreground">
+                              Por cada cliente que indicar:
+                            </p>
+                            <p className={`text-base sm:text-lg font-bold ${item.color} tabular-nums leading-none`}>
+                              {item.youEarn}
+                              <span className="text-[10px] text-muted-foreground font-normal ml-1">/mês recorrente</span>
                             </p>
                           </div>
-                          <div>
-                            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Por ano</p>
-                            <p className="text-sm sm:text-base font-bold text-foreground tabular-nums">
-                              {item.youEarnAnnual}<span className="text-[10px] text-muted-foreground font-normal">/cliente</span>
-                            </p>
+                          <div className="rounded-md bg-emerald-500/[0.06] border border-emerald-500/20 px-2 py-1.5 text-[11px] sm:text-xs text-muted-foreground">
+                            <strong className="text-emerald-500 tabular-nums">{item.youEarnAnnual}</strong> nos primeiros 12 meses por cliente — depois continua todo mês enquanto ele estiver ativo.
                           </div>
                         </div>
                       </div>
                     ))}
                   </div>
 
-                  {/* Earnings example */}
-                  <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/[0.04] p-3 flex items-start gap-2.5">
-                    <DollarSign className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
-                    <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-                      <strong className="text-foreground">Exemplo:</strong> 10 clientes no plano Pro = <strong className="text-emerald-500 tabular-nums">R$ 591/mês</strong> recorrentes — todo mês, automático.
+                  {/* Earnings projection — Pro plan */}
+                  <div className="rounded-xl border-2 border-emerald-500/40 bg-emerald-500/[0.04] p-3 sm:p-4 space-y-3">
+                    <div className="flex items-center gap-2">
+                      <DollarSign className="h-4 w-4 text-emerald-500" />
+                      <p className="text-xs sm:text-sm font-bold text-foreground">
+                        Quanto você pode ganhar com o plano Pro
+                      </p>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      {[
+                        { clients: 5,  monthly: 295.50,   yearly: 3546   },
+                        { clients: 10, monthly: 591,      yearly: 7092,  highlight: true },
+                        { clients: 20, monthly: 1182,     yearly: 14184  },
+                      ].map((tier) => (
+                        <div
+                          key={tier.clients}
+                          className={`rounded-lg p-2 sm:p-2.5 text-center ${
+                            tier.highlight
+                              ? "border-2 border-emerald-500/60 bg-emerald-500/[0.08]"
+                              : "border border-border bg-background/40"
+                          }`}
+                        >
+                          <p className="text-[10px] sm:text-xs text-muted-foreground">
+                            {tier.clients} clientes
+                          </p>
+                          <p className={`text-sm sm:text-base font-bold tabular-nums leading-tight ${tier.highlight ? "text-emerald-500" : "text-foreground"}`}>
+                            R$ {tier.monthly.toLocaleString("pt-BR", { minimumFractionDigits: tier.monthly % 1 ? 2 : 0 })}
+                          </p>
+                          <p className="text-[9px] sm:text-[10px] text-muted-foreground">/mês</p>
+                          <p className="text-[10px] sm:text-xs text-emerald-500 tabular-nums mt-1 font-semibold">
+                            R$ {tier.yearly.toLocaleString("pt-BR")}/ano
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                    <p className="text-[10px] sm:text-xs text-muted-foreground leading-relaxed text-center">
+                      💡 É renda passiva: enquanto seu indicado pagar a mensalidade, você recebe — sem trabalho extra.
                     </p>
                   </div>
 
