@@ -1,5 +1,5 @@
 import { useRef } from "react";
-import { motion, useScroll, useTransform, useReducedMotion, useMotionValueEvent, useMotionValue, useSpring } from "framer-motion";
+import { motion, useScroll, useTransform, useReducedMotion, useMotionValueEvent, useMotionValue, useSpring, AnimatePresence } from "framer-motion";
 import { useState } from "react";
 import {
   ArrowLeft, Phone, Video, MoreVertical, Smile, Paperclip, Mic, Send,
@@ -86,7 +86,8 @@ export default function ScrollPhoneStory() {
 
   // Base isometric tilt (-12° Y, 6° X) + cursor parallax (±10°) +
   // subtle scroll sweep (-4° to +4°)
-  const scrollSweep = useTransform(scrollYProgress, [0, 1], reduce ? [0, 0] : [-4, 4]);
+  // More dramatic per-scene tilt — visibly reorients with scroll
+  const scrollSweep = useTransform(scrollYProgress, [0, 1], reduce ? [0, 0] : [-18, 18]);
   const phoneRotateY = useTransform(
     () => -12 + scrollSweep.get() + sx.get() * 12 // -12° base + scroll sweep + cursor
   );
@@ -120,7 +121,8 @@ export default function ScrollPhoneStory() {
             <SceneText activeScene={activeScene} />
 
             {/* Center: phone with full 3D — perspective lives on the parent */}
-            <div className="flex justify-center" style={{ perspective: "1800px", perspectiveOrigin: "50% 50%" }}>
+            <div className="relative flex justify-center" style={{ perspective: "1800px", perspectiveOrigin: "50% 50%" }}>
+              <AmbientParticles sx={sx} sy={sy} />
               <motion.div
                 style={{
                   rotateY: phoneRotateY,
@@ -214,10 +216,12 @@ function Phone3D({
 
   return (
     <div className="relative" style={{ width: W, height: H, transformStyle: "preserve-3d" }}>
-      {/* Ambient glow — sits flat behind the phone */}
-      <div
+      {/* Ambient glow — pulses slowly to suggest "live" device */}
+      <motion.div
         aria-hidden
         className="absolute -inset-16 pointer-events-none"
+        animate={{ opacity: [0.65, 1, 0.65], scale: [1, 1.05, 1] }}
+        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
         style={{
           background: "radial-gradient(60% 60% at 50% 50%, rgba(29,158,117,0.38), transparent 70%)",
           filter: "blur(50px)",
@@ -460,20 +464,32 @@ function FloatingNotification({ activeScene }: { activeScene: number }) {
 
 function PhoneScreen({ activeScene }: { activeScene: number }) {
   return (
-    <motion.div
-      key={activeScene}
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.4 }}
-      className="h-full w-full flex flex-col"
-      style={{ background: "#0a1210" }}
-    >
-      {activeScene === 0 && <Scene1Capture />}
-      {activeScene === 1 && <Scene2FirstMessage />}
-      {activeScene === 2 && <Scene3Cadence />}
-      {activeScene === 3 && <Scene4Reply />}
-      {activeScene === 4 && <Scene5Closed />}
-    </motion.div>
+    <div className="relative h-full w-full" style={{ perspective: "1000px" }}>
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={activeScene}
+          // 3D card-flip: incoming scene rotates in from the right (Y-axis),
+          // outgoing rotates out to the left. Gives the impression of the
+          // phone "swiping" through screens rather than fading.
+          initial={{ opacity: 0, rotateY: 35, scale: 0.92, z: -100 }}
+          animate={{ opacity: 1, rotateY: 0,  scale: 1,    z: 0    }}
+          exit={{    opacity: 0, rotateY: -35, scale: 0.92, z: -100 }}
+          transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1] }}
+          className="absolute inset-0 h-full w-full flex flex-col"
+          style={{
+            background: "#0a1210",
+            transformStyle: "preserve-3d",
+            transformOrigin: "center center",
+          }}
+        >
+          {activeScene === 0 && <Scene1Capture />}
+          {activeScene === 1 && <Scene2FirstMessage />}
+          {activeScene === 2 && <Scene3Cadence />}
+          {activeScene === 3 && <Scene4Reply />}
+          {activeScene === 4 && <Scene5Closed />}
+        </motion.div>
+      </AnimatePresence>
+    </div>
   );
 }
 
@@ -769,6 +785,81 @@ function Scene5Closed() {
         </div>
       </motion.div>
     </div>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════════
+   Ambient floating particles in 3D space behind the phone
+═══════════════════════════════════════════════════════════════ */
+
+interface ParticleSpec {
+  x: number;       // px from center
+  y: number;       // px from center
+  z: number;       // depth (translateZ)
+  size: number;    // diameter px
+  duration: number;// breathing cycle seconds
+  delay: number;
+  hue: string;
+}
+
+const PARTICLES: ParticleSpec[] = [
+  { x: -180, y: -160, z: -120, size: 5, duration: 5.5, delay: 0,   hue: "rgba(93,202,165,0.7)" },
+  { x:  220, y: -120, z:  -60, size: 4, duration: 6.0, delay: 0.8, hue: "rgba(29,158,117,0.6)" },
+  { x: -240, y:   60, z: -200, size: 6, duration: 7.0, delay: 0.3, hue: "rgba(93,202,165,0.4)" },
+  { x:  260, y:  100, z: -160, size: 5, duration: 6.5, delay: 1.2, hue: "rgba(29,158,117,0.5)" },
+  { x: -160, y:  240, z:  -40, size: 3, duration: 5.0, delay: 0.5, hue: "rgba(93,202,165,0.7)" },
+  { x:  200, y:  260, z: -100, size: 4, duration: 6.8, delay: 1.5, hue: "rgba(29,158,117,0.5)" },
+  { x:    0, y: -260, z: -140, size: 4, duration: 5.8, delay: 2.0, hue: "rgba(93,202,165,0.5)" },
+  { x:    0, y:  280, z: -180, size: 5, duration: 6.2, delay: 0.9, hue: "rgba(29,158,117,0.4)" },
+];
+
+function AmbientParticles({ sx, sy }: { sx: ReturnType<typeof useSpring>; sy: ReturnType<typeof useSpring> }) {
+  return (
+    <div
+      aria-hidden
+      className="absolute inset-0 pointer-events-none"
+      style={{ transformStyle: "preserve-3d" }}
+    >
+      {PARTICLES.map((p, i) => (
+        <Particle key={i} spec={p} sx={sx} sy={sy} />
+      ))}
+    </div>
+  );
+}
+
+function Particle({ spec, sx, sy }: { spec: ParticleSpec; sx: ReturnType<typeof useSpring>; sy: ReturnType<typeof useSpring> }) {
+  // Each particle drifts a bit with the cursor, scaled by its depth
+  // so far ones move less than near ones (real parallax).
+  const intensity = (300 + spec.z) / 300; // closer = more move
+  const dx = useTransform(sx, (v) => v * 24 * intensity);
+  const dy = useTransform(sy, (v) => v * 18 * intensity);
+
+  return (
+    <motion.div
+      className="absolute left-1/2 top-1/2 rounded-full"
+      style={{
+        x: dx,
+        y: dy,
+        width: spec.size,
+        height: spec.size,
+        translateX: spec.x,
+        translateY: spec.y,
+        transform: `translateZ(${spec.z}px)`,
+        background: spec.hue,
+        boxShadow: `0 0 ${spec.size * 4}px ${spec.hue}`,
+        filter: spec.z < -120 ? "blur(1.5px)" : undefined,
+      }}
+      animate={{
+        opacity: [0.3, 1, 0.3],
+        scale: [1, 1.4, 1],
+      }}
+      transition={{
+        duration: spec.duration,
+        delay: spec.delay,
+        repeat: Infinity,
+        ease: "easeInOut",
+      }}
+    />
   );
 }
 
