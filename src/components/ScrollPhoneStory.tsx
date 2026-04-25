@@ -1,9 +1,9 @@
 import { useRef } from "react";
-import { motion, useScroll, useTransform, useReducedMotion, useMotionValueEvent } from "framer-motion";
+import { motion, useScroll, useTransform, useReducedMotion, useMotionValueEvent, useMotionValue, useSpring } from "framer-motion";
 import { useState } from "react";
 import {
   ArrowLeft, Phone, Video, MoreVertical, Smile, Paperclip, Mic, Send,
-  CheckCheck, Search, Users, Calendar, DollarSign, TrendingUp,
+  CheckCheck, Search, Users, Calendar, DollarSign, TrendingUp, Bell,
 } from "lucide-react";
 
 /**
@@ -68,14 +68,33 @@ export default function ScrollPhoneStory() {
     setActiveScene(idx);
   });
 
-  // Phone hover-tilt (combined with subtle scroll-driven rotation)
-  const phoneRotateY = useTransform(scrollYProgress, [0, 0.5, 1], reduce ? [0, 0, 0] : [-6, 0, 6]);
+  // ─── Cursor parallax ──────────────────────────────────────────────
+  // The phone always sits at a base isometric tilt; the cursor adds extra
+  // rotation on top so it really feels like a 3D object you're moving around.
+  const mx = useMotionValue(0); // -1 to 1
+  const my = useMotionValue(0);
+  const sx = useSpring(mx, { stiffness: 80, damping: 20, mass: 0.6 });
+  const sy = useSpring(my, { stiffness: 80, damping: 20, mass: 0.6 });
 
-  // Mobile / reduced-motion: render flat narrative
+  const onMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (reduce) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    mx.set(((e.clientX - rect.left) / rect.width - 0.5) * 2);
+    my.set(((e.clientY - rect.top) / rect.height - 0.5) * 2);
+  };
+  const onLeave = () => { mx.set(0); my.set(0); };
+
+  // Base isometric tilt (-12° Y, 6° X) + cursor parallax (±10°) +
+  // subtle scroll sweep (-4° to +4°)
+  const scrollSweep = useTransform(scrollYProgress, [0, 1], reduce ? [0, 0] : [-4, 4]);
+  const phoneRotateY = useTransform(
+    () => -12 + scrollSweep.get() + sx.get() * 12 // -12° base + scroll sweep + cursor
+  );
+  const phoneRotateX = useTransform(() => 6 + sy.get() * -8); // 6° base + cursor
+
+  // Reduced motion: render flat narrative
   if (reduce) {
-    return (
-      <FlatNarrative />
-    );
+    return <FlatNarrative />;
   }
 
   return (
@@ -91,24 +110,30 @@ export default function ScrollPhoneStory() {
         className="hidden md:block relative"
         style={{ height: "420vh" }}
       >
-        <div className="sticky top-0 h-screen flex items-center justify-center overflow-hidden">
+        <div
+          className="sticky top-0 h-screen flex items-center justify-center overflow-hidden"
+          onMouseMove={onMove}
+          onMouseLeave={onLeave}
+        >
           <div className="container mx-auto px-6 lg:px-8 grid lg:grid-cols-[1fr_auto_1fr] gap-8 lg:gap-16 items-center">
             {/* Left: scene narration */}
             <SceneText activeScene={activeScene} />
 
-            {/* Center: phone */}
-            <div className="flex justify-center" style={{ perspective: "1400px" }}>
+            {/* Center: phone with full 3D — perspective lives on the parent */}
+            <div className="flex justify-center" style={{ perspective: "1800px", perspectiveOrigin: "50% 50%" }}>
               <motion.div
                 style={{
                   rotateY: phoneRotateY,
+                  rotateX: phoneRotateX,
                   transformStyle: "preserve-3d",
+                  transformOrigin: "center center",
                 }}
               >
-                <Phone3D activeScene={activeScene} />
+                <Phone3D activeScene={activeScene} sx={sx} sy={sy} />
               </motion.div>
             </div>
 
-            {/* Right: scene progress dots + visual cue */}
+            {/* Right: scene progress dots */}
             <div className="hidden lg:flex flex-col gap-3 items-start">
               {SCENES.map((s, i) => (
                 <div
@@ -167,57 +192,265 @@ function SceneText({ activeScene }: { activeScene: number }) {
    Phone 3D
 ═══════════════════════════════════════════════════════════════ */
 
-function Phone3D({ activeScene }: { activeScene: number }) {
+function Phone3D({
+  activeScene, sx, sy,
+}: {
+  activeScene: number;
+  sx: ReturnType<typeof useSpring>;
+  sy: ReturnType<typeof useSpring>;
+}) {
+  // Glossy highlight gradient — moves with cursor for "real glass" effect
+  const sheen = useTransform(
+    () => `radial-gradient(circle at ${50 + sx.get() * 35}% ${30 + sy.get() * 20}%, rgba(255,255,255,0.18), transparent 35%)`
+  );
+
+  // Floating notification card behind the phone — drifts slightly with cursor
+  const floatX = useTransform(sx, (v) => v * 16);
+  const floatY = useTransform(sy, (v) => v * 12);
+
+  const W = 320; // phone width
+  const H = 640; // phone height
+  const D = 28;  // phone thickness (depth)
+
   return (
-    <div
-      className="relative"
-      style={{
-        width: 300,
-        height: 600,
-      }}
-    >
-      {/* Glow */}
+    <div className="relative" style={{ width: W, height: H, transformStyle: "preserve-3d" }}>
+      {/* Ambient glow — sits flat behind the phone */}
       <div
         aria-hidden
-        className="absolute -inset-12 rounded-[64px] pointer-events-none"
+        className="absolute -inset-16 pointer-events-none"
         style={{
-          background: "radial-gradient(60% 60% at 50% 50%, rgba(29,158,117,0.32), transparent 70%)",
-          filter: "blur(40px)",
+          background: "radial-gradient(60% 60% at 50% 50%, rgba(29,158,117,0.38), transparent 70%)",
+          filter: "blur(50px)",
+          transform: `translateZ(-${D * 2}px)`,
         }}
       />
 
-      {/* Phone body */}
+      {/* ─── BACK FACE (deep) ─── */}
       <div
-        className="relative w-full h-full rounded-[44px] p-[10px]"
+        aria-hidden
+        className="absolute inset-0 rounded-[46px]"
         style={{
-          background: "linear-gradient(145deg, #1a1a1c, #0a0a0b)",
-          boxShadow:
-            "0 40px 80px rgba(0,0,0,0.6), 0 0 0 2px rgba(255,255,255,0.04) inset, 0 0 0 8px rgba(0,0,0,0.6)",
+          transform: `translateZ(-${D}px)`,
+          background: "linear-gradient(135deg, #1c1c1e 0%, #0a0a0b 60%, #050505 100%)",
+          boxShadow: "inset 0 0 60px rgba(0,0,0,0.8)",
+        }}
+      >
+        {/* Camera bump on the back */}
+        <div
+          className="absolute top-6 left-6 h-16 w-16 rounded-2xl"
+          style={{
+            background: "linear-gradient(135deg, #2a2a2c, #050505)",
+            boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05), 0 4px 12px rgba(0,0,0,0.6)",
+          }}
+        >
+          <div className="absolute top-2 left-2 h-5 w-5 rounded-full bg-black ring-2 ring-zinc-700">
+            <div className="absolute inset-1 rounded-full bg-zinc-900 ring-1 ring-primary/20" />
+          </div>
+          <div className="absolute top-2 right-2 h-5 w-5 rounded-full bg-black ring-2 ring-zinc-700">
+            <div className="absolute inset-1 rounded-full bg-zinc-900 ring-1 ring-primary/20" />
+          </div>
+          <div className="absolute bottom-2 left-2 h-5 w-5 rounded-full bg-black ring-2 ring-zinc-700">
+            <div className="absolute inset-1 rounded-full bg-zinc-900" />
+          </div>
+        </div>
+      </div>
+
+      {/* ─── RIGHT SIDE (volume buttons) ─── */}
+      <div
+        aria-hidden
+        className="absolute top-0 right-0 h-full"
+        style={{
+          width: D,
+          transform: `rotateY(90deg) translateZ(${W / 2 - D / 2}px)`,
+          transformOrigin: "right center",
+          background: "linear-gradient(90deg, #050505 0%, #1c1c1e 50%, #050505 100%)",
+        }}
+      >
+        {/* Power button */}
+        <div className="absolute top-[140px] right-0 h-16 w-1 rounded-l bg-zinc-700/60" style={{ transform: "translateX(0)" }} />
+      </div>
+
+      {/* ─── LEFT SIDE (volume buttons) ─── */}
+      <div
+        aria-hidden
+        className="absolute top-0 left-0 h-full"
+        style={{
+          width: D,
+          transform: `rotateY(-90deg) translateZ(${W / 2 - D / 2}px)`,
+          transformOrigin: "left center",
+          background: "linear-gradient(90deg, #050505 0%, #1c1c1e 50%, #050505 100%)",
+        }}
+      >
+        <div className="absolute top-[120px] left-0 h-9 w-1 rounded-r bg-zinc-700/60" />
+        <div className="absolute top-[170px] left-0 h-12 w-1 rounded-r bg-zinc-700/60" />
+        <div className="absolute top-[200px] left-0 h-12 w-1 rounded-r bg-zinc-700/60" style={{ top: 215 }} />
+      </div>
+
+      {/* ─── TOP EDGE ─── */}
+      <div
+        aria-hidden
+        className="absolute top-0 left-0 w-full"
+        style={{
+          height: D,
+          transform: `rotateX(90deg) translateZ(${D / 2}px)`,
+          transformOrigin: "center top",
+          background: "linear-gradient(180deg, #1c1c1e 0%, #050505 100%)",
+        }}
+      />
+
+      {/* ─── BOTTOM EDGE ─── */}
+      <div
+        aria-hidden
+        className="absolute bottom-0 left-0 w-full"
+        style={{
+          height: D,
+          transform: `rotateX(-90deg) translateZ(${D / 2}px)`,
+          transformOrigin: "center bottom",
+          background: "linear-gradient(0deg, #1c1c1e 0%, #050505 100%)",
+        }}
+      />
+
+      {/* ─── FRONT FACE (the actual phone face with screen) ─── */}
+      <div
+        className="absolute inset-0 rounded-[46px] p-[10px]"
+        style={{
+          transform: `translateZ(0px)`,
+          background: "linear-gradient(145deg, #2a2a2c 0%, #1a1a1c 35%, #0a0a0b 100%)",
+          boxShadow: `
+            0 40px 80px rgba(0,0,0,0.55),
+            0 0 0 1.5px rgba(255,255,255,0.06) inset,
+            0 0 0 4px rgba(0,0,0,0.7)
+          `,
         }}
       >
         {/* Screen */}
-        <div className="relative w-full h-full rounded-[36px] overflow-hidden bg-black">
+        <div className="relative w-full h-full rounded-[38px] overflow-hidden bg-black">
           {/* Notch / dynamic island */}
           <div
             aria-hidden
-            className="absolute top-1.5 left-1/2 -translate-x-1/2 z-30 h-6 w-24 rounded-full bg-black"
-          />
+            className="absolute top-2 left-1/2 -translate-x-1/2 z-40 h-7 w-28 rounded-full bg-black"
+            style={{ boxShadow: "0 2px 6px rgba(0,0,0,0.8) inset" }}
+          >
+            {/* Camera dot */}
+            <div className="absolute top-1.5 right-3 h-3 w-3 rounded-full bg-zinc-900 ring-1 ring-zinc-800">
+              <div className="absolute inset-0.5 rounded-full bg-black">
+                <div className="absolute top-0.5 left-0.5 h-1 w-1 rounded-full bg-primary/60" />
+              </div>
+            </div>
+          </div>
+
           {/* Status bar */}
-          <div className="absolute top-0 left-0 right-0 z-20 h-9 px-6 flex items-center justify-between text-[10px] font-semibold text-white">
+          <div className="absolute top-0 left-0 right-0 z-30 h-10 px-7 flex items-center justify-between text-[10px] font-semibold text-white">
             <span className="tabular-nums">9:41</span>
-            <span className="opacity-80">●●● 5G</span>
+            <span className="opacity-80 flex items-center gap-1">
+              <span className="text-[8px]">●●●</span>
+              <span className="text-[9px]">5G</span>
+              <span className="ml-0.5 inline-block w-4 h-2 rounded-sm border border-white/60 relative">
+                <span className="absolute inset-0.5 bg-white rounded-[1px]" />
+              </span>
+            </span>
           </div>
 
           {/* Screen content */}
-          <div className="absolute inset-0 pt-9 dark">
+          <div className="absolute inset-0 pt-10 dark">
             <PhoneScreen activeScene={activeScene} />
           </div>
 
           {/* Home indicator */}
-          <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 h-1 w-24 rounded-full bg-white/30" />
+          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 z-30 h-1 w-28 rounded-full bg-white/30" />
+
+          {/* ── GLOSSY SHEEN (moves with cursor) ── */}
+          <motion.div
+            aria-hidden
+            className="absolute inset-0 z-50 pointer-events-none rounded-[38px] mix-blend-screen"
+            style={{ background: sheen }}
+          />
+
+          {/* ── Edge highlight on the right (catches light when tilted) ── */}
+          <div
+            aria-hidden
+            className="absolute inset-y-0 right-0 w-px z-40 pointer-events-none"
+            style={{
+              background: "linear-gradient(180deg, transparent, rgba(255,255,255,0.18) 30%, rgba(255,255,255,0.18) 70%, transparent)",
+            }}
+          />
         </div>
       </div>
+
+      {/* ─── FLOATING NOTIFICATION CARD (behind the phone, popping out) ─── */}
+      <motion.div
+        style={{
+          x: floatX,
+          y: floatY,
+          transform: `translateZ(80px)`,
+          transformStyle: "preserve-3d",
+        }}
+        className="absolute"
+      >
+        <FloatingNotification activeScene={activeScene} />
+      </motion.div>
+
+      {/* ─── REFLECTION on the floor below the phone ─── */}
+      <div
+        aria-hidden
+        className="absolute left-1/2 -translate-x-1/2 pointer-events-none"
+        style={{
+          top: "100%",
+          width: W * 0.85,
+          height: 120,
+          marginTop: 8,
+          background: "radial-gradient(ellipse at center top, rgba(29,158,117,0.16), transparent 70%)",
+          filter: "blur(20px)",
+          transform: "rotateX(75deg) translateZ(-30px)",
+          transformOrigin: "top center",
+          opacity: 0.7,
+        }}
+      />
     </div>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════════
+   Floating notification — sits behind/above the phone in 3D space,
+   contextual to the active scene.
+═══════════════════════════════════════════════════════════════ */
+
+function FloatingNotification({ activeScene }: { activeScene: number }) {
+  const cards = [
+    { icon: <Search className="h-3 w-3" />,        title: "8 leads novos",       sub: "Dentistas em SP",     pos: { top: -20,  right: -110 } },
+    { icon: <Send className="h-3 w-3" />,          title: "Mensagem enviada",    sub: "(11) 9••••-7890",    pos: { top: 120,  right: -130 } },
+    { icon: <Calendar className="h-3 w-3" />,      title: "Cadência ativa",      sub: "3/4 enviadas",       pos: { top: -10,  left: -130  } },
+    { icon: <Bell className="h-3 w-3" />,          title: "Lead respondeu",      sub: "Movido para Quentes", pos: { top: 240, right: -150 } },
+    { icon: <DollarSign className="h-3 w-3" />,    title: "Negócio fechado",     sub: "R$ 4.800",           pos: { top: -10,  right: -120 } },
+  ];
+  const c = cards[activeScene];
+
+  return (
+    <motion.div
+      key={activeScene}
+      initial={{ opacity: 0, scale: 0.7, rotate: -8 }}
+      animate={{ opacity: 1, scale: 1, rotate: 0 }}
+      transition={{ duration: 0.5, ease: [0.34, 1.56, 0.64, 1] }}
+      className="absolute"
+      style={c.pos}
+    >
+      <div
+        className="flex items-center gap-2 px-3 py-2 rounded-xl border border-primary/40 bg-card/95 backdrop-blur-md shadow-2xl whitespace-nowrap"
+        style={{
+          boxShadow: "0 16px 40px rgba(29,158,117,0.35), 0 0 0 1px rgba(29,158,117,0.2) inset",
+        }}
+      >
+        <div className="h-7 w-7 rounded-lg bg-primary/15 text-primary flex items-center justify-center shrink-0">
+          {c.icon}
+        </div>
+        <div className="leading-tight">
+          <p className="text-[11px] font-bold text-foreground">{c.title}</p>
+          <p className="text-[9px] text-muted-foreground">{c.sub}</p>
+        </div>
+        {/* Glow dot */}
+        <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse shrink-0 ml-1" />
+      </div>
+    </motion.div>
   );
 }
 
