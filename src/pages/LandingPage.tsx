@@ -60,7 +60,7 @@ import {
 import { WhatsAppIcon } from "@/components/WhatsAppIcon";
 import ExitIntentPopup from "@/components/ExitIntentPopup";
 import FloatingCTA from "@/components/FloatingCTA";
-import HeroProductMockup, { HeroMockupMobile } from "@/components/HeroProductMockup";
+import HeroProductMockup from "@/components/HeroProductMockup";
 import RoiCalculator from "@/components/RoiCalculator";
 import HowItWorks3Steps from "@/components/HowItWorks3Steps";
 import Features3DStack from "@/components/Features3DStack";
@@ -461,7 +461,7 @@ const LandingPage = () => {
       </nav>
 
       {/* ═══ HERO ═══ */}
-      <header className="relative md:min-h-[100dvh] flex items-center">
+      <header className="relative min-h-[100dvh] flex items-center">
         <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
           <img src={headerBg} alt="" className="absolute inset-0 w-full h-full object-cover object-top hidden lg:block opacity-30" fetchPriority="high" decoding="async" loading="eager" />
           <img src={headerBgMobile} alt="" className="absolute inset-0 w-full h-full object-cover object-center lg:hidden" fetchPriority="high" decoding="async" loading="eager" />
@@ -542,13 +542,9 @@ const LandingPage = () => {
             </motion.div>
           </motion.div>
 
-          {/* Mobile: compact static mockup (single search screen, no cycling) */}
-          <div className="md:hidden flex items-center justify-center mt-6">
-            <HeroMockupMobile />
-          </div>
-
-          {/* Tablet/desktop: full interactive mockup with cycling 5 views */}
-          <div className="hidden md:flex items-center justify-center lg:justify-end mt-8 lg:mt-0">
+          {/* Product mockup — same component on every breakpoint, lets its
+              internal flex layout scale to whatever width is available. */}
+          <div className="flex items-center justify-center lg:justify-end mt-6 sm:mt-8 lg:mt-0">
             <HeroProductMockup />
           </div>
           </div>
