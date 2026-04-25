@@ -29,7 +29,7 @@ const FeatureDisparo = () => {
 
   useDocumentMeta({
     title: "Disparo em Massa WhatsApp 2026 | Envio Automático Sem Ban — LeadsPro",
-    description: "Envie mensagens em massa pelo WhatsApp com proteção anti-banimento inteligente. Variação automática por IA, intervalos randômicos e campanhas segmentadas. Teste grátis 2 horas.",
+    description: "Envie mensagens em massa pelo WhatsApp com proteção anti-banimento inteligente. Variação automática por IA, intervalos randômicos e campanhas segmentadas. Teste grátis 7 dias.",
     ogType: "website",
     twitterCard: "summary_large_image",
     canonicalUrl: "https://leadspro.app/recursos/disparo",
@@ -174,7 +174,7 @@ const FeatureDisparo = () => {
 
           <motion.div variants={fadeUp} custom={6} className="text-center">
              <Button size="lg" onClick={() => navigate("/auth?plan=free")} className="gradient-bg text-primary-foreground hover:opacity-90 text-lg px-10 h-14 glow-shadow group">
-               Testar grátis — 2 horas <ArrowRight className="ml-2.5 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+               Testar grátis — 7 dias <ArrowRight className="ml-2.5 h-5 w-5 group-hover:translate-x-1 transition-transform" />
             </Button>
           </motion.div>
         </motion.div>

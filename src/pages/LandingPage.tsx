@@ -256,7 +256,7 @@ const LandingPage = () => {
     { q: "O que é o chatbot IA do LeadsPro?", a: "É um assistente inteligente que responde mensagens do WhatsApp 24h por dia. Qualifica leads, responde perguntas frequentes, envia propostas e agenda reuniões — tudo automaticamente. Quando o lead pedir um atendente humano, o bot transfere automaticamente e você recebe notificação por email e WhatsApp." },
     { q: "Meus dados estão seguros?", a: "Totalmente. Utilizamos criptografia de nível bancário. Nenhum terceiro tem acesso aos seus leads. Seus dados ficam protegidos na nuvem com backup automático." },
     { q: "Posso importar leads de uma planilha?", a: "Sim. Importe milhares de leads via Excel (.xlsx) ou CSV. O sistema detecta duplicados, filtra dados inválidos e organiza tudo no CRM com categorias e tags automaticamente." },
-    { q: "Quanto custa o LeadsPro?", a: "Teste grátis por 2 horas com todas as funcionalidades (até 60 leads). Depois: Plano Mensal R$197/mês ou Plano Anual R$1.200/ano (até 12x de R$139,50). Todos os planos incluem todas as funcionalidades." },
+    { q: "Quanto custa o LeadsPro?", a: "Teste grátis por 7 dias com todas as funcionalidades (60 créditos por dia · 420 no total). Depois: Plano Mensal R$197/mês ou Plano Anual R$1.200/ano (até 12x de R$139,50). Todos os planos incluem todas as funcionalidades." },
     { q: "Posso cancelar a qualquer momento?", a: "Claro. Sem multa, sem fidelidade. Mas dificilmente você vai querer cancelar depois de ver os resultados." },
     { q: "O LeadsPro substitui outras ferramentas?", a: "Sim. Ele substitui CRM, ferramenta de e-mail marketing, automação WhatsApp, scraper de dados e chatbot — tudo em uma única plataforma por uma fração do preço." },
     { q: "Como funciona o CRM do LeadsPro?", a: "Todos os leads capturados vão automaticamente para o CRM. Lá você filtra por categoria, status, data, lista personalizada e muito mais. Também conta com pipeline Kanban visual para acompanhar cada etapa da negociação." },
@@ -450,7 +450,7 @@ const LandingPage = () => {
                   </div>
                   {!isAffiliateRef && (
                     <Button size="sm" variant="outline" onClick={() => { navigate("/auth?plan=free"); setMobileMenuOpen(false); }} className="w-full border-green-500/50 bg-green-500/10 text-green-600 dark:text-green-400 hover:bg-green-500/20">
-                      <Gift className="h-3.5 w-3.5 mr-1.5" /> Testar Grátis — 2 Horas
+                      <Gift className="h-3.5 w-3.5 mr-1.5" /> Testar Grátis — 7 dias
                     </Button>
                   )}
                 </div>
@@ -487,7 +487,7 @@ const LandingPage = () => {
               </Badge>
               <Badge className="bg-red-600 text-white border-red-500 backdrop-blur-sm px-2.5 sm:px-3 py-1.5 text-[11px] sm:text-xs font-bold animate-pulse shadow-[0_0_20px_rgba(239,68,68,0.5)]">
                 <Flame className="h-3 w-3 mr-1" />
-                2 horas grátis
+                7 dias grátis
               </Badge>
             </motion.div>
 
@@ -536,7 +536,7 @@ const LandingPage = () => {
                   onClick={() => navigate("/auth?plan=free")}
                   className="border-green-500/50 bg-green-500/10 text-green-400 hover:bg-green-500/20 text-sm sm:text-base px-5 sm:px-7 h-11 sm:h-12"
                 >
-                  <Gift className="h-4 w-4 mr-2 shrink-0" /> Testar Grátis — 2h
+                  <Gift className="h-4 w-4 mr-2 shrink-0" /> Testar Grátis — 7d
                 </Button>
               )}
             </motion.div>
@@ -897,16 +897,16 @@ const LandingPage = () => {
               >
                 <div className="mb-5">
                   <h3 className="text-lg font-bold font-display text-foreground mb-1">Teste Grátis</h3>
-                  <p className="text-xs text-muted-foreground">2 horas com acesso completo</p>
+                  <p className="text-xs text-muted-foreground">7 dias com acesso completo</p>
                 </div>
                 <div className="mb-2">
                   <span className="text-3xl sm:text-4xl font-bold font-display text-foreground tracking-tight">R$0</span>
-                  <span className="text-muted-foreground text-sm"> /2 horas</span>
+                  <span className="text-muted-foreground text-sm"> /7 dias</span>
                 </div>
                 <Badge className="w-fit mb-2 bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20 text-xs">
                   <Gift className="h-3 w-3 mr-1" /> 100% Grátis
                 </Badge>
-                <p className="text-xs text-muted-foreground mb-2">60 créditos de prospecção</p>
+                <p className="text-xs text-muted-foreground mb-2">60 créditos por dia · 420 no total</p>
                 <p className="text-xs text-primary font-medium mb-6">Sem cartão de crédito</p>
                 <ul className="space-y-2.5 mb-6 flex-1 text-xs" role="list">
                   {["Acesso completo à plataforma", "Filtros de busca de leads", "Exportação de leads"].map((item) => (

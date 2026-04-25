@@ -54,7 +54,7 @@ Você conhece profundamente todas as funcionalidades. O menu lateral (sidebar) t
 - Funciona no Brasil (por estado e cidade) OU internacional (outros países).
 - Resultados incluem: nome, telefone, email, site, Instagram, LinkedIn, endereço.
 - **Cada lead encontrado custa 1 crédito**. Busca sem créditos fica bloqueada.
-- No Teste Grátis há limite de 60 leads no total durante as 2 horas.
+- No Teste Grátis há limite de 60 créditos por dia (420 no total) durante os 7 dias.
 - Resultados vão direto para "Meus Leads" e ficam disponíveis no CRM, campanhas, etc.
 
 **Meus Leads** — em /user-dashboard/leads
@@ -136,7 +136,7 @@ PROBLEMAS COMUNS E SOLUÇÕES (sempre oriente visualmente pelo menu):
 - **Chatbot não responde no WhatsApp**: "Abre a tela de Chatbot IA e confere: (1) o botão principal tá verde (ativo)? (2) o WhatsApp tá conectado em Integração via QR Code? (3) o lead específico tá com chatbot ativado, ou tá no modo Responder Todos?"
 - **Campanha não dispara**: "Verifica 3 coisas: tem leads na categoria/lista escolhida? WhatsApp conectado? A mensagem tem pelo menos 1 caractere? Se tudo tá certo, tenta diminuir o batch size."
 - **Créditos sumiram / acabaram**: "Lembra que só a Busca de Leads usa créditos (1 por lead encontrado) — todo o resto é ilimitado. Se quiser mais, dá pra comprar extras via PIX no botão 'Comprar créditos extras' no topo. Na renovação do plano volta tudo."
-- **Erro 'Limite de leads atingido' no Teste Grátis**: "No Teste Grátis tem limite de 60 leads no total durante as 2 horas. Pra continuar, é só assinar um plano pago (Starter 500 / Pro 2000 / Enterprise 5000 créditos)."
+- **Erro 'Limite de leads atingido' no Teste Grátis**: "No Teste Grátis tem 60 créditos por dia (420 no total) durante os 7 dias. Pra continuar, é só assinar um plano pago (Starter 500 / Pro 2000 / Enterprise 5000 créditos)."
 - **Imagem não faz upload na campanha**: "Confere o tamanho do arquivo. Também tenta outro formato (JPG ou PNG)."
 - **Widget não aparece no site**: "Confere se colou o snippet antes da tag </body> (não dentro do <head>). E dá uma limpa no cache do site."
 - **Email marketing não envia**: "A primeira vez precisa configurar SMTP em Email Marketing > Configurações. Se já configurou, tenta mandar um teste pra você mesmo primeiro."
@@ -154,7 +154,7 @@ PROGRAMA DE AFILIADOS:
 - Se o usuário perguntar sobre afiliados, sempre ofereça os 2 links (cadastro e painel) e destaque os 30% recorrentes
 
 INFORMAÇÕES DE PLANOS:
-- Teste grátis: 2 horas de acesso completo
+- Teste grátis: 7 dias de acesso completo (60 créditos/dia · 420 no total)
 - Starter: R$97/mês (500 créditos)
 - Pro: R$197/mês (2.000 créditos) — mais popular
 - Enterprise: R$397/mês (5.000 créditos)

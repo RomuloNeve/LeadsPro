@@ -40,10 +40,10 @@ const FloatingCTA = () => {
 
             <div className="flex-1 min-w-0">
               <p className="text-xs sm:text-sm font-semibold text-foreground truncate">
-                🚀 Teste grátis por 2 horas
+                🚀 Teste grátis por 7 dias
               </p>
               <p className="text-[10px] sm:text-xs text-muted-foreground truncate">
-                Sem cartão • Acesso completo • 60 leads grátis
+                Sem cartão • 60 créditos/dia • Acesso completo
               </p>
             </div>
 

@@ -69,7 +69,7 @@ const Auth = () => {
 
         toast({
           title: "🎉 Conta criada com sucesso!",
-          description: isFreeTrial ? "Você tem 2 horas de acesso gratuito a todas as funcionalidades. Aproveite!" : "Bem-vindo ao LeadsPro!",
+          description: isFreeTrial ? "Você tem 7 dias de acesso gratuito a todas as funcionalidades, com 60 créditos por dia. Aproveite!" : "Bem-vindo ao LeadsPro!",
         });
 
         if (signUpData.session) {
@@ -134,11 +134,11 @@ const Auth = () => {
           {/* Header */}
           <div className="space-y-2">
             <h1 className="text-2xl md:text-3xl font-bold font-display text-foreground tracking-tight">
-              {isFreeTrial ? "Teste Grátis — 2 Horas" : isPaid ? "Crie sua conta" : mode === "login" ? "Acesse nossa Plataforma" : "Crie sua conta"}
+              {isFreeTrial ? "Teste Grátis — 7 dias" : isPaid ? "Crie sua conta" : mode === "login" ? "Acesse nossa Plataforma" : "Crie sua conta"}
             </h1>
             <p className="text-sm text-muted-foreground">
               {isFreeTrial
-                ? "Crie sua conta e explore todos os recursos por 2 horas. Acesso completo!"
+                ? "Crie sua conta e explore todos os recursos por 7 dias — 60 créditos por dia, acesso completo!"
                 : isPaid
                 ? "Cadastre-se para acessar o sistema."
                 : mode === "login"
@@ -172,7 +172,7 @@ const Auth = () => {
 
           {isFreeTrial && (
             <Badge className="bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20 px-4 py-1.5 text-sm">
-              <Gift className="h-4 w-4 mr-1.5" /> Teste grátis de 2 horas
+              <Gift className="h-4 w-4 mr-1.5" /> Teste grátis de 7 dias
             </Badge>
           )}
 

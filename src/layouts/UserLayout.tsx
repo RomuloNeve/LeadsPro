@@ -41,7 +41,7 @@ const FreeTrialCountdown = () => {
   const [timeLeft, setTimeLeft] = useState<{ hours: number; minutes: number } | null>(null);
   const [urgency, setUrgency] = useState<"normal" | "warning" | "critical">("normal");
 
-  const FREE_LEAD_LIMIT = 60;
+  const FREE_LEAD_LIMIT = 420; // 60 créditos/dia × 7 dias
   const freeLeadsUsed = license?.plan_type === "free" ? leads.length : 0;
   const freeLeadsRemaining = Math.max(0, FREE_LEAD_LIMIT - freeLeadsUsed);
 
@@ -166,7 +166,7 @@ const ExpiredTrialModal = () => {
   const isFree = license?.plan_type === "free";
   const title = isFree ? "Teste grátis expirado" : "Assinatura expirada";
   const description = isFree
-    ? "Seu período de teste de 2 horas terminou. Escolha um plano para continuar usando o LeadsPro com todos os recursos."
+    ? "Seu período de teste de 7 dias terminou. Escolha um plano para continuar usando o LeadsPro com todos os recursos."
     : "Sua assinatura expirou ou foi cancelada. Renove para continuar usando o LeadsPro.";
 
   return (

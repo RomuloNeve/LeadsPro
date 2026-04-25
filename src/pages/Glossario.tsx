@@ -314,7 +314,7 @@ const Glossario = () => {
           {/* CTA */}
           <motion.div variants={fadeUp} custom={10} className="mt-16 p-8 rounded-2xl border border-primary/30 bg-primary/5 text-center">
             <h3 className="text-2xl font-bold font-display mb-3">Aplique esses conceitos na prática</h3>
-            <p className="text-muted-foreground mb-6">O LeadsPro reúne todas essas ferramentas em uma única plataforma. Teste grátis por 2 horas.</p>
+            <p className="text-muted-foreground mb-6">O LeadsPro reúne todas essas ferramentas em uma única plataforma. Teste grátis por 7 dias.</p>
             <Button size="lg" onClick={() => navigate("/auth?plan=free")} className="gradient-bg text-primary-foreground hover:opacity-90 text-lg px-10 h-14 glow-shadow group">
               Começar agora <ArrowRight className="ml-2.5 h-5 w-5 group-hover:translate-x-1 transition-transform" />
             </Button>

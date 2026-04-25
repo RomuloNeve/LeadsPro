@@ -66,10 +66,10 @@ const ExitIntentPopup = () => {
               </div>
 
               <h3 className="text-xl sm:text-2xl font-bold font-display text-foreground mb-2">
-                Espera! 🎁 Teste grátis por 2 horas
+                Espera! 🎁 Teste grátis por 7 dias
               </h3>
               <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
-                Acesso completo a todas as funcionalidades. Capture até 60 leads, dispare mensagens em massa e automatize seu WhatsApp — sem pagar nada.
+                Acesso completo a todas as funcionalidades. 60 créditos por dia (420 no total), dispare mensagens em massa e automatize seu WhatsApp — sem pagar nada.
               </p>
 
               <div className="space-y-3 text-left mb-6">

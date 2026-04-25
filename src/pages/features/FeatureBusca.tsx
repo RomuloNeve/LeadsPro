@@ -17,7 +17,7 @@ const fadeUp = {
 const faqs = [
   { question: "Como funciona a busca de leads do LeadsPro?", answer: "Você seleciona a categoria (CNAE ou digitação livre) e a localização (estado, cidade ou país). O sistema busca automaticamente empresas e extrai nome, telefone, e-mail, Instagram, LinkedIn e site de cada resultado. Os dados são exibidos em uma tabela e podem ser salvos no CRM ou exportados para CSV." },
   { question: "Posso buscar leads em qualquer cidade do Brasil?", answer: "Sim. O LeadsPro cobre todos os 5.570 municípios brasileiros. Você pode buscar por estado inteiro, cidade específica ou todas as capitais de uma vez. Também funciona internacionalmente em mais de 190 países." },
-  { question: "A busca de leads é gratuita?", answer: "O LeadsPro oferece um teste grátis de 2 horas com acesso completo a todas as funcionalidades, incluindo busca ilimitada de leads. Após o teste, os planos começam em R$97/mês (Starter) e o mais popular é o Pro por R$197/mês." },
+  { question: "A busca de leads é gratuita?", answer: "O LeadsPro oferece um teste grátis de 7 dias com acesso completo a todas as funcionalidades — 60 créditos por dia (420 no total) — incluindo busca de leads. Após o teste, os planos começam em R$97/mês (Starter) e o mais popular é o Pro por R$197/mês." },
   { question: "Quantos leads posso capturar por busca?", answer: "Cada busca retorna dezenas de leads qualificados com dados completos. Você pode fazer buscas ilimitadas durante sua licença ativa e capturar centenas de leads por dia." },
   { question: "Os leads vêm com telefone e WhatsApp?", answer: "Sim. O sistema extrai automaticamente o telefone de cada empresa. Como a maioria dos negócios brasileiros usa WhatsApp comercial, os números capturados geralmente são válidos para envio de mensagens." },
   { question: "Posso buscar leads por CNAE?", answer: "Sim. O sistema inclui a lista completa de CNAEs do Brasil. Você também pode alternar para digitação livre e buscar por qualquer nicho, como 'pizzaria', 'advogado trabalhista' ou 'clínica veterinária'." },
@@ -29,7 +29,7 @@ const FeatureBusca = () => {
 
   useDocumentMeta({
     title: "Busca de Leads Grátis | Ferramenta de Leads Qualificados — LeadsPro",
-    description: "Ferramenta de busca de leads qualificados por categoria e localização. Capture telefone, e-mail, Instagram e LinkedIn automaticamente do Google Maps. Teste grátis 2 horas.",
+    description: "Ferramenta de busca de leads qualificados por categoria e localização. Capture telefone, e-mail, Instagram e LinkedIn automaticamente do Google Maps. Teste grátis 7 dias.",
     ogType: "website",
     twitterCard: "summary_large_image",
     canonicalUrl: "https://leadspro.app/recursos/busca",
@@ -176,7 +176,7 @@ const FeatureBusca = () => {
 
           <motion.div variants={fadeUp} custom={6} className="text-center">
              <Button size="lg" onClick={() => navigate("/auth?plan=free")} className="gradient-bg text-primary-foreground hover:opacity-90 text-lg px-10 h-14 glow-shadow group">
-               Testar grátis — 2 horas <ArrowRight className="ml-2.5 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+               Testar grátis — 7 dias <ArrowRight className="ml-2.5 h-5 w-5 group-hover:translate-x-1 transition-transform" />
             </Button>
           </motion.div>
         </motion.div>

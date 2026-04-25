@@ -110,7 +110,7 @@ const UserSearch = () => {
         </h2>
         <p className="text-muted-foreground max-w-md">
           {isFreeUser
-            ? `Você atingiu o limite de ${FREE_LEAD_LIMIT} leads do plano gratuito. As demais funcionalidades continuam disponíveis até o fim do seu teste de 2 horas. Para buscar leads ilimitados, assine um plano.`
+            ? `Você atingiu o limite de ${FREE_LEAD_LIMIT} leads do plano gratuito. As demais funcionalidades continuam disponíveis até o fim do seu teste de 7 dias. Para buscar leads ilimitados, assine um plano.`
             : "Seus créditos de prospecção acabaram. Compre créditos extras via PIX ou aguarde a renovação do seu plano mensal."}
         </p>
         {isFreeUser ? (
