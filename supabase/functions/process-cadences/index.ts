@@ -52,40 +52,45 @@ function textToHtml(text: string): string {
     .join("");
 }
 
-/** Parse "HH:mm" to minutes-since-midnight. Local server time used — the
- * scheduler's tick resolution (10min) is coarser than the business-hour
- * edges, so timezone drift of a few hours inside the edge runtime won't
- * cause wrong sends. If the user's expectation is strict local time, we
- * should store a tz on the cadence — filed for a later sprint. */
+/** Brazil timezone offset (UTC-3, no DST). All send-window comparisons
+ *  use this so "09:00" in the cadence config means 09:00 local time, not
+ *  09:00 UTC (which would dispatch at 06:00 BRT — 3h too early). */
+const BR_TZ_OFFSET_MS = -3 * 60 * 60 * 1000;
+
 function parseHHmm(t: string): number {
   const [h, m] = (t || "09:00").split(":").map(Number);
   return (h || 0) * 60 + (m || 0);
 }
 
-/** Given "now", returns the next timestamp that sits inside [start..end]
- * on a weekday (if skipWeekends). */
+/** Given "now" (UTC), returns the next timestamp (in UTC) that sits
+ *  inside [start..end] on a weekday (if skipWeekends), evaluated in
+ *  Brazil local time. */
 function nextAllowedSendAt(now: Date, startHHmm: string, endHHmm: string, skipWeekends: boolean): Date {
-  const candidate = new Date(now);
+  // Work in BR-local space using a shifted Date — cheap & correct as long
+  // as Brazil stays on UTC-3 (true since 2019, no DST).
+  const local = new Date(now.getTime() + BR_TZ_OFFSET_MS);
   const startMin = parseHHmm(startHHmm);
   const endMin = parseHHmm(endHHmm);
-  const nowMin = candidate.getHours() * 60 + candidate.getMinutes();
+  const nowMin = local.getUTCHours() * 60 + local.getUTCMinutes();
 
   // Inside today's window → send now
-  const dow = candidate.getDay(); // 0=Sun, 6=Sat
+  const dow = local.getUTCDay(); // 0=Sun, 6=Sat
   const isWeekend = dow === 0 || dow === 6;
   if (!isWeekend && nowMin >= startMin && nowMin < endMin) {
-    return candidate;
+    return now; // already within window — no rescheduling
   }
 
-  // Otherwise: jump to start of next eligible day
+  // Otherwise: roll forward to next eligible day (in local space)
   if (nowMin >= endMin || isWeekend) {
-    candidate.setDate(candidate.getDate() + 1);
+    local.setUTCDate(local.getUTCDate() + 1);
   }
-  while (skipWeekends && (candidate.getDay() === 0 || candidate.getDay() === 6)) {
-    candidate.setDate(candidate.getDate() + 1);
+  while (skipWeekends && (local.getUTCDay() === 0 || local.getUTCDay() === 6)) {
+    local.setUTCDate(local.getUTCDate() + 1);
   }
-  candidate.setHours(Math.floor(startMin / 60), startMin % 60, 0, 0);
-  return candidate;
+  local.setUTCHours(Math.floor(startMin / 60), startMin % 60, 0, 0);
+
+  // Convert local-space back to UTC for storage / comparisons
+  return new Date(local.getTime() - BR_TZ_OFFSET_MS);
 }
 
 async function sendWhatsapp(instanceName: string, phone: string, message: string): Promise<{ ok: boolean; err?: string }> {

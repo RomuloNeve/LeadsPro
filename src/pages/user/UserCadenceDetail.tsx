@@ -69,6 +69,7 @@ export default function UserCadenceDetail() {
   const [running, setRunning] = useState(false);
   const [cadence, setCadence] = useState<{ id: string; name: string; description: string | null; is_active: boolean } | null>(null);
   const [steps, setSteps] = useState<StepRow[]>([]);
+  const [statusFilter, setStatusFilter] = useState<EnrollmentStatus | "all">("all");
   const [enrollments, setEnrollments] = useState<EnrollmentRow[]>([]);
   const [stepPerf, setStepPerf] = useState<StepPerf[]>([]);
 
@@ -281,13 +282,63 @@ export default function UserCadenceDetail() {
         <CardHeader className="pb-3">
           <CardTitle className="text-base">Leads inscritos ({enrollments.length})</CardTitle>
           <CardDescription>Cada linha é um lead percorrendo a cadência. Você pode pausar, retomar ou retirar.</CardDescription>
+          {/* Status filter chips */}
+          {enrollments.length > 0 && (() => {
+            const counts: Record<string, number> = enrollments.reduce((acc, e) => {
+              acc[e.status] = (acc[e.status] || 0) + 1;
+              return acc;
+            }, {} as Record<string, number>);
+            const FILTERS: { key: EnrollmentStatus | "all"; label: string }[] = [
+              { key: "all",        label: "Todos" },
+              { key: "active",     label: "Ativos" },
+              { key: "paused",     label: "Pausados" },
+              { key: "replied",    label: "Respondeu" },
+              { key: "completed",  label: "Concluído" },
+              { key: "stopped",    label: "Parados" },
+              { key: "failed",     label: "Falhas" },
+            ];
+            return (
+              <div className="flex flex-wrap gap-1.5 pt-3">
+                {FILTERS.map((f) => {
+                  const cnt = f.key === "all" ? enrollments.length : (counts[f.key] || 0);
+                  if (f.key !== "all" && cnt === 0) return null;
+                  const active = statusFilter === f.key;
+                  return (
+                    <button
+                      key={f.key}
+                      onClick={() => setStatusFilter(f.key)}
+                      className={`text-xs px-2.5 h-7 rounded-md border transition-colors ${
+                        active
+                          ? "border-primary bg-primary/15 text-primary font-semibold"
+                          : "border-border bg-card text-muted-foreground hover:border-primary/30"
+                      }`}
+                    >
+                      {f.label} <span className="opacity-70 tabular-nums">({cnt})</span>
+                    </button>
+                  );
+                })}
+              </div>
+            );
+          })()}
         </CardHeader>
         <CardContent>
-          {enrollments.length === 0 ? (
-            <div className="py-8 text-center text-sm text-muted-foreground">
-              Nenhum lead inscrito ainda. Vá para o CRM ou Pipeline e use "Inscrever em cadência".
-            </div>
-          ) : (
+          {(() => {
+            const filtered = statusFilter === "all" ? enrollments : enrollments.filter((e) => e.status === statusFilter);
+            if (enrollments.length === 0) {
+              return (
+                <div className="py-8 text-center text-sm text-muted-foreground">
+                  Nenhum lead inscrito ainda. Vá para o CRM ou Pipeline e use "Inscrever em cadência".
+                </div>
+              );
+            }
+            if (filtered.length === 0) {
+              return (
+                <div className="py-8 text-center text-sm text-muted-foreground">
+                  Nenhum inscrito com status "{STATUS_META[statusFilter as EnrollmentStatus]?.label || statusFilter}". Mude o filtro.
+                </div>
+              );
+            }
+            return (
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
@@ -301,9 +352,11 @@ export default function UserCadenceDetail() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {enrollments.map((e) => {
+                  {filtered.map((e) => {
                     const meta = STATUS_META[e.status];
                     const stepLabel = `${Math.min(e.current_step, steps.length)}/${steps.length}`;
+                    const nextRun = new Date(e.next_run_at);
+                    const isOverdue = e.status === "active" && nextRun.getTime() < Date.now();
                     return (
                       <TableRow key={e.id}>
                         <TableCell className="max-w-[260px]">
@@ -319,7 +372,16 @@ export default function UserCadenceDetail() {
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">{stepLabel}</TableCell>
                         <TableCell className="text-xs text-muted-foreground">
-                          {e.status === "active" ? new Date(e.next_run_at).toLocaleString("pt-BR") : "—"}
+                          {e.status === "active" ? (
+                            isOverdue ? (
+                              <span className="inline-flex items-center gap-1 text-amber-500 font-medium">
+                                <Clock className="h-3 w-3" />
+                                Aguardando processamento
+                              </span>
+                            ) : (
+                              nextRun.toLocaleString("pt-BR")
+                            )
+                          ) : "—"}
                         </TableCell>
                         <TableCell className="max-w-[220px]">
                           {e.last_error ? (
@@ -355,7 +417,8 @@ export default function UserCadenceDetail() {
                 </TableBody>
               </Table>
             </div>
-          )}
+            );
+          })()}
         </CardContent>
       </Card>
 
