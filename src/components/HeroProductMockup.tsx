@@ -6,7 +6,10 @@ import {
   LayoutDashboard, Users, Send, MessageCircle, Kanban, Settings,
   Bot, Paperclip, Smile, Mic, Plus, Filter, MoreVertical,
   TrendingUp, Target, Flame, Download, FolderOpen,
+  PanelLeft, Coins, ArrowUpRight, HelpCircle, ChevronDown,
+  FileText, Pencil,
 } from "lucide-react";
+import logoIcon from "@/assets/logo-icon.png";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -159,6 +162,22 @@ export default function HeroProductMockup() {
             <span className="ml-3 text-[10px] font-mono text-muted-foreground tracking-wide truncate">
               app.leadspro.com.br{ROUTE_OF[view]}
             </span>
+          </div>
+
+          {/* App top bar (real UserLayout header) */}
+          <div className="flex items-center gap-2 px-3 h-10 border-b border-border bg-background">
+            <PanelLeft className="h-3.5 w-3.5 text-muted-foreground" />
+            <img src={logoIcon} alt="LeadsPro" className="h-6 w-6" />
+            <div className="ml-auto flex items-center gap-1.5">
+              <div className="flex items-center gap-1 px-2 h-6 rounded-md border border-border bg-card">
+                <Coins className="h-3 w-3 text-primary" />
+                <span className="text-[10px] font-bold text-foreground tabular-nums">9.745</span>
+                <span className="text-[10px] text-muted-foreground">créditos</span>
+              </div>
+              <Button size="sm" className="gradient-bg text-primary-foreground h-6 px-2 text-[10px] gap-1">
+                <ArrowUpRight className="h-3 w-3" /> Upgrade
+              </Button>
+            </div>
           </div>
 
           {/* Page content */}
@@ -356,30 +375,79 @@ function SearchView({ reduce }: { reduce: boolean }) {
   }, [reduce]);
 
   return (
-    <div className="space-y-3">
-      <div>
-        <h1 className="text-lg font-bold font-display text-foreground">Busca de Leads</h1>
-        <p className="text-xs text-muted-foreground mt-0.5">Encontre empresas por categoria e localização</p>
+    <div className="space-y-2.5">
+      {/* Help banner — matches "Como usar: Buscar Leads" */}
+      <div className="flex items-center justify-between px-3 py-1.5 rounded-md border border-primary/20 bg-primary/5">
+        <div className="flex items-center gap-1.5">
+          <HelpCircle className="h-3 w-3 text-primary" />
+          <span className="text-[10px] font-medium text-foreground">Como usar: Buscar Leads</span>
+        </div>
+        <ChevronDown className="h-3 w-3 text-muted-foreground" />
       </div>
 
+      {/* Credits card */}
+      <Card>
+        <CardContent className="p-2.5 flex items-center gap-2.5">
+          <div className="h-7 w-7 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
+            <Coins className="h-3.5 w-3.5 text-primary" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-[11px] font-bold text-foreground tabular-nums">9.745 créditos restantes</p>
+            <p className="text-[9px] text-muted-foreground">255 usados de 10.000 · 1 crédito por lead</p>
+          </div>
+          <div className="hidden sm:block w-20 h-1.5 rounded-full bg-muted overflow-hidden shrink-0">
+            <div className="h-full bg-gradient-to-r from-primary to-accent" style={{ width: "97%" }} />
+          </div>
+          <Button size="sm" variant="outline" className="h-6 text-[9px] px-2 shrink-0 border-primary/40 text-primary">
+            Comprar <ArrowUpRight className="h-2.5 w-2.5 ml-0.5" />
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* Page title — gradient teal like real app */}
+      <div>
+        <h1 className="text-lg font-bold font-display gradient-text">Buscar Leads</h1>
+        <p className="text-[10px] text-muted-foreground mt-0.5">
+          Busca de leads direto no Google Maps com redes sociais · 9.745 créditos disponíveis
+        </p>
+      </div>
+
+      {/* Form card */}
       <Card>
         <CardContent className="p-3 space-y-2.5">
-          <div className="grid grid-cols-2 gap-2">
-            <div className="space-y-1">
-              <label className="text-[10px] font-medium text-foreground">Categoria(s) *</label>
-              <div className="flex items-center gap-1 flex-wrap min-h-[32px] px-2 py-1.5 rounded-md bg-input border border-border">
-                <Badge className="bg-primary/15 text-primary hover:bg-primary/15 text-[10px] py-0">Dentista ×</Badge>
-              </div>
+          {/* Categoria header + toggle */}
+          <div>
+            <label className="text-[10px] font-bold text-foreground block mb-1.5">Categoria / Atividade *</label>
+            <div className="flex items-center gap-1 mb-1.5">
+              <button className="flex items-center gap-1 px-2 h-6 rounded-md border border-primary/40 bg-primary/10 text-primary text-[9px] font-semibold">
+                <FileText className="h-2.5 w-2.5" /> Categorias populares
+              </button>
+              <button className="flex items-center gap-1 px-2 h-6 rounded-md border border-border text-muted-foreground text-[9px] font-medium">
+                <Pencil className="h-2.5 w-2.5" /> Digitar livremente
+              </button>
             </div>
-            <div className="space-y-1">
-              <label className="text-[10px] font-medium text-foreground">Localização</label>
-              <div className="flex items-center gap-1.5 px-2.5 h-[32px] rounded-md bg-input border border-border">
-                <MapPin className="h-3 w-3 text-primary" />
-                <span className="text-[11px] text-foreground truncate">São Paulo, SP</span>
+            <div className="flex items-center justify-between px-2.5 h-7 rounded-md border border-border bg-input">
+              <div className="flex items-center gap-1 flex-wrap">
+                <Badge className="bg-primary/15 text-primary hover:bg-primary/15 text-[9px] py-0">Dentista ×</Badge>
               </div>
+              <ChevronDown className="h-3 w-3 text-muted-foreground" />
             </div>
           </div>
-          <div className="flex items-center justify-between gap-2">
+
+          {/* Localização da busca — 5 cards */}
+          <div>
+            <label className="text-[10px] font-bold text-foreground block mb-1.5">Localização da busca</label>
+            <div className="grid grid-cols-5 gap-1">
+              <LocationCard flag="🇧🇷" title="Todo Brasil"   sub="Capitais"  active />
+              <LocationCard flag="📍" title="Estado"         sub="Inteiro"   />
+              <LocationCard flag="🏙️" title="Cidade"         sub="Específica" />
+              <LocationCard flag="🌍" title="País"           sub="Inteiro"   />
+              <LocationCard flag="🌐" title="País + Cidade" sub="Específica" />
+            </div>
+          </div>
+
+          {/* Search progress + button */}
+          <div className="flex items-center justify-between gap-2 pt-1">
             <div className="flex-1 space-y-1">
               <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
                 <div
@@ -395,7 +463,7 @@ function SearchView({ reduce }: { reduce: boolean }) {
                 )}
               </p>
             </div>
-            <Button size="sm" className="gradient-bg text-primary-foreground h-8 text-[11px] shrink-0">
+            <Button size="sm" className="gradient-bg text-primary-foreground h-8 text-[10px] shrink-0">
               <Search className="h-3 w-3 mr-1" /> Buscar Leads
             </Button>
           </div>
@@ -458,6 +526,22 @@ function SearchView({ reduce }: { reduce: boolean }) {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+function LocationCard({ flag, title, sub, active = false }: { flag: string; title: string; sub: string; active?: boolean }) {
+  return (
+    <button
+      className={`flex flex-col items-start gap-0.5 px-1.5 py-1.5 rounded-md border text-left transition-all ${
+        active
+          ? "border-primary/50 bg-primary/10 ring-1 ring-primary/30"
+          : "border-border bg-card hover:border-primary/30"
+      }`}
+    >
+      <span className="text-[10px] leading-none">{flag}</span>
+      <span className="text-[8px] font-bold text-foreground leading-tight truncate w-full">{title}</span>
+      <span className="text-[7px] text-muted-foreground leading-tight truncate w-full">{sub}</span>
+    </button>
   );
 }
 
