@@ -61,6 +61,8 @@ import { WhatsAppIcon } from "@/components/WhatsAppIcon";
 import ExitIntentPopup from "@/components/ExitIntentPopup";
 import FloatingCTA from "@/components/FloatingCTA";
 import HeroProductMockup from "@/components/HeroProductMockup";
+import RoiCalculator from "@/components/RoiCalculator";
+import HowItWorks3Steps from "@/components/HowItWorks3Steps";
 
 /* ── Animations (lightweight for scroll perf) ── */
 const fadeUp = {
@@ -359,6 +361,16 @@ const LandingPage = () => {
             <Button size="sm" onClick={() => scrollTo("pricing")} className="hidden lg:inline-flex gradient-bg text-primary-foreground hover:opacity-90 glow-shadow text-xs sm:text-sm px-3 sm:px-4">
               Começar
             </Button>
+            {/* Mobile sticky CTA — appears once scrolled past hero */}
+            {!isAffiliateRef && scrolled && (
+              <Button
+                size="sm"
+                onClick={() => navigate("/auth?plan=free")}
+                className="lg:hidden gradient-bg text-primary-foreground hover:opacity-90 text-[11px] px-2.5 h-8 shrink-0"
+              >
+                <Gift className="h-3 w-3 mr-1" /> Grátis
+              </Button>
+            )}
             {/* Mobile hamburger */}
             <button
               className={`lg:hidden p-2 rounded-lg transition-colors ${scrolled ? "text-foreground hover:bg-muted" : "text-white hover:bg-white/10"}`}
@@ -564,6 +576,16 @@ const LandingPage = () => {
         </div>
       </section>
 
+      {/* ═══ HOW IT WORKS — 3 visual steps ═══ */}
+      <Section id="how" className="border-t border-border/40" ariaLabel="Como funciona em 3 passos">
+        <SectionHeader
+          badge="Como funciona"
+          title={<>Em 3 passos você sai do <span className="gradient-text">manual</span> para o automático</>}
+          subtitle="Clique em cada passo para ver a tela real do sistema."
+        />
+        <HowItWorks3Steps />
+      </Section>
+
       {/* ═══ PROBLEM / PAIN ═══ */}
       <Section className="border-t border-border/40 relative" ariaLabel="Problemas que resolvemos">
         <div className="absolute inset-0 bg-destructive/[0.015] pointer-events-none" aria-hidden="true" />
@@ -666,6 +688,10 @@ const LandingPage = () => {
         </div>
       </Section>
 
+      {/* ═══ ROI CALCULATOR ═══ */}
+      <Section id="calculadora-roi" className="border-t border-border/40" ariaLabel="Calculadora de prejuízo">
+        <RoiCalculator onCta={() => scrollTo("pricing")} />
+      </Section>
 
       {/* ═══ PRODUCT SHOWCASE ═══ */}
       <Section className="border-t border-border/40" ariaLabel="Veja a plataforma por dentro">
@@ -721,10 +747,10 @@ const LandingPage = () => {
         </motion.div>
       </Section>
 
-      {/* ═══ HOW IT WORKS ═══ */}
-      <Section id="how" className="border-t border-border/40" ariaLabel="Como funciona">
+      {/* ═══ HOW IT WORKS — full 9 steps ═══ */}
+      <Section id="how-detail" className="border-t border-border/40" ariaLabel="Fluxo completo">
         <SectionHeader
-          badge="Como funciona"
+          badge="Fluxo completo"
           title={<>Um ecossistema completo em <span className="gradient-text">9 etapas</span></>}
           subtitle="Da captura ao fechamento — tudo automatizado dentro de uma única plataforma."
         />
