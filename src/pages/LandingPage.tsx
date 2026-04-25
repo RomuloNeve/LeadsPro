@@ -64,7 +64,6 @@ import HeroProductMockup from "@/components/HeroProductMockup";
 import RoiCalculator from "@/components/RoiCalculator";
 import HowItWorks3Steps from "@/components/HowItWorks3Steps";
 import Features3DStack from "@/components/Features3DStack";
-import ScrollPhoneStory from "@/components/ScrollPhoneStory";
 
 /* ── Animations (lightweight for scroll perf) ── */
 const fadeUp = {
@@ -704,20 +703,6 @@ const LandingPage = () => {
         />
         <Features3DStack />
       </Section>
-
-      {/* ═══ SCROLL PHONE STORY ═══ */}
-      <section className="border-t border-border/40 relative" aria-label="Da captura ao fechamento">
-        {/* Title block before the scroll-jacked phone story */}
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 pt-12 sm:pt-16 md:pt-24 pb-6 md:pb-10">
-          <SectionHeader
-            badge="A jornada completa"
-            title={<>Do <span className="gradient-text">primeiro toque</span> até o negócio fechado</>}
-            subtitle="Role a página e veja como o LeadsPro conduz cada lead no automático."
-          />
-        </div>
-        <ScrollPhoneStory />
-        <div className="h-12 md:h-20" />
-      </section>
 
       {/* ═══ PRODUCT SHOWCASE ═══ */}
       <Section className="border-t border-border/40" ariaLabel="Veja a plataforma por dentro">

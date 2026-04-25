@@ -34,15 +34,21 @@ interface FeatureCard {
   tint: string; // primary accent color (HSL or hex)
 }
 
+// 3-row grid (3 + 2 + 3) — spread out so cards don't overlap each other.
+// Subtle depth (-30..+30) still gives a 3D feel via translateZ + rotation
+// without sacrificing legibility.
 const FEATURES: FeatureCard[] = [
-  { icon: Search,        title: "Busca de Leads",     blurb: "Pesquise por categoria + cidade. Telefone, IG, LinkedIn extraídos.",        metric: "3s/lead",        depth:   60, x: 12, y: 18, rotate: -3, tint: "#5DCAA5" },
-  { icon: MessageCircle, title: "Disparo WhatsApp",   blurb: "Em massa com IA + intervalos randômicos. Anti-banimento.",                  metric: "Sem ban",        depth:   30, x: 76, y: 12, rotate:  4, tint: "#1D9E75" },
-  { icon: Database,      title: "CRM Brasileiro",     blurb: "Filtros, tags, listas. Tudo num painel feito pra quem vende no BR.",        metric: "1.247 leads",    depth:  -40, x: 48, y: 30, rotate:  0, tint: "#5DCAA5" },
-  { icon: Kanban,        title: "Pipeline Kanban",    blurb: "Drag-and-drop entre colunas. Acompanhe cada negociação.",                   metric: "4 estágios",     depth:  -10, x: 16, y: 62, rotate:  3, tint: "#a855f7" },
-  { icon: Bot,           title: "Chatbot IA 24/7",    blurb: "Qualifica leads, envia propostas e agenda reuniões automaticamente.",       metric: "24h online",     depth:   45, x: 84, y: 56, rotate: -4, tint: "#1D9E75" },
-  { icon: Mail,          title: "Email Marketing",    blurb: "Campanhas com seu domínio + IA pra copy + estatísticas de entrega.",         metric: "Bulk + IA",      depth:  -80, x: 60, y: 72, rotate:  2, tint: "#3b82f6" },
-  { icon: Code,          title: "Widget de Captura",  blurb: "Formulário no seu site. Lead vai pro CRM e IA já manda WhatsApp.",          metric: "1 linha",        depth: -120, x: 26, y: 82, rotate: -2, tint: "#f97316" },
-  { icon: Zap,           title: "Cadência Multi-canal", blurb: "WhatsApp + email em sequência automática até o lead responder.",           metric: "Auto",           depth:  -60, x: 78, y: 84, rotate:  3, tint: "#5DCAA5" },
+  // Row 1
+  { icon: Search,        title: "Busca de Leads",       blurb: "Pesquise por categoria + cidade. Telefone, IG, LinkedIn extraídos.",  metric: "3s/lead",     depth:  20, x: 16, y: 18, rotate: -2, tint: "#5DCAA5" },
+  { icon: Database,      title: "CRM Brasileiro",       blurb: "Filtros, tags, listas. Tudo num painel feito pra quem vende no BR.",  metric: "1.247 leads", depth:  30, x: 50, y: 14, rotate:  0, tint: "#5DCAA5" },
+  { icon: MessageCircle, title: "Disparo WhatsApp",     blurb: "Em massa com IA + intervalos randômicos. Anti-banimento.",            metric: "Sem ban",     depth:  20, x: 84, y: 18, rotate:  2, tint: "#1D9E75" },
+  // Row 2
+  { icon: Bot,           title: "Chatbot IA 24/7",      blurb: "Qualifica leads, envia propostas e agenda reuniões automaticamente.", metric: "24h online",  depth: -10, x: 25, y: 50, rotate:  1, tint: "#1D9E75" },
+  { icon: Kanban,        title: "Pipeline Kanban",      blurb: "Drag-and-drop entre colunas. Acompanhe cada negociação.",             metric: "4 estágios",  depth: -10, x: 75, y: 50, rotate: -1, tint: "#a855f7" },
+  // Row 3
+  { icon: Mail,          title: "Email Marketing",      blurb: "Campanhas com seu domínio + IA pra copy + estatísticas de entrega.",  metric: "Bulk + IA",   depth:   0, x: 16, y: 82, rotate: -1, tint: "#3b82f6" },
+  { icon: Zap,           title: "Cadência Multi-canal", blurb: "WhatsApp + email em sequência automática até o lead responder.",      metric: "Auto",        depth:  10, x: 50, y: 86, rotate:  1, tint: "#5DCAA5" },
+  { icon: Code,          title: "Widget de Captura",    blurb: "Formulário no seu site. Lead vai pro CRM e IA já manda WhatsApp.",    metric: "1 linha",     depth:   0, x: 84, y: 82, rotate:  2, tint: "#f97316" },
 ];
 
 export default function Features3DStack() {
@@ -104,7 +110,12 @@ export default function Features3DStack() {
             </linearGradient>
           </defs>
           {[
-            [0, 2], [1, 2], [2, 3], [2, 4], [3, 6], [4, 5], [5, 7], [2, 5],
+            // Top row + verticals to middle
+            [0, 1], [1, 2], [0, 3], [2, 4],
+            // Middle to bottom
+            [3, 5], [4, 7], [3, 6], [4, 6],
+            // Bottom row
+            [5, 6], [6, 7],
           ].map(([a, b], idx) => (
             <line
               key={idx}
@@ -144,16 +155,13 @@ function FloatingCard({
   sy: ReturnType<typeof useSpring>;
   reduce: boolean;
 }) {
-  // Parallax: closer cards (higher depth) move more
-  const intensity = (feature.depth + 200) / 260; // ≈ 0.31 to 1.0
-  const tx = useTransform(sx, (v) => v * 26 * intensity);
-  const ty = useTransform(sy, (v) => v * 18 * intensity);
-  const rx = useTransform(sy, (v) => -v * 4);
-  const ry = useTransform(sx, (v) => v * 4);
-
-  // Far cards get more blur; near cards stay sharp
-  const blur = feature.depth < -60 ? 1.2 : 0;
-  const opacity = feature.depth < -100 ? 0.85 : 1;
+  // Parallax: closer cards (higher depth) move slightly more — kept subtle so
+  // the layout reads as 3D without making any card hard to follow.
+  const intensity = (feature.depth + 60) / 90; // ≈ 0.33 to 1.0
+  const tx = useTransform(sx, (v) => v * 18 * intensity);
+  const ty = useTransform(sy, (v) => v * 12 * intensity);
+  const rx = useTransform(sy, (v) => -v * 3);
+  const ry = useTransform(sx, (v) => v * 3);
 
   const [hovered, setHovered] = useState(false);
 
@@ -162,7 +170,7 @@ function FloatingCard({
   return (
     <motion.div
       initial={reduce ? false : { opacity: 0, y: 20, scale: 0.9 }}
-      whileInView={{ opacity, y: 0, scale: 1 }}
+      whileInView={{ opacity: 1, y: 0, scale: 1 }}
       viewport={{ once: true, margin: "-50px" }}
       transition={{ duration: 0.6, delay: index * 0.08, ease: [0.25, 0.1, 0.25, 1] }}
       onMouseEnter={() => setHovered(true)}
@@ -180,35 +188,34 @@ function FloatingCard({
         rotate: feature.rotate,
         transformStyle: "preserve-3d",
         transform: `translateZ(${feature.depth}px)`,
-        zIndex: Math.round(feature.depth + 200),
-        filter: blur ? `blur(${blur}px)` : undefined,
+        zIndex: Math.round(feature.depth + 100),
       }}
     >
       <motion.div
-        animate={hovered && !reduce ? { scale: 1.06, y: -4 } : { scale: 1, y: 0 }}
+        animate={hovered && !reduce ? { scale: 1.05, y: -4 } : { scale: 1, y: 0 }}
         transition={{ duration: 0.25 }}
-        className="relative w-[200px] sm:w-[230px] rounded-xl border bg-card/95 backdrop-blur-md p-3.5 cursor-default"
+        className="relative w-[230px] sm:w-[260px] rounded-xl border bg-card p-4 cursor-default"
         style={{
-          borderColor: hovered ? `${feature.tint}66` : "hsl(var(--border))",
+          borderColor: hovered ? `${feature.tint}80` : "hsl(var(--border))",
           boxShadow: hovered
-            ? `0 20px 50px ${feature.tint}33, 0 0 0 1px ${feature.tint}55 inset`
-            : "0 14px 36px rgba(0,0,0,0.35), 0 0 0 1px rgba(255,255,255,0.04) inset",
+            ? `0 24px 60px ${feature.tint}40, 0 0 0 1px ${feature.tint}66 inset`
+            : "0 18px 44px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.05) inset",
           transition: "border-color 0.25s, box-shadow 0.25s",
         }}
       >
         <div className="flex items-start gap-2.5 mb-2">
           <div
-            className="h-9 w-9 rounded-lg flex items-center justify-center shrink-0"
-            style={{ background: `${feature.tint}20`, color: feature.tint }}
+            className="h-10 w-10 rounded-lg flex items-center justify-center shrink-0"
+            style={{ background: `${feature.tint}22`, color: feature.tint }}
           >
             <Icon className="h-4 w-4" />
           </div>
           <div className="min-w-0 flex-1">
             <p className="text-sm font-bold font-display text-foreground leading-tight">{feature.title}</p>
-            <p className="text-[10px] text-muted-foreground mt-0.5 font-mono">{feature.metric}</p>
+            <p className="text-[11px] text-muted-foreground mt-0.5 font-mono">{feature.metric}</p>
           </div>
         </div>
-        <p className="text-xs text-muted-foreground leading-relaxed line-clamp-3">{feature.blurb}</p>
+        <p className="text-xs text-muted-foreground leading-relaxed">{feature.blurb}</p>
       </motion.div>
     </motion.div>
   );
