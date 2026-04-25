@@ -63,6 +63,7 @@ import FloatingCTA from "@/components/FloatingCTA";
 import HeroProductMockup from "@/components/HeroProductMockup";
 import RoiCalculator from "@/components/RoiCalculator";
 import HowItWorks3Steps from "@/components/HowItWorks3Steps";
+import Features3DStack from "@/components/Features3DStack";
 
 /* ── Animations (lightweight for scroll perf) ── */
 const fadeUp = {
@@ -691,6 +692,16 @@ const LandingPage = () => {
       {/* ═══ ROI CALCULATOR ═══ */}
       <Section id="calculadora-roi" className="border-t border-border/40" ariaLabel="Calculadora de prejuízo">
         <RoiCalculator onCta={() => scrollTo("pricing")} />
+      </Section>
+
+      {/* ═══ FEATURES 3D STACK ═══ */}
+      <Section className="border-t border-border/40 relative overflow-hidden" ariaLabel="Recursos da plataforma">
+        <SectionHeader
+          badge="Tudo num só lugar"
+          title={<>Os recursos que <span className="gradient-text">tiram o manual</span> do seu dia</>}
+          subtitle="Mexa o mouse pra explorar — tudo aqui está disponível em qualquer plano."
+        />
+        <Features3DStack />
       </Section>
 
       {/* ═══ PRODUCT SHOWCASE ═══ */}
