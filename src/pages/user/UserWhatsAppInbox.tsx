@@ -871,16 +871,40 @@ const UserWhatsAppInbox = () => {
       const session = await getSession();
       if (!session) return;
       const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
-      const res = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/whatsapp-inbox?action=contacts`,
-        { method: "POST", headers: { Authorization: `Bearer ${session.access_token}`, apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY, "Content-Type": "application/json" } }
-      );
-      const data = await res.json();
-      if (data.error) throw new Error(data.error);
+      // Client-side timeout — if the edge function doesn't respond in 35s, abort
+      // gracefully so the user sees a real error instead of "Failed to fetch".
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 35000);
+      let res: Response;
+      try {
+        res = await fetch(
+          `https://${projectId}.supabase.co/functions/v1/whatsapp-inbox?action=contacts`,
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${session.access_token}`,
+              apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+              "Content-Type": "application/json",
+            },
+            signal: ctrl.signal,
+          }
+        );
+      } finally {
+        clearTimeout(timer);
+      }
+      const data = await res.json().catch(() => ({ error: "Resposta inválida do servidor" }));
+      // The function always returns 200 with contacts:[] + error message on
+      // soft failures, so we surface the message but keep going.
+      if (data.error) {
+        toast({ title: "Erro ao carregar contatos", description: data.error, variant: "destructive" });
+      }
       setContacts(data.contacts || []);
       setFilteredContacts(data.contacts || []);
     } catch (e: any) {
-      toast({ title: "Erro ao carregar contatos", description: e.message, variant: "destructive" });
+      const msg = e?.name === "AbortError"
+        ? "A busca demorou demais. Sua agenda pode estar muito grande — tente de novo."
+        : (e?.message || "Erro de rede ao carregar contatos.");
+      toast({ title: "Erro ao carregar contatos", description: msg, variant: "destructive" });
     }
     setLoadingContacts(false);
   }, [getSession, toast]);

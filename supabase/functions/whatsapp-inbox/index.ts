@@ -58,16 +58,23 @@ async function safeJson(res: Response): Promise<any> {
   }
 }
 
-async function evoFetch(path: string, options: RequestInit = {}) {
-  const res = await fetch(`${EVOLUTION_API_URL}${path}`, {
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      apikey: EVOLUTION_API_KEY,
-      ...(options.headers || {}),
-    },
-  });
-  return await safeJson(res);
+async function evoFetch(path: string, options: RequestInit = {}, timeoutMs = 25000) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    const res = await fetch(`${EVOLUTION_API_URL}${path}`, {
+      ...options,
+      headers: {
+        "Content-Type": "application/json",
+        apikey: EVOLUTION_API_KEY,
+        ...(options.headers || {}),
+      },
+      signal: ctrl.signal,
+    });
+    return await safeJson(res);
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 Deno.serve(async (req) => {
@@ -772,26 +779,54 @@ Deno.serve(async (req) => {
 
     // LIST CONTACTS (for group creation)
     if (action === "contacts") {
-      const data = await evoFetch(`/chat/findContacts/${instance.instance_name}`, {
-        method: "POST",
-        body: JSON.stringify({}),
-      });
+      try {
+        const data = await evoFetch(
+          `/chat/findContacts/${instance.instance_name}`,
+          { method: "POST", body: JSON.stringify({}) },
+          25000,
+        );
 
-      const contacts = (Array.isArray(data) ? data : [])
-        .filter((c: any) => {
-          const jid = c.remoteJid || c.id || "";
-          return jid.endsWith("@s.whatsapp.net");
-        })
-        .map((c: any) => ({
-          jid: c.remoteJid || c.id,
-          name: c.pushName || c.name || c.contactName || (c.remoteJid || c.id || "").replace("@s.whatsapp.net", ""),
-          profilePicUrl: c.profilePicUrl || null,
-        }))
-        .sort((a: any, b: any) => a.name.localeCompare(b.name));
+        if (!Array.isArray(data)) {
+          // Evolution returned an error object or null — surface a clean message
+          // instead of returning empty contacts (which the UI then shows as
+          // "Nenhuma conversa encontrada", masking the real problem).
+          const errMsg = (data && typeof data === "object" && "message" in data)
+            ? String((data as any).message)
+            : "A Evolution API não retornou a lista. Tente novamente em alguns segundos.";
+          return new Response(JSON.stringify({ contacts: [], error: errMsg }), {
+            status: 200, // 200 so the client doesn't throw on res.ok
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
 
-      return new Response(JSON.stringify({ contacts }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+        const contacts = data
+          .filter((c: any) => {
+            const jid = c?.remoteJid || c?.id || "";
+            return typeof jid === "string" && jid.endsWith("@s.whatsapp.net");
+          })
+          .map((c: any) => ({
+            jid: c.remoteJid || c.id,
+            name: c.pushName || c.name || c.contactName || String(c.remoteJid || c.id || "").replace("@s.whatsapp.net", ""),
+            profilePicUrl: c.profilePicUrl || null,
+          }))
+          .sort((a: any, b: any) => String(a.name || "").localeCompare(String(b.name || "")));
+
+        return new Response(JSON.stringify({ contacts }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      } catch (e: any) {
+        const isTimeout = e?.name === "AbortError";
+        console.error("contacts action failed:", e?.message || e);
+        return new Response(JSON.stringify({
+          contacts: [],
+          error: isTimeout
+            ? "Tempo esgotado ao buscar contatos. Sua agenda do WhatsApp pode estar muito grande — tente de novo."
+            : (e?.message || "Erro ao carregar contatos. Verifique se sua instância está conectada."),
+        }), {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
     }
 
     // GET MEDIA (base64 from a message)
