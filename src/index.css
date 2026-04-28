@@ -200,6 +200,68 @@
       0 30px 80px -10px rgba(0, 0, 0, 0.5);
   }
 
+  /* ──────────────────────────────────────────────────────────────
+     Cursor-aware spotlight — radial gradient that tracks the mouse
+     position via --mx/--my CSS variables set per card by onMouseMove.
+     Only fades in on hover — sits transparent otherwise.
+  ────────────────────────────────────────────────────────────── */
+  .glass-spotlight {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    background: radial-gradient(
+      400px circle at var(--mx, 50%) var(--my, 50%),
+      hsl(var(--primary) / 0.18),
+      hsl(var(--primary) / 0.05) 35%,
+      transparent 70%
+    );
+    opacity: 0;
+    transition: opacity 0.35s ease;
+    mix-blend-mode: screen;
+  }
+
+  /* Bright inner border that follows the cursor — gives the card the
+     premium "glass catches light" feel. Same --mx/--my variables. */
+  .glass-spotlight-border {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    padding: 1px;
+    background: radial-gradient(
+      280px circle at var(--mx, 50%) var(--my, 50%),
+      hsl(var(--primary) / 0.55),
+      hsl(var(--primary) / 0.15) 35%,
+      transparent 75%
+    );
+    -webkit-mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+            mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+            mask-composite: exclude;
+    opacity: 0;
+    transition: opacity 0.35s ease;
+  }
+
+  .glass-card-interactive:hover .glass-spotlight,
+  .glass-card-interactive:hover .glass-spotlight-border {
+    opacity: 1;
+  }
+  .glass-card-interactive {
+    transition: transform 0.5s cubic-bezier(0.25, 0.1, 0.25, 1),
+                box-shadow 0.5s cubic-bezier(0.25, 0.1, 0.25, 1);
+  }
+  .glass-card-interactive:hover {
+    transform: translateY(-6px);
+    box-shadow:
+      0 0 50px -10px hsl(var(--primary) / 0.4),
+      0 30px 80px -10px rgba(0, 0, 0, 0.55);
+  }
+
   /* Soft animated blobs for the section background */
   .blob {
     position: absolute;

@@ -876,12 +876,51 @@ const LandingPage = () => {
       </Section>
 
       {/* ═══ PRICING — glass morphism ═══ */}
-      <Section id="pricing" className="border-t border-border/40 relative overflow-hidden" ariaLabel="Planos e preços">
-        {/* Animated background blobs */}
-        <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
-          <div className="blob top-1/4 left-1/4 w-[28rem] h-[28rem] bg-primary/30" style={{ animationDelay: "0s" }} />
-          <div className="blob bottom-1/4 right-1/4 w-[24rem] h-[24rem] bg-emerald-500/20" style={{ animationDelay: "4s" }} />
-          <div className="blob top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[36rem] h-[36rem] bg-primary/15" style={{ animationDelay: "8s" }} />
+      <Section
+        id="pricing"
+        className="border-t border-border/40 relative overflow-hidden"
+        ariaLabel="Planos e preços"
+      >
+        {/* Section-level cursor tracker — shifts blobs subtly toward the
+            cursor for ambient response. Listens at the section root. */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          aria-hidden="true"
+          onMouseMove={(e) => {
+            const root = e.currentTarget.parentElement as HTMLElement | null;
+            if (!root) return;
+            const rect = root.getBoundingClientRect();
+            const x = (e.clientX - rect.left) / rect.width - 0.5;
+            const y = (e.clientY - rect.top) / rect.height - 0.5;
+            root.style.setProperty("--sx", String(x));
+            root.style.setProperty("--sy", String(y));
+          }}
+          style={{ pointerEvents: "auto" }}
+        >
+          <div
+            className="blob top-1/4 left-1/4 w-[28rem] h-[28rem] bg-primary/30"
+            style={{
+              animationDelay: "0s",
+              transform: "translate(calc(var(--sx, 0) * 40px), calc(var(--sy, 0) * 30px))",
+              transition: "transform 0.8s cubic-bezier(0.25, 0.1, 0.25, 1)",
+            }}
+          />
+          <div
+            className="blob bottom-1/4 right-1/4 w-[24rem] h-[24rem] bg-emerald-500/20"
+            style={{
+              animationDelay: "4s",
+              transform: "translate(calc(var(--sx, 0) * -30px), calc(var(--sy, 0) * -25px))",
+              transition: "transform 0.8s cubic-bezier(0.25, 0.1, 0.25, 1)",
+            }}
+          />
+          <div
+            className="blob top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[36rem] h-[36rem] bg-primary/15"
+            style={{
+              animationDelay: "8s",
+              transform: "translate(calc(-50% + var(--sx, 0) * 20px), calc(-50% + var(--sy, 0) * 20px))",
+              transition: "transform 0.8s cubic-bezier(0.25, 0.1, 0.25, 1)",
+            }}
+          />
         </div>
 
         <div className="relative">
@@ -995,10 +1034,26 @@ const LandingPage = () => {
                       />
                     )}
 
-                    {/* Glass card */}
-                    <div className={`relative rounded-2xl overflow-hidden h-full flex flex-col p-5 sm:p-6 glass-card ${plan.popular ? "glass-glow" : ""}`}>
+                    {/* Glass card with cursor-aware spotlight + interactive lift */}
+                    <div
+                      className="relative rounded-2xl overflow-hidden h-full flex flex-col p-5 sm:p-6 glass-card glass-card-interactive"
+                      onMouseMove={(e) => {
+                        const el = e.currentTarget as HTMLElement;
+                        const rect = el.getBoundingClientRect();
+                        const x = ((e.clientX - rect.left) / rect.width) * 100;
+                        const y = ((e.clientY - rect.top) / rect.height) * 100;
+                        el.style.setProperty("--mx", `${x}%`);
+                        el.style.setProperty("--my", `${y}%`);
+                      }}
+                    >
                       {/* Diagonal split borders (white top-left, primary bottom-right) */}
                       <div className="glass-border-overlay rounded-2xl" />
+
+                      {/* Cursor-aware radial spotlight (fills the card on hover) */}
+                      <div className="glass-spotlight rounded-2xl" />
+
+                      {/* Cursor-aware bright border ring (chases the cursor along the edge) */}
+                      <div className="glass-spotlight-border rounded-2xl" />
 
                       {/* Card content */}
                       <div className="relative flex flex-col flex-1">
