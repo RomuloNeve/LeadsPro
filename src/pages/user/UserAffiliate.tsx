@@ -33,7 +33,7 @@ const AFFILIATE_PLANS = [
     youEarn: "R$59,10",
     youEarnAnnual: "R$709,20",
     popular: true,
-    url: "https://app.cakto.com.br/affiliate/invite/edede6e3-3573-41b3-a1d8-e038f4a303e2",
+    url: "https://app.cakto.com.br/affiliate/invite/673c2a72-7e40-4cd1-a55f-d8260f06582f",
     color: "text-primary",
     bg: "bg-primary/15",
     border: "border-primary/40",
