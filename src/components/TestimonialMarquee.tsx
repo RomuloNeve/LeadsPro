@@ -1,5 +1,10 @@
 import { useEffect, useRef } from "react";
 import { Star } from "lucide-react";
+import avatarCarlos from "@/assets/avatar-carlos.jpg";
+import avatarAmanda from "@/assets/avatar-amanda.jpg";
+import avatarRicardo from "@/assets/avatar-ricardo.jpg";
+import avatarJuliana from "@/assets/avatar-juliana.jpg";
+import avatarRomulo from "@/assets/avatar-romulo.jpg";
 
 /**
  * TestimonialMarquee — three vertical scrolling columns of testimonial
@@ -7,13 +12,10 @@ import { Star } from "lucide-react";
  * creative-agency reference. Content is duplicated inside each track
  * so the loop is seamless.
  *
- * Speed accelerates with the user's scroll velocity (decays back to
- * baseline) — the section feels alive as you scroll past it.
- *
- * Cards alternate between three visual styles to keep the wall varied:
- *  - dashed border + zinc-900/20
- *  - solid white/5 border + zinc-900/40
- *  - dashed black/50 + italic copy
+ * Avatars: 5 curated local portraits (avatarCarlos/Amanda/Ricardo/
+ * Juliana/Romulo) for the "named" testimonials + 7 unique realistic
+ * portraits from randomuser.me for the rest. All 12 testimonials have
+ * a unique face — no repeats.
  */
 
 interface Testimonial {
@@ -23,9 +25,14 @@ interface Testimonial {
   metric?: string;
   metricLabel?: string;
   stars?: number;
-  avatar?: string;
+  avatar: string;
   variant: "long" | "short" | "italic";
 }
+
+// randomuser.me serves real, consenting portraits at deterministic URLs.
+// Picked specific IDs to ensure visual variety (age + gender + framing).
+const ru = (gender: "men" | "women", id: number) =>
+  `https://randomuser.me/api/portraits/${gender}/${id}.jpg`;
 
 const COLUMN_A: Testimonial[] = [
   {
@@ -34,11 +41,14 @@ const COLUMN_A: Testimonial[] = [
     role: "Corretor de Imóveis",
     metric: "+300%",
     stars: 5,
+    avatar: avatarCarlos,
     variant: "long",
   },
   {
     text: "Sem complicação, conectei meu WhatsApp em 1 minuto e já saí disparando.",
-    name: "@thales.vende",
+    name: "Thales R.",
+    role: "Founder",
+    avatar: ru("men", 32),
     variant: "short",
   },
   {
@@ -47,11 +57,14 @@ const COLUMN_A: Testimonial[] = [
     role: "Salão de Beleza",
     metric: "24/7",
     stars: 5,
+    avatar: ru("women", 24),
     variant: "long",
   },
   {
     text: "Cancelei o RD Station. O LeadsPro faz tudo num só lugar e sai pela metade do preço.",
-    name: "@founder.flowx",
+    name: "Diego S.",
+    role: "@founder.flowx",
+    avatar: ru("men", 47),
     variant: "italic",
   },
 ];
@@ -63,11 +76,14 @@ const COLUMN_B: Testimonial[] = [
     role: "Consultora de Marketing",
     metric: "200+",
     stars: 5,
+    avatar: avatarAmanda,
     variant: "long",
   },
   {
     text: "Capturei 400 leads de dentistas em 1 hora. INSANO. 🚀",
-    name: "@gustavo.crm",
+    name: "Gustavo P.",
+    role: "@gustavo.crm",
+    avatar: ru("men", 65),
     variant: "italic",
   },
   {
@@ -76,6 +92,7 @@ const COLUMN_B: Testimonial[] = [
     role: "Dono de Agência",
     metric: "R$ 8k/mês",
     stars: 5,
+    avatar: avatarRomulo,
     variant: "long",
   },
   {
@@ -84,6 +101,7 @@ const COLUMN_B: Testimonial[] = [
     role: "B2B SaaS",
     metric: "2x",
     stars: 5,
+    avatar: ru("women", 56),
     variant: "long",
   },
 ];
@@ -95,11 +113,14 @@ const COLUMN_C: Testimonial[] = [
     role: "Dono de Agência Digital",
     metric: "40 clientes",
     stars: 5,
+    avatar: avatarRicardo,
     variant: "long",
   },
   {
     text: "Suporte humano respondendo em minutos, não horas. Diferença gigante.",
-    name: "@livia.consultora",
+    name: "Lívia M.",
+    role: "Consultora",
+    avatar: ru("women", 79),
     variant: "short",
   },
   {
@@ -108,11 +129,14 @@ const COLUMN_C: Testimonial[] = [
     role: "Vendedora Digital",
     metric: "8x",
     stars: 5,
+    avatar: avatarJuliana,
     variant: "long",
   },
   {
     text: "Finalmente uma ferramenta brasileira que não parece tradução do gringo.",
-    name: "@bruno.vendas",
+    name: "Bruno A.",
+    role: "@bruno.vendas",
+    avatar: ru("men", 83),
     variant: "italic",
   },
 ];
@@ -121,12 +145,19 @@ function Card({ t }: { t: Testimonial }) {
   if (t.variant === "short") {
     return (
       <div className="p-6 border border-white/5 bg-zinc-900/40 backdrop-blur-sm">
-        <p className="text-zinc-400 text-sm font-sans mb-3 leading-relaxed">"{t.text}"</p>
-        <div className="flex items-center gap-2">
-          <div className="w-6 h-6 bg-primary/20 text-primary flex items-center justify-center text-[10px] font-bold border border-primary/30">
-            {t.name.startsWith("@") ? t.name[1].toUpperCase() : t.name[0]}
+        <p className="text-zinc-400 text-sm font-sans mb-4 leading-relaxed">"{t.text}"</p>
+        <div className="flex items-center gap-2.5">
+          <img
+            src={t.avatar}
+            alt={t.name}
+            loading="lazy"
+            className="w-7 h-7 object-cover border border-white/10"
+            referrerPolicy="no-referrer"
+          />
+          <div className="flex flex-col leading-tight">
+            <span className="text-xs text-white font-medium">{t.name}</span>
+            {t.role && <span className="text-[10px] text-zinc-500 font-mono">{t.role}</span>}
           </div>
-          <span className="text-xs text-zinc-500 font-mono">{t.name}</span>
         </div>
       </div>
     );
@@ -136,8 +167,18 @@ function Card({ t }: { t: Testimonial }) {
     return (
       <div className="p-6 border border-zinc-800 border-dashed bg-black/50">
         <p className="text-zinc-300 mb-4 font-sans text-sm italic leading-relaxed">"{t.text}"</p>
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-zinc-500 font-mono">{t.name}</span>
+        <div className="flex items-center gap-2.5">
+          <img
+            src={t.avatar}
+            alt={t.name}
+            loading="lazy"
+            className="w-7 h-7 object-cover grayscale border border-white/10"
+            referrerPolicy="no-referrer"
+          />
+          <div className="flex flex-col leading-tight">
+            <span className="text-xs text-white font-medium">{t.name}</span>
+            {t.role && <span className="text-[10px] text-zinc-500 font-mono">{t.role}</span>}
+          </div>
         </div>
       </div>
     );
@@ -158,16 +199,20 @@ function Card({ t }: { t: Testimonial }) {
       </p>
       <div className="flex items-center justify-between gap-3 pt-4 border-t border-zinc-800 border-dashed">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="w-8 h-8 bg-gradient-to-br from-primary to-primary/60 text-primary-foreground flex items-center justify-center text-[10px] font-bold shrink-0">
-            {t.name
-              .split(" ")
-              .map((w) => w[0])
-              .slice(0, 2)
-              .join("")}
-          </div>
+          <img
+            src={t.avatar}
+            alt={t.name}
+            loading="lazy"
+            className="w-9 h-9 object-cover border border-white/10 shrink-0"
+            referrerPolicy="no-referrer"
+          />
           <div className="min-w-0">
             <div className="text-sm text-white font-semibold font-display truncate">{t.name}</div>
-            {t.role && <div className="text-[10px] text-zinc-500 font-mono uppercase tracking-wider truncate">{t.role}</div>}
+            {t.role && (
+              <div className="text-[10px] text-zinc-500 font-mono uppercase tracking-wider truncate">
+                {t.role}
+              </div>
+            )}
           </div>
         </div>
         {t.metric && (
@@ -236,6 +281,7 @@ export default function TestimonialMarquee() {
     measure();
     setTimeout(measure, 200);
     setTimeout(measure, 600);
+    setTimeout(measure, 1500); // again after remote avatars finish loading
 
     let scrollSpeed = 0;
     let lastScrollY = window.scrollY;
@@ -316,7 +362,7 @@ export default function TestimonialMarquee() {
 
       {/* Three-column grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 h-full max-w-7xl mx-auto px-6 gap-6">
-        <Track direction="up"   baseSpeed={0.5}  items={COLUMN_A} />
+        <Track direction="up" baseSpeed={0.5} items={COLUMN_A} />
         {/* Hide column B on tablet/mobile to keep density readable */}
         <div className="hidden md:block h-full overflow-hidden relative">
           <div
