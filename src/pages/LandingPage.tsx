@@ -875,9 +875,15 @@ const LandingPage = () => {
         </div>
       </Section>
 
-      {/* ═══ PRICING ═══ */}
-      <Section id="pricing" className="border-t border-border/40 relative" ariaLabel="Planos e preços">
-        <div className="absolute inset-0 bg-primary/[0.015] pointer-events-none" aria-hidden="true" />
+      {/* ═══ PRICING — glass morphism ═══ */}
+      <Section id="pricing" className="border-t border-border/40 relative overflow-hidden" ariaLabel="Planos e preços">
+        {/* Animated background blobs */}
+        <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
+          <div className="blob top-1/4 left-1/4 w-[28rem] h-[28rem] bg-primary/30" style={{ animationDelay: "0s" }} />
+          <div className="blob bottom-1/4 right-1/4 w-[24rem] h-[24rem] bg-emerald-500/20" style={{ animationDelay: "4s" }} />
+          <div className="blob top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[36rem] h-[36rem] bg-primary/15" style={{ animationDelay: "8s" }} />
+        </div>
+
         <div className="relative">
           <SectionHeader
             badge="Investimento"
@@ -885,175 +891,172 @@ const LandingPage = () => {
             subtitle="Menos que um almoço de negócios por mês. O retorno? Imensurável."
           />
 
-          <div className={`grid grid-cols-1 sm:grid-cols-2 ${isAffiliateRef ? 'lg:grid-cols-3' : 'lg:grid-cols-4'} gap-4 sm:gap-5 sm:gap-6 max-w-6xl mx-auto pt-6`}>
-            {/* Free Trial - hidden for affiliate URLs */}
-            {!isAffiliateRef && (
-              <motion.div
-                className="p-4 sm:p-6 rounded-2xl border border-border/60 bg-card card-shadow flex flex-col"
-                initial={{ opacity: 0, y: 30, scale: 0.96 }}
-                whileInView={{ opacity: 1, y: 0, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6 }}
-              >
-                <div className="mb-5">
-                  <h3 className="text-lg font-bold font-display text-foreground mb-1">Teste Grátis</h3>
-                  <p className="text-xs text-muted-foreground">7 dias com acesso completo</p>
-                </div>
-                <div className="mb-2">
-                  <span className="text-3xl sm:text-4xl font-bold font-display text-foreground tracking-tight">R$0</span>
-                  <span className="text-muted-foreground text-sm"> /7 dias</span>
-                </div>
-                <Badge className="w-fit mb-2 bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20 text-xs">
-                  <Gift className="h-3 w-3 mr-1" /> 100% Grátis
-                </Badge>
-                <p className="text-xs text-muted-foreground mb-2">60 créditos por dia · 420 no total</p>
-                <p className="text-xs text-primary font-medium mb-6">Sem cartão de crédito</p>
-                <ul className="space-y-2.5 mb-6 flex-1 text-xs" role="list">
-                  {["Acesso completo à plataforma", "Filtros de busca de leads", "Exportação de leads"].map((item) => (
-                    <li key={item} className="flex items-center gap-2 text-muted-foreground">
-                      <CheckCircle2 className="h-3.5 w-3.5 text-primary shrink-0" />
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-                <Button
-                  size="lg"
-                  onClick={() => navigate("/auth?plan=free")}
-                  className="w-full h-11 gradient-bg text-primary-foreground hover:opacity-90 glow-shadow text-sm"
-                >
-                  <Gift className="mr-2 h-4 w-4" />
-                  Cadastre-se grátis
-                </Button>
-              </motion.div>
-            )}
+          {(() => {
+            const PLANS = [
+              !isAffiliateRef && {
+                id: "free",
+                name: "Teste Grátis",
+                tagline: "7 dias com acesso completo",
+                price: "R$0",
+                priceSuffix: "/7 dias",
+                creditsBadge: "100% Grátis",
+                creditsBadgeIcon: <Gift className="h-3 w-3 mr-1" />,
+                creditsBadgeClass: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30",
+                detail: "60 créditos por dia · 420 no total",
+                accent: "Sem cartão de crédito",
+                features: ["Acesso completo à plataforma", "Filtros de busca de leads", "Exportação de leads"],
+                ctaLabel: "Cadastre-se grátis",
+                ctaIcon: <Gift className="mr-2 h-4 w-4" />,
+                ctaPrimary: true,
+                onCta: () => navigate("/auth?plan=free"),
+              },
+              {
+                id: "starter",
+                name: "Starter",
+                tagline: "Para quem está começando",
+                price: "R$97",
+                priceSuffix: "/mês",
+                creditsBadge: "300 créditos/mês",
+                creditsBadgeClass: "bg-primary/15 text-primary border-primary/30",
+                detail: "1 crédito = 1 lead gerado",
+                accent: "⚡ CRM, campanhas, chatbot e demais recursos ilimitados",
+                features: ["Acesso completo à plataforma", "Filtros de busca de leads", "Exportação de leads", "Compra de créditos extras"],
+                ctaLabel: "Começar agora",
+                ctaIcon: null,
+                ctaPrimary: false,
+                onCta: () => window.open(checkoutLinks.starter, "_blank"),
+              },
+              {
+                id: "pro",
+                name: "Pro",
+                tagline: "Prospecção constante",
+                price: "R$197",
+                priceSuffix: "/mês",
+                creditsBadge: "1.000 créditos/mês",
+                creditsBadgeClass: "bg-primary/15 text-primary border-primary/30",
+                detail: "1 crédito = 1 lead gerado",
+                accent: "⚡ CRM, campanhas, chatbot e demais recursos ilimitados",
+                features: ["Acesso completo à plataforma", "Filtros de busca de leads", "Exportação de leads", "Compra de créditos extras"],
+                ctaLabel: "Garantir acesso",
+                ctaIcon: null,
+                ctaPrimary: true,
+                popular: true,
+                onCta: () => window.open(checkoutLinks.profissional, "_blank"),
+              },
+              {
+                id: "enterprise",
+                name: "Enterprise",
+                tagline: "Grandes volumes de leads",
+                price: "R$397",
+                priceSuffix: "/mês",
+                creditsBadge: "5.000 créditos/mês",
+                creditsBadgeClass: "bg-amber-500/15 text-amber-300 border-amber-500/30",
+                detail: "1 crédito = 1 lead gerado",
+                accent: "⚡ CRM, campanhas, chatbot e demais recursos ilimitados",
+                features: ["Acesso completo à plataforma", "Filtros de busca de leads", "Exportação de leads", "Compra de créditos extras"],
+                ctaLabel: "Começar agora",
+                ctaIcon: null,
+                ctaPrimary: false,
+                onCta: () => window.open(checkoutLinks.enterprise, "_blank"),
+              },
+            ].filter(Boolean) as Array<{
+              id: string; name: string; tagline: string; price: string; priceSuffix: string;
+              creditsBadge: string; creditsBadgeIcon?: React.ReactNode; creditsBadgeClass: string;
+              detail: string; accent: string; features: string[];
+              ctaLabel: string; ctaIcon: React.ReactNode; ctaPrimary: boolean; popular?: boolean;
+              onCta: () => void;
+            }>;
 
-            {/* Starter */}
-            <motion.div
-              className="p-4 sm:p-6 rounded-2xl border border-border/60 bg-card card-shadow flex flex-col"
-              initial={{ opacity: 0, y: 30, scale: 0.96 }}
-              whileInView={{ opacity: 1, y: 0, scale: 1 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: 0.08 }}
-            >
-              <div className="mb-5">
-                <h3 className="text-lg font-bold font-display text-foreground mb-1">Starter</h3>
-                <p className="text-xs text-muted-foreground">Para quem está começando</p>
-              </div>
-              <div className="mb-2">
-                <span className="text-3xl sm:text-4xl font-bold font-display text-foreground tracking-tight">R$97</span>
-                <span className="text-muted-foreground text-sm"> /mês</span>
-              </div>
-              <Badge className="w-fit mb-2 bg-primary/10 text-primary border-primary/20 text-xs">
-                300 créditos/mês
-              </Badge>
-              <p className="text-xs text-muted-foreground mb-2">1 crédito = 1 lead gerado</p>
-              <p className="text-[10px] text-primary/80 mb-6">⚡ Créditos usados apenas para prospecção. CRM, campanhas, chatbot e demais recursos são ilimitados.</p>
-              <ul className="space-y-2.5 mb-6 flex-1 text-xs" role="list">
-                {["Acesso completo à plataforma", "Filtros de busca de leads", "Exportação de leads", "Compra de créditos extras"].map((item) => (
-                  <li key={item} className="flex items-center gap-2 text-muted-foreground">
-                    <CheckCircle2 className="h-3.5 w-3.5 text-primary shrink-0" />
-                    {item}
-                  </li>
+            return (
+              <div className={`grid grid-cols-1 sm:grid-cols-2 ${isAffiliateRef ? 'lg:grid-cols-3' : 'lg:grid-cols-4'} gap-5 sm:gap-6 max-w-6xl mx-auto pt-6`}>
+                {PLANS.map((plan, i) => (
+                  <motion.div
+                    key={plan.id}
+                    className={`relative ${plan.popular ? "lg:scale-[1.03] z-10" : ""}`}
+                    initial={{ opacity: 0, y: 30, scale: 0.96 }}
+                    whileInView={{ opacity: 1, y: 0, scale: plan.popular ? 1.03 : 1 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.6, delay: i * 0.08 }}
+                  >
+                    {/* "Most popular" pill — sits above */}
+                    {plan.popular && (
+                      <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-30">
+                        <Badge className="gradient-bg text-primary-foreground border-0 px-5 py-1.5 glow-shadow text-xs tracking-wide whitespace-nowrap">
+                          MAIS ESCOLHIDO 🔥
+                        </Badge>
+                      </div>
+                    )}
+
+                    {/* Decorative card peeking from behind (popular only) */}
+                    {plan.popular && (
+                      <div
+                        aria-hidden
+                        className="absolute inset-0 rounded-2xl bg-gradient-to-br from-primary/30 to-emerald-500/20 translate-x-3 translate-y-3 -z-10 opacity-60"
+                      />
+                    )}
+
+                    {/* Glass card */}
+                    <div className={`relative rounded-2xl overflow-hidden h-full flex flex-col p-5 sm:p-6 glass-card ${plan.popular ? "glass-glow" : ""}`}>
+                      {/* Diagonal split borders (white top-left, primary bottom-right) */}
+                      <div className="glass-border-overlay rounded-2xl" />
+
+                      {/* Card content */}
+                      <div className="relative flex flex-col flex-1">
+                        {/* Header */}
+                        <div className="mb-5">
+                          <h3 className="text-lg font-bold font-display text-foreground mb-1">{plan.name}</h3>
+                          <p className="text-xs text-white/65">{plan.tagline}</p>
+                        </div>
+
+                        {/* Price — gradient text */}
+                        <div className="mb-3 flex items-end gap-2">
+                          <span className={`text-4xl sm:text-5xl font-bold font-display tracking-tight leading-none ${plan.popular ? "gradient-text" : "text-white"}`}>
+                            {plan.price}
+                          </span>
+                          <span className="text-sm text-white/55 mb-1">{plan.priceSuffix}</span>
+                        </div>
+
+                        <Badge className={`w-fit mb-2 text-[11px] ${plan.creditsBadgeClass}`}>
+                          {plan.creditsBadgeIcon}
+                          {plan.creditsBadge}
+                        </Badge>
+                        <p className="text-xs text-white/65 mb-1">{plan.detail}</p>
+                        <p className="text-[10px] text-primary/85 mb-5 leading-relaxed">{plan.accent}</p>
+
+                        {/* Divider */}
+                        <div className="h-px w-full bg-gradient-to-r from-transparent via-white/20 to-transparent mb-4" />
+
+                        {/* Features */}
+                        <ul className="space-y-2.5 mb-6 flex-1 text-xs" role="list">
+                          {plan.features.map((item) => (
+                            <li key={item} className="flex items-start gap-2 text-white/75">
+                              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400 shrink-0 mt-0.5" />
+                              <span>{item}</span>
+                            </li>
+                          ))}
+                        </ul>
+
+                        {/* CTA */}
+                        <Button
+                          size="lg"
+                          onClick={plan.onCta}
+                          className={
+                            plan.ctaPrimary
+                              ? "w-full h-11 gradient-bg text-primary-foreground hover:opacity-90 glow-shadow text-sm border-0"
+                              : "w-full h-11 text-sm bg-white/[0.06] hover:bg-white/[0.12] text-foreground border border-white/15 backdrop-blur-sm"
+                          }
+                        >
+                          {plan.ctaIcon}
+                          {plan.ctaLabel}
+                          {!plan.ctaIcon && <ArrowRight className="ml-2 h-4 w-4" />}
+                        </Button>
+                      </div>
+                    </div>
+                  </motion.div>
                 ))}
-              </ul>
-              <Button
-                size="lg"
-                variant="outline"
-                onClick={() => window.open(checkoutLinks.starter, "_blank")}
-                className="w-full h-11 text-sm"
-              >
-                Começar agora
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </motion.div>
-
-            {/* Pro — Most popular */}
-            <motion.div
-              className="p-4 sm:p-6 rounded-2xl border-2 border-primary bg-card card-shadow flex flex-col relative overflow-visible"
-              initial={{ opacity: 0, y: 30, scale: 0.96 }}
-              whileInView={{ opacity: 1, y: 0, scale: 1 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: 0.15 }}
-            >
-              <div className="absolute inset-0 bg-primary/[0.025] pointer-events-none" aria-hidden="true" />
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
-                <Badge className="gradient-bg text-primary-foreground border-0 px-5 py-1.5 glow-shadow text-xs tracking-wide whitespace-nowrap">
-                  MAIS ESCOLHIDO 🔥
-                </Badge>
               </div>
-              <div className="relative z-10 flex flex-col flex-1">
-                <div className="mb-5">
-                  <h3 className="text-lg font-bold font-display text-foreground mb-1">Pro</h3>
-                  <p className="text-xs text-muted-foreground">Prospecção constante</p>
-                </div>
-                <div className="mb-2">
-                  <span className="text-3xl sm:text-4xl font-bold font-display gradient-text tracking-tight">R$197</span>
-                  <span className="text-muted-foreground text-sm"> /mês</span>
-                </div>
-                <Badge className="w-fit mb-2 bg-primary/10 text-primary border-primary/20 text-xs">
-                  1.000 créditos/mês
-                </Badge>
-                <p className="text-xs text-muted-foreground mb-2">1 crédito = 1 lead gerado</p>
-                <p className="text-[10px] text-primary/80 mb-6">⚡ Créditos usados apenas para prospecção. CRM, campanhas, chatbot e demais recursos são ilimitados.</p>
-                <ul className="space-y-2.5 mb-6 flex-1 text-xs" role="list">
-                  {["Acesso completo à plataforma", "Filtros de busca de leads", "Exportação de leads", "Compra de créditos extras"].map((item) => (
-                    <li key={item} className="flex items-center gap-2 text-muted-foreground">
-                      <CheckCircle2 className="h-3.5 w-3.5 text-primary shrink-0" />
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-                <Button
-                  size="lg"
-                  onClick={() => window.open(checkoutLinks.profissional, "_blank")}
-                  className="w-full gradient-bg text-primary-foreground hover:opacity-90 glow-shadow h-11 text-sm"
-                >
-                  Garantir acesso
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </div>
-            </motion.div>
-
-            {/* Enterprise */}
-            <motion.div
-              className="p-4 sm:p-6 rounded-2xl border border-border/60 bg-card card-shadow flex flex-col"
-              initial={{ opacity: 0, y: 30, scale: 0.96 }}
-              whileInView={{ opacity: 1, y: 0, scale: 1 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: 0.22 }}
-            >
-              <div className="mb-5">
-                <h3 className="text-lg font-bold font-display text-foreground mb-1">Enterprise</h3>
-                <p className="text-xs text-muted-foreground">Grandes volumes de leads</p>
-              </div>
-              <div className="mb-2">
-                <span className="text-3xl sm:text-4xl font-bold font-display text-foreground tracking-tight">R$397</span>
-                <span className="text-muted-foreground text-sm"> /mês</span>
-              </div>
-              <Badge className="w-fit mb-2 bg-primary/10 text-primary border-primary/20 text-xs">
-                5.000 créditos/mês
-              </Badge>
-              <p className="text-xs text-muted-foreground mb-2">1 crédito = 1 lead gerado</p>
-              <p className="text-[10px] text-primary/80 mb-6">⚡ Créditos usados apenas para prospecção. CRM, campanhas, chatbot e demais recursos são ilimitados.</p>
-              <ul className="space-y-2.5 mb-6 flex-1 text-xs" role="list">
-                {["Acesso completo à plataforma", "Filtros de busca de leads", "Exportação de leads", "Compra de créditos extras"].map((item) => (
-                  <li key={item} className="flex items-center gap-2 text-muted-foreground">
-                    <CheckCircle2 className="h-3.5 w-3.5 text-primary shrink-0" />
-                    {item}
-                  </li>
-                ))}
-              </ul>
-              <Button
-                size="lg"
-                variant="outline"
-                onClick={() => window.open(checkoutLinks.enterprise, "_blank")}
-                className="w-full h-11 text-sm"
-              >
-                Começar agora
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </motion.div>
-          </div>
+            );
+          })()}
 
           {/* Credits extra info */}
           <motion.div
