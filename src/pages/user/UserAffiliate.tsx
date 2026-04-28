@@ -14,37 +14,36 @@ import { supabase } from "@/integrations/supabase/client";
 const LANDING_URL = "https://leadspro.app";
 const CAKTO_REGISTER_URL = "https://app.cakto.com.br/auth/register/";
 
+/** Single Cakto invite that activates affiliation to ALL three plans
+ *  in one click. Replaces the previous per-plan invites. */
+const AFFILIATE_INVITE_URL = "https://app.cakto.com.br/affiliate/invite/673c2a72-7e40-4cd1-a55f-d8260f06582f";
+
+/** Used purely for the earnings reference table — not for buttons. */
 const AFFILIATE_PLANS = [
   {
     plan: "Starter",
-    price: "R$97",
     customerPays: "R$97/mês",
     youEarn: "R$29,10",
     youEarnAnnual: "R$349,20",
-    url: "https://app.cakto.com.br/affiliate/invite/4ccb38bd-f59e-4777-961c-27fe1bf203cc",
     color: "text-blue-500",
     bg: "bg-blue-500/10",
     border: "border-blue-500/20",
   },
   {
     plan: "Pro",
-    price: "R$197",
     customerPays: "R$197/mês",
     youEarn: "R$59,10",
     youEarnAnnual: "R$709,20",
     popular: true,
-    url: "https://app.cakto.com.br/affiliate/invite/673c2a72-7e40-4cd1-a55f-d8260f06582f",
     color: "text-primary",
     bg: "bg-primary/15",
     border: "border-primary/40",
   },
   {
     plan: "Enterprise",
-    price: "R$397",
     customerPays: "R$397/mês",
     youEarn: "R$119,10",
     youEarnAnnual: "R$1.429,20",
-    url: "https://app.cakto.com.br/affiliate/invite/24363329-3162-4684-8e24-4d4550c17493",
     color: "text-amber-500",
     bg: "bg-amber-500/10",
     border: "border-amber-500/20",
@@ -209,8 +208,8 @@ const UserAffiliate = () => {
           <div className="grid sm:grid-cols-2 gap-3">
             {[
               { n: "1", t: "Crie sua conta na Cakto",     d: "Plataforma gratuita que processa as comissões. Leva 2 minutos." },
-              { n: "2", t: "Afilie-se ao plano Pro",       d: "Um clique. É o plano mais vendido (R$59,10 de comissão por venda)." },
-              { n: "3", t: "Cole 1 link aqui",             d: "A Cakto te dá um link de checkout. Você cola aqui e geramos sua URL única." },
+              { n: "2", t: "Afilie-se a todos os planos",  d: "Um clique. O link já cadastra você nos 3 planos (Starter, Pro e Enterprise) de uma vez." },
+              { n: "3", t: "Cole seu link aqui",            d: "A Cakto te dá um link de checkout. Você cola aqui e geramos sua URL única." },
               { n: "4", t: "Compartilhe e receba",          d: "Divulgue sua URL. A cada compra, você ganha 30% recorrente todo mês." },
             ].map((s) => (
               <div key={s.n} className="flex gap-2.5 sm:gap-3 p-2.5 sm:p-3 rounded-lg border border-border bg-muted/30">
@@ -298,67 +297,59 @@ const UserAffiliate = () => {
                     </div>
                     <div className="min-w-0 flex-1">
                       <h3 className="text-sm sm:text-base font-bold text-foreground">
-                        {advancedMode ? "Afilie-se aos 3 planos" : "Afilie-se ao plano Pro"}
+                        Afilie-se a todos os planos
                       </h3>
                       <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-                        {advancedMode ? (
-                          <>Clique nos 3 botões abaixo (um pra cada plano). Você não paga nada.</>
-                        ) : (
-                          <>Um clique é tudo. <strong className="text-foreground">Pro é o plano mais vendido</strong> — comissão de R$59,10 por cliente, todo mês.</>
-                        )}
+                        Um clique já te cadastra como afiliado nos <strong className="text-foreground">3 planos</strong> de uma vez. Você não paga nada.
                       </p>
                     </div>
                   </div>
 
-                  <div className="grid gap-2.5">
-                    {(advancedMode ? AFFILIATE_PLANS : AFFILIATE_PLANS.filter((p) => p.plan === "Pro")).map((item) => (
-                      <div
-                        key={item.plan}
-                        className={`relative rounded-xl border-2 ${item.border} p-3 sm:p-4`}
-                      >
-                        {item.popular && (
-                          <span className="absolute -top-2 left-3 text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-primary text-primary-foreground">
-                            Mais vendido
-                          </span>
-                        )}
-                        <div className="flex items-center justify-between gap-3 flex-wrap sm:flex-nowrap">
-                          <div className="flex items-center gap-3 min-w-0">
-                            <div className={`rounded-lg p-2 ${item.bg} shrink-0`}>
-                              <Crown className={`h-4 w-4 ${item.color}`} />
+                  {/* SINGLE affiliation CTA — opens the unified Cakto invite */}
+                  <Button
+                    className="w-full gap-2 gradient-bg text-primary-foreground h-12 text-sm sm:text-base font-semibold glow-shadow"
+                    onClick={() => window.open(AFFILIATE_INVITE_URL, "_blank")}
+                  >
+                    <Crown className="h-4 w-4" />
+                    Afiliar-se aos planos do LeadsPro
+                    <ExternalLink className="h-4 w-4" />
+                  </Button>
+
+                  {/* Earnings reference — shows commission per plan, no buttons */}
+                  <div className="rounded-xl border border-border bg-muted/30 p-3 sm:p-4 space-y-2.5">
+                    <p className="text-[11px] sm:text-xs font-bold text-foreground uppercase tracking-wider">
+                      Sua comissão em cada plano
+                    </p>
+                    <div className="space-y-1.5">
+                      {AFFILIATE_PLANS.map((item) => (
+                        <div
+                          key={item.plan}
+                          className={`flex items-center justify-between gap-2 rounded-lg px-2.5 py-2 ${
+                            item.popular ? "bg-primary/[0.06] border border-primary/30" : "bg-background/40 border border-border"
+                          }`}
+                        >
+                          <div className="flex items-center gap-2 min-w-0">
+                            <div className={`rounded-md p-1.5 ${item.bg} shrink-0`}>
+                              <Crown className={`h-3 w-3 ${item.color}`} />
                             </div>
                             <div className="min-w-0">
-                              <p className="font-bold text-foreground text-sm sm:text-base">
-                                Plano {item.plan}
+                              <p className="text-xs sm:text-sm font-semibold text-foreground leading-tight">
+                                {item.plan} {item.popular && <span className="text-[9px] text-primary font-bold ml-1">MAIS VENDIDO</span>}
                               </p>
-                              <p className="text-[11px] sm:text-xs text-muted-foreground">
-                                Cliente paga <strong className="text-foreground">{item.customerPays}</strong>
+                              <p className="text-[10px] text-muted-foreground">
+                                Cliente paga {item.customerPays}
                               </p>
                             </div>
                           </div>
-                          <Button
-                            size="sm"
-                            className="gap-1.5 text-xs shrink-0 gradient-bg text-primary-foreground"
-                            onClick={() => window.open(item.url, "_blank")}
-                          >
-                            Afiliar-se <ExternalLink className="h-3 w-3" />
-                          </Button>
-                        </div>
-                        <div className="mt-2.5 sm:mt-3 pt-2.5 sm:pt-3 border-t border-border/50 space-y-2">
-                          <div className="flex items-center justify-between gap-2">
-                            <p className="text-[11px] sm:text-xs text-muted-foreground">
-                              Por cada cliente que indicar:
-                            </p>
-                            <p className={`text-base sm:text-lg font-bold ${item.color} tabular-nums leading-none`}>
+                          <div className="text-right shrink-0">
+                            <p className={`text-sm sm:text-base font-bold ${item.color} tabular-nums leading-none`}>
                               {item.youEarn}
-                              <span className="text-[10px] text-muted-foreground font-normal ml-1">/mês recorrente</span>
                             </p>
-                          </div>
-                          <div className="rounded-md bg-emerald-500/[0.06] border border-emerald-500/20 px-2 py-1.5 text-[11px] sm:text-xs text-muted-foreground">
-                            <strong className="text-emerald-500 tabular-nums">{item.youEarnAnnual}</strong> nos primeiros 12 meses por cliente — depois continua todo mês enquanto ele estiver ativo.
+                            <p className="text-[9px] text-muted-foreground">/mês recorrente</p>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
 
                   {/* Earnings projection — Pro plan */}
@@ -401,17 +392,6 @@ const UserAffiliate = () => {
                     </p>
                   </div>
 
-                  {/* Advanced toggle */}
-                  <button
-                    onClick={() => setAdvancedMode((v) => !v)}
-                    className="w-full text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center justify-center gap-1.5 py-1"
-                  >
-                    {advancedMode ? (
-                      <>← Voltar pro modo simples (só Pro)</>
-                    ) : (
-                      <>+ Quero também Starter e Enterprise (avançado)</>
-                    )}
-                  </button>
                 </CardContent>
               </Card>
 
