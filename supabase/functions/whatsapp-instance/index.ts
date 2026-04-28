@@ -32,20 +32,58 @@ async function configureWebhook(instanceName: string) {
 }
 
 async function evoFetch(path: string, options: RequestInit = {}) {
+  if (!EVOLUTION_API_URL || !EVOLUTION_API_KEY) {
+    throw new Error("Servidor WhatsApp não configurado (env vars ausentes). Contate o suporte.");
+  }
   const baseUrl = EVOLUTION_API_URL.replace(/\/+$/, "");
   const url = `${baseUrl}${path}`;
-  const res = await fetch(url, {
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      apikey: EVOLUTION_API_KEY,
-      ...(options.headers || {}),
-    },
-  });
-  const data = await res.json();
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 25000);
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      ...options,
+      headers: {
+        "Content-Type": "application/json",
+        apikey: EVOLUTION_API_KEY,
+        ...(options.headers || {}),
+      },
+      signal: ctrl.signal,
+    });
+  } catch (e: any) {
+    if (e?.name === "AbortError") {
+      throw new Error("Tempo esgotado conectando ao servidor WhatsApp. Tente de novo em alguns segundos.");
+    }
+    throw new Error("Não foi possível alcançar o servidor WhatsApp. Verifique sua conexão e tente novamente.");
+  } finally {
+    clearTimeout(timer);
+  }
+  const text = await res.text();
+  let data: any = null;
+  try { data = text ? JSON.parse(text) : null; } catch { /* keep raw text */ }
+
   if (!res.ok) {
-    console.error("Evolution API error:", JSON.stringify(data));
-    throw new Error(data?.message || data?.error || "Evolution API error");
+    // Detailed log for the admin error console — includes URL + status + payload
+    console.error(
+      `Evolution API ${res.status} ${res.statusText} on ${path} —`,
+      JSON.stringify(data ?? text).substring(0, 400),
+    );
+    // Friendly user-facing messages by status family
+    if (res.status === 401 || res.status === 403) {
+      throw new Error(
+        "Configuração do servidor WhatsApp inválida (chave de API rejeitada). Contate o suporte para regenerar a credencial."
+      );
+    }
+    if (res.status === 404) {
+      throw new Error("Recurso WhatsApp não encontrado no servidor. A instância pode ter sido removida.");
+    }
+    if (res.status === 409) {
+      throw new Error("Já existe uma instância com esse nome. Tente reconectar.");
+    }
+    if (res.status >= 500) {
+      throw new Error("Servidor WhatsApp instável no momento. Tente novamente em 30 segundos.");
+    }
+    throw new Error(data?.message || data?.error || `Erro inesperado (HTTP ${res.status}).`);
   }
   return data;
 }
