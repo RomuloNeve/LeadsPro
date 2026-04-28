@@ -51,7 +51,7 @@ const COLUMN_A: Testimonial[] = [
     text: "Sem complicação, conectei meu WhatsApp em 1 minuto e já saí disparando.",
     name: "Thales R.",
     role: "Founder",
-    avatar: ru("men", 32),
+    avatar: ru("men", 71),
     variant: "short",
   },
   {
