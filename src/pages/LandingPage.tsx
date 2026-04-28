@@ -119,17 +119,28 @@ const SectionHeader = ({ badge, title, subtitle }: {
   badge?: string; title: React.ReactNode; subtitle?: string;
 }) => (
   <motion.header
-    className="text-center mb-10 md:mb-16 lg:mb-20 max-w-3xl mx-auto px-1"
+    className="mb-10 md:mb-16 lg:mb-20 max-w-3xl mx-auto px-1"
     initial={{ opacity: 0, y: 20 }}
     whileInView={{ opacity: 1, y: 0 }}
     viewport={{ once: true, margin: "-100px" }}
     transition={{ duration: 0.5 }}
   >
     {badge && (
-      <Badge variant="outline" className="mb-4 md:mb-5 border-primary/30 text-primary text-xs tracking-wide uppercase px-3 md:px-4 py-1.5">{badge}</Badge>
+      <div className="flex items-center gap-3 mb-4 md:mb-6">
+        <span className="h-px w-8 bg-primary" />
+        <span className="font-mono uppercase tracking-[0.2em] text-xs font-medium text-primary">
+          {badge}
+        </span>
+      </div>
     )}
-    <h2 className="text-[1.5rem] sm:text-3xl md:text-5xl lg:text-[3.25rem] font-bold font-display leading-[1.15] tracking-tight">{title}</h2>
-    {subtitle && <p className="text-muted-foreground mt-3 md:mt-5 text-sm md:text-base lg:text-lg leading-relaxed max-w-xl mx-auto">{subtitle}</p>}
+    <h2 className="text-[1.75rem] sm:text-3xl md:text-5xl lg:text-[3.5rem] font-medium font-display leading-[1.1] tracking-tighter text-white">
+      {title}
+    </h2>
+    {subtitle && (
+      <p className="text-zinc-400 mt-4 md:mt-6 text-base md:text-lg lg:text-xl leading-relaxed max-w-2xl font-sans">
+        {subtitle}
+      </p>
+    )}
   </motion.header>
 );
 
@@ -293,46 +304,55 @@ const LandingPage = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* ═══ NAV ═══ */}
-      <nav className={`fixed top-0 w-full z-50 transition-all duration-300 ${scrolled ? "bg-background/95 backdrop-blur-xl border-b border-border/40" : "bg-transparent"}`} role="navigation" aria-label="Navegação principal">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-2.5 sm:py-3 flex items-center justify-between">
-          <a href="/" className="flex items-center gap-2 sm:gap-3 group" aria-label="LeadsPro - Página inicial">
-            <img src={logoIcon} alt="LeadsPro" className="h-16 sm:h-20 lg:h-24 transition-all duration-300" />
-            <span className="text-lg sm:text-xl font-bold font-display text-foreground">
-              Leads<span className="gradient-text">Pro</span>
+      {/* ═══ NAV — editorial floating bar ═══ */}
+      <div className="fixed flex w-full z-50 pt-4 sm:pt-6 px-3 sm:px-4 top-0 left-0 justify-center pointer-events-none">
+        <nav
+          role="navigation"
+          aria-label="Navegação principal"
+          className="pointer-events-auto flex w-full max-w-6xl items-center justify-between gap-2 sm:gap-4 bg-black/70 backdrop-blur-lg shadow-2xl shadow-black/50 px-3 sm:px-4 py-2 sm:py-2.5 border border-white/10"
+        >
+          <a href="/" className="flex items-center gap-2 sm:gap-2.5 group shrink-0" aria-label="LeadsPro">
+            {/* Editorial logo block — 4-square mark */}
+            <div className="grid grid-cols-2 w-5 h-5 gap-0.5">
+              <div className="bg-primary w-full h-full" />
+              <div className="bg-zinc-700 w-full h-full" />
+              <div className="bg-zinc-800 w-full h-full" />
+              <div className="bg-white w-full h-full shadow-[0_0_8px_rgba(255,255,255,0.4)]" />
+            </div>
+            <span className="text-base sm:text-lg font-bold font-display tracking-tight text-white">
+              LeadsPro
             </span>
           </a>
-          <div className="hidden lg:flex items-center gap-8">
+
+          <div className="hidden lg:flex items-center gap-6">
             {/* Recursos dropdown */}
             <div
               className="relative"
               onMouseEnter={() => setRecursosOpen(true)}
               onMouseLeave={() => setRecursosOpen(false)}
             >
-              <button
-                className={`text-sm transition-colors flex items-center gap-1 ${scrolled ? "text-muted-foreground hover:text-foreground" : "text-white/70 hover:text-white"}`}
-              >
+              <button className="text-sm font-medium text-zinc-400 hover:text-white transition-colors flex items-center gap-1">
                 Recursos <ChevronDown className={`h-3.5 w-3.5 transition-transform ${recursosOpen ? "rotate-180" : ""}`} />
               </button>
               <AnimatePresence>
                 {recursosOpen && (
                   <motion.div
-                    initial={{ opacity: 0, y: 8, scale: 0.96 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 8, scale: 0.96 }}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 8 }}
                     transition={{ duration: 0.2 }}
-                    className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-[540px] p-4 rounded-2xl border border-border/60 bg-popover/95 backdrop-blur-xl shadow-2xl grid grid-cols-2 gap-1 max-h-[70vh] overflow-y-auto no-scrollbar"
+                    className="absolute top-full left-1/2 -translate-x-1/2 mt-3 w-[540px] p-3 border border-white/10 bg-black/95 backdrop-blur-xl shadow-2xl grid grid-cols-2 gap-0 max-h-[70vh] overflow-y-auto no-scrollbar"
                   >
                     {recursosMenuItems.map((r) => (
                       <button
                         key={r.title}
                         onClick={() => { setRecursosOpen(false); navigate(r.route); }}
-                        className="flex items-center gap-3 p-3 rounded-xl hover:bg-accent/10 transition-colors text-left group"
+                        className="flex items-center gap-3 p-3 hover:bg-primary/10 transition-colors text-left group border border-transparent hover:border-primary/20"
                       >
-                        <div className="rounded-lg p-2 bg-primary/10 group-hover:bg-primary/20 transition-colors">
+                        <div className="p-2 bg-zinc-900 group-hover:bg-primary/15 transition-colors">
                           <r.icon className="h-4 w-4 text-primary" />
                         </div>
-                        <span className="text-sm font-medium text-popover-foreground">{r.title}</span>
+                        <span className="text-sm font-medium text-white">{r.title}</span>
                       </button>
                     ))}
                   </motion.div>
@@ -343,38 +363,48 @@ const LandingPage = () => {
               <button
                 key={item}
                 onClick={() => item === "Blog" ? navigate("/blog") : scrollTo(item === "Como funciona" ? "how" : item === "Preços" ? "pricing" : "afiliados")}
-                className={`text-sm transition-colors ${scrolled ? "text-muted-foreground hover:text-foreground" : "text-white/70 hover:text-white"}`}
+                className="text-sm font-medium text-zinc-400 hover:text-white transition-colors"
               >
                 {item}
               </button>
             ))}
           </div>
-          <div className="flex items-center gap-1.5 sm:gap-2">
-            <ThemeToggle className={scrolled ? "" : "text-white/70 hover:text-white hover:bg-white/10"} />
-            <Button variant="ghost" size="sm" onClick={() => navigate("/auth")} className={`text-xs sm:text-sm px-2 sm:px-3 ${scrolled ? "text-muted-foreground hover:text-foreground" : "text-white/70 hover:text-white hover:bg-white/10"}`}>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <ThemeToggle className="text-zinc-400 hover:text-white hover:bg-white/5" />
+            <button
+              onClick={() => navigate("/auth")}
+              className="hidden sm:inline-flex text-xs sm:text-sm font-medium text-zinc-400 hover:text-white transition-colors px-2 sm:px-3"
+            >
               Entrar
-            </Button>
+            </button>
             {!isAffiliateRef && (
-              <Button size="sm" onClick={() => navigate("/auth?plan=free")} className="hidden lg:inline-flex border-green-500/50 bg-green-500/10 text-green-400 hover:bg-green-500/20 text-xs sm:text-sm px-3 sm:px-4" variant="outline">
-                <Gift className="h-3.5 w-3.5 mr-1.5" /> Testar Grátis
-              </Button>
-            )}
-            <Button size="sm" onClick={() => scrollTo("pricing")} className="hidden lg:inline-flex gradient-bg text-primary-foreground hover:opacity-90 glow-shadow text-xs sm:text-sm px-3 sm:px-4">
-              Começar
-            </Button>
-            {/* Mobile sticky CTA — appears once scrolled past hero */}
-            {!isAffiliateRef && scrolled && (
-              <Button
-                size="sm"
+              <button
                 onClick={() => navigate("/auth?plan=free")}
-                className="lg:hidden gradient-bg text-primary-foreground hover:opacity-90 text-[11px] px-2.5 h-8 shrink-0"
+                className="hidden lg:inline-flex h-9 px-4 items-center gap-1.5 border border-primary/40 bg-primary/10 text-primary text-xs font-medium uppercase tracking-wider hover:bg-primary/20 transition-colors"
               >
-                <Gift className="h-3 w-3 mr-1" /> Grátis
-              </Button>
+                <Gift className="h-3.5 w-3.5" /> Testar 7d
+              </button>
+            )}
+            <button
+              onClick={() => scrollTo("pricing")}
+              className="hidden lg:inline-flex h-9 px-4 items-center bg-primary text-primary-foreground text-xs font-medium uppercase tracking-wider hover:bg-primary/90 transition-colors"
+              style={{ boxShadow: "0 0 20px -5px hsl(var(--primary) / 0.5)" }}
+            >
+              Começar
+            </button>
+            {/* Mobile sticky CTA — visible once scrolled */}
+            {!isAffiliateRef && scrolled && (
+              <button
+                onClick={() => navigate("/auth?plan=free")}
+                className="lg:hidden h-8 px-2.5 bg-primary text-primary-foreground text-[11px] font-medium uppercase tracking-wider shrink-0 flex items-center gap-1"
+              >
+                <Gift className="h-3 w-3" /> Grátis
+              </button>
             )}
             {/* Mobile hamburger */}
             <button
-              className={`lg:hidden p-2 rounded-lg transition-colors ${scrolled ? "text-foreground hover:bg-muted" : "text-white hover:bg-white/10"}`}
+              className="lg:hidden p-2 text-white hover:bg-white/5 transition-colors"
               onClick={() => {
                 setMobileMenuOpen((prev) => {
                   const next = !prev;
@@ -386,192 +416,243 @@ const LandingPage = () => {
               {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </button>
           </div>
-        </div>
+        </nav>
+      </div>
 
-        {/* Mobile menu */}
-        <AnimatePresence>
-          {mobileMenuOpen && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              className="lg:hidden border-t border-border/40 bg-background/95 backdrop-blur-xl overflow-hidden"
-            >
-              <div className="px-4 py-4 space-y-2 max-h-[70vh] overflow-y-auto no-scrollbar">
-                <button
-                  onClick={() => setMobileRecursosOpen((prev) => !prev)}
-                  className="flex w-full items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium text-foreground hover:bg-muted transition-colors"
-                >
-                  <span>Recursos</span>
-                  <ChevronDown className={`h-4 w-4 transition-transform ${mobileRecursosOpen ? "rotate-180" : ""}`} />
-                </button>
+      {/* Mobile menu — full overlay */}
+      <AnimatePresence>
+        {mobileMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="lg:hidden fixed inset-0 top-16 z-40 bg-black/95 backdrop-blur-xl overflow-y-auto"
+          >
+            <div className="px-4 py-4 space-y-2 max-h-[calc(100vh-4rem)] overflow-y-auto no-scrollbar">
+              <button
+                onClick={() => setMobileRecursosOpen((prev) => !prev)}
+                className="flex w-full items-center justify-between px-3 py-2.5 text-sm font-medium text-white border border-white/10 hover:bg-white/5 transition-colors"
+              >
+                <span>Recursos</span>
+                <ChevronDown className={`h-4 w-4 transition-transform ${mobileRecursosOpen ? "rotate-180" : ""}`} />
+              </button>
 
-                {mobileRecursosOpen && (
-                  <div className="pl-1 space-y-1">
-                    {recursosMenuItems.map((r) => (
-                      <button
-                        key={r.title}
-                        onClick={() => handleMobileResourceSelect(r.route)}
-                        className="flex w-full items-start gap-2.5 text-left px-3 py-2 rounded-lg text-sm text-foreground hover:bg-muted transition-colors"
-                      >
-                        <r.icon className="h-4 w-4 mt-0.5 text-primary shrink-0" />
-                        <span className="leading-snug">{r.title}</span>
-                      </button>
-                    ))}
-                  </div>
-                )}
-
-                {[
-                  { label: "Preços", id: "pricing" },
-                  { label: "Afiliados", id: "afiliados" },
-                ].map((item) => (
-                  <button
-                    key={item.label}
-                    onClick={() => handleMobileMenuSelect(item.id)}
-                    className="block w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium text-foreground hover:bg-muted transition-colors"
-                  >
-                    {item.label}
-                  </button>
-                ))}
-                <button
-                  onClick={() => { navigate("/blog"); setMobileMenuOpen(false); }}
-                  className="block w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium text-foreground hover:bg-muted transition-colors"
-                >
-                  Blog
-                </button>
-                <div className="flex flex-col gap-2 pt-2">
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm" onClick={() => { navigate("/auth"); setMobileMenuOpen(false); }} className="flex-1">
-                      Entrar
-                    </Button>
-                    <Button size="sm" onClick={() => handleMobileMenuSelect("pricing")} className="flex-1 gradient-bg text-primary-foreground">
-                      Começar
-                    </Button>
-                  </div>
-                  {!isAffiliateRef && (
-                    <Button size="sm" variant="outline" onClick={() => { navigate("/auth?plan=free"); setMobileMenuOpen(false); }} className="w-full border-green-500/50 bg-green-500/10 text-green-600 dark:text-green-400 hover:bg-green-500/20">
-                      <Gift className="h-3.5 w-3.5 mr-1.5" /> Testar Grátis — 7 dias
-                    </Button>
-                  )}
+              {mobileRecursosOpen && (
+                <div className="space-y-0">
+                  {recursosMenuItems.map((r) => (
+                    <button
+                      key={r.title}
+                      onClick={() => handleMobileResourceSelect(r.route)}
+                      className="flex w-full items-start gap-2.5 text-left px-3 py-2 text-sm text-zinc-300 hover:bg-white/5 transition-colors border-l-2 border-transparent hover:border-primary"
+                    >
+                      <r.icon className="h-4 w-4 mt-0.5 text-primary shrink-0" />
+                      <span className="leading-snug">{r.title}</span>
+                    </button>
+                  ))}
                 </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </nav>
+              )}
 
-      {/* ═══ HERO ═══ */}
-      <header className="relative min-h-[100dvh] flex items-center">
-        <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
-          <img src={headerBg} alt="" className="absolute inset-0 w-full h-full object-cover object-top hidden lg:block opacity-30" fetchPriority="high" decoding="async" loading="eager" />
-          <img src={headerBgMobile} alt="" className="absolute inset-0 w-full h-full object-cover object-center lg:hidden" fetchPriority="high" decoding="async" loading="eager" />
-          <div className="absolute inset-0 bg-black/75 lg:bg-black/80" />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/90" />
-          {/* Teal radial glow (desktop only) — anchored top-right behind the mockup */}
+              {[
+                { label: "Como funciona", id: "how" },
+                { label: "Preços", id: "pricing" },
+                { label: "Afiliados", id: "afiliados" },
+              ].map((item) => (
+                <button
+                  key={item.label}
+                  onClick={() => handleMobileMenuSelect(item.id)}
+                  className="block w-full text-left px-3 py-2.5 text-sm font-medium text-white border border-white/10 hover:bg-white/5 transition-colors"
+                >
+                  {item.label}
+                </button>
+              ))}
+              <button
+                onClick={() => { navigate("/blog"); setMobileMenuOpen(false); }}
+                className="block w-full text-left px-3 py-2.5 text-sm font-medium text-white border border-white/10 hover:bg-white/5 transition-colors"
+              >
+                Blog
+              </button>
+              <div className="flex flex-col gap-2 pt-3">
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => { navigate("/auth"); setMobileMenuOpen(false); }}
+                    className="h-10 border border-white/15 text-white text-xs font-medium uppercase tracking-wider hover:bg-white/5 transition-colors"
+                  >
+                    Entrar
+                  </button>
+                  <button
+                    onClick={() => handleMobileMenuSelect("pricing")}
+                    className="h-10 bg-primary text-primary-foreground text-xs font-medium uppercase tracking-wider hover:bg-primary/90"
+                  >
+                    Começar
+                  </button>
+                </div>
+                {!isAffiliateRef && (
+                  <button
+                    onClick={() => { navigate("/auth?plan=free"); setMobileMenuOpen(false); }}
+                    className="h-10 border border-primary/40 bg-primary/10 text-primary text-xs font-medium uppercase tracking-wider hover:bg-primary/20 transition-colors flex items-center justify-center gap-2"
+                  >
+                    <Gift className="h-3.5 w-3.5" /> Testar Grátis — 7 dias
+                  </button>
+                )}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ═══ HERO — editorial style ═══ */}
+      <header className="relative min-h-[100dvh] flex items-center bg-black overflow-hidden">
+        {/* Subtle radial glow behind hero */}
+        <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
           <div
-            className="absolute top-0 right-0 w-[55%] h-[70%] pointer-events-none hidden lg:block"
+            className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[80%] h-[60%]"
             style={{
-              background:
-                "radial-gradient(60% 60% at 70% 30%, rgba(29,158,117,0.18), transparent 70%)",
+              background: "radial-gradient(60% 60% at 50% 50%, hsl(var(--primary) / 0.15), transparent 70%)",
+              filter: "blur(40px)",
             }}
           />
+          {/* Mask for the bottom edge */}
+          <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black to-transparent" />
         </div>
 
         <div className="container mx-auto px-5 sm:px-6 lg:px-8 relative z-10 pt-28 sm:pt-36 lg:pt-32 pb-16 sm:pb-20">
-          <div className="grid lg:grid-cols-[1.05fr_1fr] gap-10 lg:gap-10 xl:gap-14 items-center">
-          <motion.div className="max-w-xl" initial="hidden" animate="visible">
-            <motion.div variants={fadeUp} custom={0} className="flex flex-wrap items-center gap-2 mb-5 sm:mb-8">
-              <Badge variant="outline" className="border-white/30 text-white/90 bg-white/10 backdrop-blur-sm px-3 sm:px-4 py-1.5 text-[11px] sm:text-xs tracking-wide">
-                <Zap className="h-3 w-3 sm:h-3.5 sm:w-3.5 mr-1.5 sm:mr-2" />
-                +50.000 leads capturados na plataforma
-              </Badge>
-              <Badge className="bg-red-600 text-white border-red-500 backdrop-blur-sm px-2.5 sm:px-3 py-1.5 text-[11px] sm:text-xs font-bold animate-pulse shadow-[0_0_20px_rgba(239,68,68,0.5)]">
-                <Flame className="h-3 w-3 mr-1" />
-                7 dias grátis
-              </Badge>
-            </motion.div>
+          <div className="grid lg:grid-cols-[1.1fr_1fr] gap-10 lg:gap-12 xl:gap-16 items-center">
 
-            <motion.h1
-              variants={fadeUp}
-              custom={1}
-              className="text-[1.85rem] leading-[1.12] sm:text-4xl sm:leading-[1.08] md:text-5xl lg:text-[2.75rem] lg:leading-[1.06] xl:text-[3.25rem] 2xl:text-6xl font-bold font-display tracking-tight mb-4 sm:mb-6 text-white"
-            >
-              Encontre clientes.{" "}
-              <span className="inline sm:hidden">Dispare em massa.</span>
-              <span className="hidden sm:inline">Dispare em massa.<br /></span>
-              <span className="gradient-text">Feche vendas no automático.</span>
-            </motion.h1>
+            {/* ── LEFT: Editorial copy ── */}
+            <motion.div className="max-w-xl" initial="hidden" animate="visible">
+              {/* Top mono badges */}
+              <motion.div variants={fadeUp} custom={0} className="flex flex-wrap items-center gap-2 mb-6 sm:mb-8">
+                <span className="inline-flex items-center gap-2 px-3 py-1.5 border border-white/15 bg-white/[0.03] backdrop-blur-sm">
+                  <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse shadow-[0_0_10px_hsl(var(--primary)/0.6)]" />
+                  <span className="text-[10px] font-mono uppercase tracking-[0.15em] text-white/70">
+                    +50K leads · 2K usuários
+                  </span>
+                </span>
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1.5 border border-primary/40 bg-primary/10 backdrop-blur-sm">
+                  <Flame className="h-3 w-3 text-primary" />
+                  <span className="text-[10px] font-mono uppercase tracking-[0.15em] text-primary font-semibold">
+                    7 dias grátis
+                  </span>
+                </span>
+              </motion.div>
 
-            <motion.p
-              variants={fadeUp}
-              custom={2}
-              className="text-sm sm:text-base lg:text-base xl:text-lg text-white/75 max-w-xl mb-3 sm:mb-4 leading-relaxed"
-            >
-              Capture leads do Google Maps em 3 segundos. Dispare mensagens no WhatsApp sem ser banido. Automatize follow-ups. CRM, chatbot IA e pipeline de vendas — tudo numa única plataforma.
-            </motion.p>
-
-            <motion.div variants={fadeUp} custom={2.5} className="flex flex-wrap items-center gap-x-4 sm:gap-x-5 gap-y-1.5 mb-6 sm:mb-8">
-              {[
-                "✅ Sem cartão de crédito",
-                "✅ Acesso imediato",
-                "✅ Cancele quando quiser",
-              ].map((t) => (
-                <span key={t} className="text-[11px] sm:text-sm text-white/60">{t}</span>
-              ))}
-            </motion.div>
-
-            <motion.div variants={fadeUp} custom={3} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
-              <Button
-                size="lg"
-                onClick={() => scrollTo("pricing")}
-                className="gradient-bg text-primary-foreground hover:opacity-90 text-sm sm:text-base px-5 sm:px-7 h-11 sm:h-12 glow-shadow group"
+              {/* Headline — gradient white fade, Manrope */}
+              <motion.h1
+                variants={fadeUp}
+                custom={1}
+                className="font-display font-medium tracking-tighter text-white leading-[1.05] mb-6 sm:mb-8 text-[2.25rem] sm:text-5xl md:text-6xl lg:text-[3.5rem] xl:text-[4rem] 2xl:text-7xl"
               >
-                Quero dominar meu mercado
-                <ArrowRight className="ml-2 h-4 w-4 shrink-0 group-hover:translate-x-1 transition-transform" />
-              </Button>
-              {!isAffiliateRef && (
-                <Button
-                  size="lg"
-                  variant="outline"
-                  onClick={() => navigate("/auth?plan=free")}
-                  className="border-green-500/50 bg-green-500/10 text-green-400 hover:bg-green-500/20 text-sm sm:text-base px-5 sm:px-7 h-11 sm:h-12"
-                >
-                  <Gift className="h-4 w-4 mr-2 shrink-0" /> Testar Grátis — 7d
-                </Button>
-              )}
-            </motion.div>
-          </motion.div>
+                <span className="block text-gradient-white">Encontre clientes.</span>
+                <span className="block text-gradient-white">Dispare em massa.</span>
+                <span className="block text-gradient-crimson">Feche no automático.</span>
+              </motion.h1>
 
-          {/* Product mockup — same component on every breakpoint, lets its
-              internal flex layout scale to whatever width is available. */}
-          <div className="flex items-center justify-center lg:justify-end mt-6 sm:mt-8 lg:mt-0">
-            <HeroProductMockup />
-          </div>
+              {/* Subheadline */}
+              <motion.p
+                variants={fadeUp}
+                custom={2}
+                className="text-base sm:text-lg lg:text-base xl:text-lg text-zinc-400 max-w-xl mb-6 sm:mb-8 leading-relaxed font-sans"
+              >
+                Capture leads do Google Maps em 3 segundos. Dispare mensagens no WhatsApp sem ser banido. Automatize follow-ups. CRM, chatbot IA e pipeline — tudo numa plataforma só.
+              </motion.p>
+
+              {/* Reassurance line */}
+              <motion.div variants={fadeUp} custom={2.5} className="flex flex-wrap items-center gap-x-5 gap-y-1.5 mb-8 sm:mb-10">
+                {["Sem cartão", "Acesso imediato", "Cancele quando quiser"].map((t) => (
+                  <span key={t} className="text-[10px] sm:text-xs font-mono uppercase tracking-wider text-zinc-500 flex items-center gap-1.5">
+                    <span className="text-primary">✓</span> {t}
+                  </span>
+                ))}
+              </motion.div>
+
+              {/* CTAs — sharp corners, conic hover */}
+              <motion.div variants={fadeUp} custom={3} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
+                {/* Primary — solid crimson */}
+                <button
+                  onClick={() => scrollTo("pricing")}
+                  className="group relative inline-flex h-12 items-center justify-center px-7 bg-primary text-primary-foreground font-medium text-sm uppercase tracking-wider transition-all hover:bg-primary/90 active:scale-95"
+                  style={{ boxShadow: "0 0 30px -5px hsl(var(--primary) / 0.6)" }}
+                >
+                  <span className="relative z-10 flex items-center gap-2">
+                    Quero dominar meu mercado
+                    <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                  </span>
+                </button>
+
+                {/* Secondary — outline with conic spin on hover */}
+                {!isAffiliateRef && (
+                  <button
+                    onClick={() => navigate("/auth?plan=free")}
+                    className="group relative inline-flex h-12 items-center justify-center px-7 overflow-hidden text-white font-medium text-sm uppercase tracking-wider transition-transform active:scale-95"
+                  >
+                    {/* Animated conic border */}
+                    <span className="absolute inset-[-100%] animate-[spin_3s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,transparent_0%,transparent_75%,hsl(var(--primary))_100%)] opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                    <span className="absolute inset-0 bg-zinc-800 transition-opacity duration-300 group-hover:opacity-0" />
+                    <span className="absolute inset-[1px] bg-black z-10" />
+                    <span className="relative z-20 flex items-center gap-2">
+                      <Gift className="h-4 w-4 text-primary" />
+                      Testar grátis 7d
+                    </span>
+                  </button>
+                )}
+              </motion.div>
+            </motion.div>
+
+            {/* ── RIGHT: Product mockup with sci-fi corner brackets ── */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.4 }}
+              className="relative flex items-center justify-center lg:justify-end mt-8 lg:mt-0"
+            >
+              <div className="corner-brackets-full w-full max-w-[680px] p-4 sm:p-6">
+                <span className="cb-tl" />
+                <span className="cb-tr" />
+                <span className="cb-bl" />
+                <span className="cb-br" />
+                <HeroProductMockup />
+              </div>
+            </motion.div>
           </div>
         </div>
       </header>
 
-      {/* ═══ STATS ═══ */}
-      <section className="py-12 md:py-20 border-t border-border/40" aria-label="Números">
+      {/* ═══ STATS — editorial 4-up panel ═══ */}
+      <section className="py-12 md:py-20 border-t border-zinc-800 bg-black" aria-label="Números">
         <div className="container mx-auto px-5 sm:px-6 lg:px-8">
           <motion.div
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true }}
-            className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-5 max-w-4xl mx-auto"
+            className="grid grid-cols-2 md:grid-cols-4 max-w-6xl mx-auto border border-zinc-800"
           >
             {[
-              { ref: stat1.ref, display: stat1.display, label: "Leads capturados", icon: Target, delay: 0 },
-              { ref: stat2.ref, display: stat2.display, label: "Usuários ativos", icon: Users, delay: 1 },
-              { ref: stat3.ref, display: `${stat3.display}s`, label: "Tempo por lead", icon: Clock, delay: 2 },
-              { ref: stat4.ref, display: stat4.display, label: "Satisfação", icon: TrendingUp, delay: 3 },
-            ].map((s) => (
-              <motion.div key={s.label} variants={fadeUp} custom={s.delay} className="text-center p-4 sm:p-6 rounded-2xl border border-border/60 bg-card card-shadow">
-                <s.icon className="h-5 w-5 sm:h-6 sm:w-6 text-primary mx-auto mb-2 sm:mb-3" />
-                <p className="text-2xl sm:text-3xl md:text-4xl font-bold font-display text-foreground">
+              { ref: stat1.ref, display: stat1.display, label: "Leads capturados", code: "[ 01 ]", delay: 0 },
+              { ref: stat2.ref, display: stat2.display, label: "Usuários ativos",  code: "[ 02 ]", delay: 1 },
+              { ref: stat3.ref, display: `${stat3.display}s`, label: "Tempo por lead", code: "[ 03 ]", delay: 2 },
+              { ref: stat4.ref, display: stat4.display, label: "Satisfação", code: "[ 04 ]", delay: 3 },
+            ].map((s, i) => (
+              <motion.div
+                key={s.label}
+                variants={fadeUp}
+                custom={s.delay}
+                className={`relative p-6 sm:p-8 md:p-10 group hover:bg-zinc-900/30 transition-colors ${
+                  i < 2 ? "md:border-r border-b md:border-b-0 border-zinc-800" : ""
+                } ${
+                  i === 1 ? "border-r-0 md:border-r border-zinc-800" : ""
+                } ${
+                  i === 2 ? "md:border-r border-zinc-800" : ""
+                } ${
+                  i === 0 ? "border-r border-zinc-800" : ""
+                }`}
+              >
+                <span className="block text-[10px] font-mono text-zinc-600 mb-3 tracking-widest">{s.code}</span>
+                <p className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-medium font-display text-white tabular-nums tracking-tighter">
                   <span ref={s.ref}>{s.display}</span>
                 </p>
-                <p className="text-xs sm:text-sm text-muted-foreground mt-1">{s.label}</p>
+                <p className="text-[11px] sm:text-xs font-mono uppercase tracking-wider text-zinc-500 mt-3">{s.label}</p>
+                {/* Hover line */}
+                <span className="absolute bottom-0 left-0 h-0.5 w-0 bg-primary group-hover:w-full transition-all duration-500" />
               </motion.div>
             ))}
           </motion.div>
@@ -579,7 +660,7 @@ const LandingPage = () => {
       </section>
 
       {/* ═══ HOW IT WORKS — 3 visual steps ═══ */}
-      <Section id="how" className="border-t border-border/40" ariaLabel="Como funciona em 3 passos">
+      <Section id="how" className="border-t border-zinc-800" ariaLabel="Como funciona em 3 passos">
         <SectionHeader
           badge="Como funciona"
           title={<>Em 3 passos você sai do <span className="gradient-text">manual</span> para o automático</>}
@@ -589,12 +670,11 @@ const LandingPage = () => {
       </Section>
 
       {/* ═══ PROBLEM / PAIN ═══ */}
-      <Section className="border-t border-border/40 relative" ariaLabel="Problemas que resolvemos">
-        <div className="absolute inset-0 bg-destructive/[0.015] pointer-events-none" aria-hidden="true" />
-        <div className="relative max-w-3xl mx-auto">
+      <Section className="border-t border-zinc-800 relative bg-black" ariaLabel="Problemas que resolvemos">
+        <div className="relative max-w-4xl mx-auto">
           <SectionHeader
-            badge="A verdade que ninguém te conta"
-            title={<>Você está <span className="text-destructive">perdendo dinheiro</span> agora mesmo</>}
+            badge="A verdade"
+            title={<>Você está <span className="text-primary">perdendo dinheiro</span> agora mesmo</>}
             subtitle="Clique em cada item e descubra o que está sabotando seus resultados."
           />
 
@@ -648,20 +728,23 @@ const LandingPage = () => {
               },
             ].map((item, i) => (
               <motion.div key={i} variants={itemFade}>
-                <details className="group rounded-2xl border border-destructive/15 bg-card overflow-hidden">
-                  <summary className="flex items-center justify-between cursor-pointer p-5 hover:bg-destructive/[0.03] transition-colors list-none [&::-webkit-details-marker]:hidden">
-                    <span className="text-base font-bold font-display text-foreground">{item.trigger}</span>
-                    <ChevronDown className="h-5 w-5 text-muted-foreground transition-transform group-open:rotate-180 shrink-0 ml-3" />
+                <details className="group border border-zinc-800 bg-black hover:border-primary/40 transition-colors">
+                  <summary className="flex items-center justify-between cursor-pointer p-5 hover:bg-zinc-900/30 transition-colors list-none [&::-webkit-details-marker]:hidden">
+                    <div className="flex items-center gap-3">
+                      <span className="font-mono text-[10px] text-primary uppercase tracking-widest font-medium">[ {String(i+1).padStart(2,'0')} ]</span>
+                      <span className="text-base font-medium font-display text-white">{item.trigger}</span>
+                    </div>
+                    <ChevronDown className="h-5 w-5 text-zinc-500 transition-transform group-open:rotate-180 shrink-0 ml-3" />
                   </summary>
-                  <div className="px-5 pb-5 space-y-3">
+                  <div className="px-5 pb-5 space-y-2 border-t border-zinc-800 border-dashed pt-4">
                     {item.content.map((line, j) => (
-                      <div key={j} className="flex items-start gap-3 p-3 rounded-xl bg-destructive/[0.04] border border-destructive/10">
+                      <div key={j} className="flex items-start gap-3 p-3 bg-zinc-900/40 border-l-2 border-destructive/60">
                         <span className="text-destructive font-bold text-sm mt-0.5 shrink-0">✗</span>
-                        <p className="text-sm text-muted-foreground leading-relaxed">{line}</p>
+                        <p className="text-sm text-zinc-400 leading-relaxed">{line}</p>
                       </div>
                     ))}
-                    <div className="mt-4 p-4 rounded-xl border border-primary/20 bg-primary/[0.04]">
-                      <p className="text-sm font-semibold text-foreground flex items-start gap-2">
+                    <div className="mt-4 p-4 border border-primary/30 bg-primary/[0.05]">
+                      <p className="text-sm font-medium text-white flex items-start gap-2">
                         <CheckCircle2 className="h-4 w-4 text-primary mt-0.5 shrink-0" />
                         {item.cta}
                       </p>
@@ -678,25 +761,25 @@ const LandingPage = () => {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
           >
-            <Button
-              size="lg"
+            <button
               onClick={() => scrollTo("pricing")}
-              className="gradient-bg text-primary-foreground hover:opacity-90 text-sm sm:text-base px-5 sm:px-10 h-12 sm:h-14 glow-shadow group w-full sm:w-auto"
+              className="group inline-flex items-center justify-center gap-3 h-12 sm:h-14 px-6 sm:px-10 bg-primary text-primary-foreground text-xs sm:text-sm font-medium uppercase tracking-wider hover:bg-primary/90 transition-all w-full sm:w-auto"
+              style={{ boxShadow: "0 0 30px -5px hsl(var(--primary) / 0.5)" }}
             >
               Chega de perder dinheiro — comece agora
-              <ArrowRight className="ml-2.5 h-5 w-5 shrink-0 group-hover:translate-x-1 transition-transform" />
-            </Button>
+              <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+            </button>
           </motion.div>
         </div>
       </Section>
 
       {/* ═══ ROI CALCULATOR ═══ */}
-      <Section id="calculadora-roi" className="border-t border-border/40" ariaLabel="Calculadora de prejuízo">
+      <Section id="calculadora-roi" className="border-t border-zinc-800" ariaLabel="Calculadora de prejuízo">
         <RoiCalculator onCta={() => scrollTo("pricing")} />
       </Section>
 
       {/* ═══ FEATURES 3D STACK ═══ */}
-      <Section className="border-t border-border/40 relative overflow-hidden" ariaLabel="Recursos da plataforma">
+      <Section className="border-t border-zinc-800 relative overflow-hidden" ariaLabel="Recursos da plataforma">
         <SectionHeader
           badge="Tudo num só lugar"
           title={<>Os recursos que <span className="gradient-text">tiram o manual</span> do seu dia</>}
@@ -705,50 +788,53 @@ const LandingPage = () => {
         <Features3DStack />
       </Section>
 
-      {/* ═══ TESTIMONIALS ═══ */}
-      <Section id="testimonials" className="border-t border-border/40" ariaLabel="Depoimentos de clientes">
+      {/* ═══ TESTIMONIALS — editorial cards ═══ */}
+      <Section id="testimonials" className="border-t border-zinc-800 bg-black" ariaLabel="Depoimentos de clientes">
         <SectionHeader
           badge="Resultados reais"
-          title={<>Profissionais que <span className="gradient-text">já transformaram</span> seus resultados</>}
+          title={<>Profissionais que <span className="text-primary">já transformaram</span> seus resultados</>}
         />
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 max-w-6xl mx-auto">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 max-w-6xl mx-auto border border-zinc-800">
           {testimonials.map((t, i) => (
             <motion.article
               key={t.name}
-              className="p-4 sm:p-6 rounded-2xl border border-border/60 bg-card card-shadow flex flex-col"
-              initial={{ opacity: 0, y: 16 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.07 }}
+              className={`relative p-5 sm:p-6 group hover:bg-zinc-900/40 transition-colors flex flex-col ${
+                i < 3 ? "border-b lg:border-b-0 lg:border-r border-zinc-800" : ""
+              } ${
+                i === 1 ? "sm:border-r-0 lg:border-r border-zinc-800" : ""
+              } ${
+                i === 0 ? "sm:border-r border-zinc-800" : ""
+              } ${
+                i === 2 ? "sm:border-b-0 lg:border-b-0 border-zinc-800 sm:border-r border-r-0" : ""
+              }`}
             >
-              <div className="flex gap-0.5 mb-4">
-                {Array.from({ length: t.stars }).map((_, j) => (
-                  <Star key={j} className="h-3.5 w-3.5 fill-primary text-primary" />
-                ))}
-              </div>
-              <Quote className="h-5 w-5 text-primary/20 mb-2" aria-hidden="true" />
-              <p className="text-sm text-muted-foreground leading-relaxed flex-1">{t.text}</p>
-              <div className="border-t border-border/50 pt-4 mt-5">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-2xl font-bold font-display gradient-text">{t.metric}</span>
-                  <span className="text-xs text-muted-foreground">{t.metricLabel}</span>
+              {/* Quote mark */}
+              <Quote className="h-8 w-8 text-primary/30 mb-4" aria-hidden="true" strokeWidth={1.5} />
+              <p className="text-sm text-zinc-300 leading-relaxed flex-1 font-sans">{t.text}</p>
+              {/* Divider — dashed editorial */}
+              <div className="border-t border-zinc-800 border-dashed pt-4 mt-5 space-y-3">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-3xl font-medium font-display text-primary tabular-nums tracking-tighter">{t.metric}</span>
+                  <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-500">{t.metricLabel}</span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <img src={t.avatar} alt={t.name} className="h-10 w-10 rounded-full object-cover ring-2 ring-primary/20" />
+                  <img src={t.avatar} alt={t.name} className="h-9 w-9 object-cover" />
                   <div>
-                    <p className="font-medium text-foreground text-sm">{t.name}</p>
-                    <p className="text-xs text-muted-foreground">{t.role}</p>
+                    <p className="font-medium text-white text-sm font-sans">{t.name}</p>
+                    <p className="text-[10px] font-mono uppercase tracking-wider text-zinc-500">{t.role}</p>
                   </div>
                 </div>
               </div>
+              {/* Hover side line */}
+              <span className="absolute left-0 top-0 h-full w-0.5 bg-primary scale-y-0 group-hover:scale-y-100 transition-transform origin-top duration-500" />
             </motion.article>
           ))}
         </div>
       </Section>
 
       {/* ═══ BEFORE / AFTER ═══ */}
-      <Section className="border-t border-border/40" ariaLabel="Comparação antes e depois">
+      <Section className="border-t border-zinc-800" ariaLabel="Comparação antes e depois">
         <SectionHeader
           title={<>O que muda <span className="gradient-text">quando você começa</span></>}
         />
@@ -816,7 +902,7 @@ const LandingPage = () => {
       </Section>
 
       {/* ═══ PROGRAMA DE AFILIADOS ═══ */}
-      <Section id="afiliados" className="border-t border-border/40 relative overflow-hidden" ariaLabel="Programa de Afiliados">
+      <Section id="afiliados" className="border-t border-zinc-800 relative overflow-hidden" ariaLabel="Programa de Afiliados">
         <div className="absolute top-1/2 right-0 -translate-y-1/2 w-64 h-64 opacity-[0.04] pointer-events-none" aria-hidden="true">
           <svg viewBox="0 0 200 200" fill="currentColor" className="text-primary w-full h-full">
             <circle cx="100" cy="100" r="80" />
@@ -878,7 +964,7 @@ const LandingPage = () => {
       {/* ═══ PRICING — glass morphism ═══ */}
       <Section
         id="pricing"
-        className="border-t border-border/40 relative overflow-hidden"
+        className="border-t border-zinc-800 relative overflow-hidden"
         ariaLabel="Planos e preços"
       >
         {/* Mouse tracker wraps everything inside the section so cursor
@@ -1178,7 +1264,7 @@ const LandingPage = () => {
       </Section>
 
       {/* ═══ FAQ ═══ */}
-      <Section id="faq" className="border-t border-border/40" ariaLabel="Perguntas frequentes">
+      <Section id="faq" className="border-t border-zinc-800" ariaLabel="Perguntas frequentes">
         <SectionHeader
           title={<>Perguntas <span className="gradient-text">frequentes</span></>}
         />
@@ -1204,7 +1290,7 @@ const LandingPage = () => {
       </Section>
 
       {/* ═══ SECURITY POLICY ═══ */}
-      <Section id="seguranca" className="border-t border-border/40" ariaLabel="Política de Segurança">
+      <Section id="seguranca" className="border-t border-zinc-800" ariaLabel="Política de Segurança">
         <SectionHeader
           title={<>Seus dados estão <span className="gradient-text">100% seguros</span></>}
           subtitle="Privacidade e proteção são prioridades absolutas na LeadsPro."
@@ -1259,7 +1345,7 @@ const LandingPage = () => {
 
       {/* ═══ FOOTER ═══ */}
       <motion.footer
-        className="border-t border-border/40 py-10"
+        className="border-t border-zinc-800 py-10"
         role="contentinfo"
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
@@ -1289,7 +1375,7 @@ const LandingPage = () => {
               <a href="/termos-de-uso" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Termos de Uso</a>
             </nav>
           </div>
-          <div className="mt-8 pt-6 border-t border-border/40 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="mt-8 pt-6 border-t border-zinc-800 flex flex-col sm:flex-row items-center justify-between gap-4">
             <p className="text-xs text-muted-foreground">
               © {new Date().getFullYear()} LeadsPro. Todos os direitos reservados.
             </p>
