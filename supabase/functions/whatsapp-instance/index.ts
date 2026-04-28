@@ -113,6 +113,35 @@ Deno.serve(async (req) => {
         } catch (e: any) {
           probeError = e?.message || String(e);
         }
+
+        // Real create probe — same path the user code takes
+        const testName = `__edgeprobe_${Math.random().toString(36).slice(2, 10)}`;
+        let createStatus: number | null = null;
+        let createBody: string | null = null;
+        let createError: string | null = null;
+        try {
+          const cRes = await fetch(`${u.replace(/\/+$/, "")}/instance/create`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", apikey: k },
+            body: JSON.stringify({
+              instanceName: testName,
+              integration: "WHATSAPP-BAILEYS",
+              qrcode: false,
+            }),
+          });
+          createStatus = cRes.status;
+          createBody = (await cRes.text()).slice(0, 600);
+          // best-effort cleanup
+          if (cRes.ok) {
+            await fetch(`${u.replace(/\/+$/, "")}/instance/delete/${testName}`, {
+              method: "DELETE",
+              headers: { apikey: k },
+            }).catch(() => null);
+          }
+        } catch (e: any) {
+          createError = e?.message || String(e);
+        }
+
         return new Response(
           JSON.stringify({
             key_present: k.length > 0,
@@ -126,6 +155,9 @@ Deno.serve(async (req) => {
             url_value: u,
             evolution_probe_status: probeStatus,
             evolution_probe_error: probeError,
+            create_probe_status: createStatus,
+            create_probe_body: createBody,
+            create_probe_error: createError,
           }, null, 2),
           { headers: { ...corsHeaders, "Content-Type": "application/json" } },
         );
@@ -189,10 +221,9 @@ Deno.serve(async (req) => {
           }),
         });
       } catch (createErr: any) {
-        // Self-heal: if Evolution thinks the instance already exists (left
-        // over from a previous attempt that failed before the DB insert),
-        // delete it and retry once. Most "Forbidden / already in use"
-        // responses from Evolution land here.
+        // Self-heal: an orphan instance with the same name already exists on
+        // Evolution (left over from a previous attempt that failed before
+        // the DB insert).
         const msg = String(createErr?.message || "").toLowerCase();
         const looksLikeOrphan =
           msg.includes("already") ||
@@ -205,28 +236,69 @@ Deno.serve(async (req) => {
         if (!looksLikeOrphan) throw createErr;
 
         console.warn(
-          `Possible orphan instance detected for ${instanceName} — deleting and retrying.`,
+          `Possible orphan instance detected for ${instanceName} — attempting recovery.`,
           createErr?.message,
         );
+
+        // Try logout (might fail if not connected — ignore)
         try {
           await evoFetch(`/instance/logout/${instanceName}`, { method: "DELETE" });
-        } catch { /* ignore — instance may not be logged in */ }
+        } catch { /* ignore */ }
+
+        // Try delete + recreate (with retry — Evolution sometimes needs a
+        // bigger pause for its internal state to clear).
+        let deleted = false;
         try {
           await evoFetch(`/instance/delete/${instanceName}`, { method: "DELETE" });
+          deleted = true;
         } catch (delErr) {
-          console.error("Orphan delete failed:", delErr);
-          throw createErr; // surface the original error if cleanup didn't work
+          console.warn("Orphan delete failed:", delErr);
         }
-        // Brief pause so Evolution's internal state catches up
-        await new Promise((r) => setTimeout(r, 800));
-        evoData = await evoFetch("/instance/create", {
-          method: "POST",
-          body: JSON.stringify({
-            instanceName,
-            integration: "WHATSAPP-BAILEYS",
-            qrcode: true,
-          }),
-        });
+
+        if (deleted) {
+          let lastErr: any = null;
+          for (const waitMs of [1500, 2500, 4000]) {
+            await new Promise((r) => setTimeout(r, waitMs));
+            try {
+              evoData = await evoFetch("/instance/create", {
+                method: "POST",
+                body: JSON.stringify({
+                  instanceName,
+                  integration: "WHATSAPP-BAILEYS",
+                  qrcode: true,
+                }),
+              });
+              lastErr = null;
+              break;
+            } catch (retryErr: any) {
+              lastErr = retryErr;
+              console.warn(`Recreate attempt after ${waitMs}ms failed:`, retryErr?.message);
+            }
+          }
+          if (lastErr && !evoData) {
+            // All retries failed — fall through to adoption below
+            console.warn("All recreate retries failed; trying adoption fallback.");
+          }
+        }
+
+        // Adoption fallback: if delete/recreate didn't work, just connect to
+        // the existing instance and adopt it. The QR code from /connect lets
+        // the user finish onboarding regardless of the orphan's prior state.
+        if (!evoData) {
+          try {
+            const connectData = await evoFetch(`/instance/connect/${instanceName}`);
+            evoData = {
+              instance: { instanceName },
+              qrcode: connectData?.base64
+                ? { base64: connectData.base64 }
+                : connectData?.qrcode || null,
+            };
+            console.log(`Adopted existing instance ${instanceName}.`);
+          } catch (adoptErr) {
+            console.error("Adoption fallback also failed:", adoptErr);
+            throw createErr; // surface the original error
+          }
+        }
       }
 
       // Save to DB
