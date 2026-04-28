@@ -1030,49 +1030,30 @@ const LandingPage = () => {
                       </div>
                     )}
 
-                    {/* ── Decorative cards peeking from behind (popular only) ──
-                        Two depth layers that drift with the section's --sx/--sy
-                        cursor variables. The deeper layer moves more (parallax). */}
+                    {/* ── Cursor-tracked glow that drifts behind the popular card ──
+                        Soft blurred shape (not a card outline) so it reads as
+                        ambient light, not a stacked second card. */}
                     {plan.popular && (
-                      <>
-                        {/* Far layer — bigger movement, more transparent, blurred */}
-                        <div
-                          aria-hidden
-                          className="absolute inset-0 rounded-2xl bg-gradient-to-br from-primary/35 to-emerald-500/25 -z-20 opacity-50 blur-[2px]"
-                          style={{
-                            transform: `
-                              translate3d(
-                                calc(18px + var(--sx, 0) * 28px),
-                                calc(18px + var(--sy, 0) * 22px),
-                                0
-                              )
-                              rotate(calc(var(--sx, 0) * 2.4deg))
-                              scale(calc(1 + var(--sx, 0) * 0.015))
-                            `,
-                            transition:
-                              "transform 0.7s cubic-bezier(0.22, 1, 0.36, 1)",
-                          }}
-                        />
-                        {/* Near layer — smaller offset, sharper, more saturated */}
-                        <div
-                          aria-hidden
-                          className="absolute inset-0 rounded-2xl bg-gradient-to-br from-primary/40 to-emerald-500/30 -z-10 opacity-70"
-                          style={{
-                            transform: `
-                              translate3d(
-                                calc(8px + var(--sx, 0) * 14px),
-                                calc(8px + var(--sy, 0) * 11px),
-                                0
-                              )
-                              rotate(calc(var(--sx, 0) * 1.2deg))
-                            `,
-                            transition:
-                              "transform 0.6s cubic-bezier(0.22, 1, 0.36, 1)",
-                            boxShadow:
-                              "0 30px 80px -10px hsl(var(--primary) / 0.35)",
-                          }}
-                        />
-                      </>
+                      <div
+                        aria-hidden
+                        className="absolute inset-0 rounded-2xl pointer-events-none -z-10"
+                        style={{
+                          background:
+                            "linear-gradient(135deg, hsl(var(--primary) / 0.38), hsl(160 60% 45% / 0.28))",
+                          filter: "blur(28px)",
+                          transform: `
+                            translate3d(
+                              calc(var(--sx, 0) * 26px),
+                              calc(8px + var(--sy, 0) * 22px),
+                              0
+                            )
+                            scale(1.04)
+                          `,
+                          transition:
+                            "transform 0.7s cubic-bezier(0.22, 1, 0.36, 1)",
+                          opacity: 0.85,
+                        }}
+                      />
                     )}
 
                     {/* Glass card with cursor-aware spotlight + interactive lift */}
