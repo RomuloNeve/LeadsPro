@@ -207,7 +207,24 @@ Deno.serve(async (req) => {
         );
       }
 
-      const instanceName = `user_${userId.replace(/-/g, "").substring(0, 16)}`;
+      // Use a timestamp-suffixed name so EVERY create gets a brand-new
+      // Evolution instance. This avoids the "already in use" 403 entirely
+      // and prevents accidentally adopting an orphan that may already be
+      // paired with someone else's WhatsApp number.
+      const baseUserPart = userId.replace(/-/g, "").substring(0, 12);
+      const ts = Date.now().toString(36); // ~7 chars
+      const instanceName = `user_${baseUserPart}_${ts}`;
+
+      // Best-effort proactive cleanup: if Evolution has a stale instance
+      // matching the user's previous naming pattern, log it out and delete
+      // it so we don't accumulate zombies on the server.
+      const legacyName = `user_${userId.replace(/-/g, "").substring(0, 16)}`;
+      try {
+        await evoFetch(`/instance/logout/${legacyName}`, { method: "DELETE" });
+      } catch { /* not connected, fine */ }
+      try {
+        await evoFetch(`/instance/delete/${legacyName}`, { method: "DELETE" });
+      } catch { /* not present, fine */ }
 
       // First-pass create — most users hit this path.
       let evoData: any;
@@ -221,84 +238,19 @@ Deno.serve(async (req) => {
           }),
         });
       } catch (createErr: any) {
-        // Self-heal: an orphan instance with the same name already exists on
-        // Evolution (left over from a previous attempt that failed before
-        // the DB insert).
-        const msg = String(createErr?.message || "").toLowerCase();
-        const looksLikeOrphan =
-          msg.includes("already") ||
-          msg.includes("exist") ||
-          msg.includes("forbidden") ||
-          msg.includes("uso") ||
-          msg.includes("conflict") ||
-          msg.includes("409") ||
-          msg.includes("rejeitada");
-        if (!looksLikeOrphan) throw createErr;
-
-        console.warn(
-          `Possible orphan instance detected for ${instanceName} — attempting recovery.`,
-          createErr?.message,
-        );
-
-        // Try logout (might fail if not connected — ignore)
-        try {
-          await evoFetch(`/instance/logout/${instanceName}`, { method: "DELETE" });
-        } catch { /* ignore */ }
-
-        // Try delete + recreate (with retry — Evolution sometimes needs a
-        // bigger pause for its internal state to clear).
-        let deleted = false;
-        try {
-          await evoFetch(`/instance/delete/${instanceName}`, { method: "DELETE" });
-          deleted = true;
-        } catch (delErr) {
-          console.warn("Orphan delete failed:", delErr);
-        }
-
-        if (deleted) {
-          let lastErr: any = null;
-          for (const waitMs of [1500, 2500, 4000]) {
-            await new Promise((r) => setTimeout(r, waitMs));
-            try {
-              evoData = await evoFetch("/instance/create", {
-                method: "POST",
-                body: JSON.stringify({
-                  instanceName,
-                  integration: "WHATSAPP-BAILEYS",
-                  qrcode: true,
-                }),
-              });
-              lastErr = null;
-              break;
-            } catch (retryErr: any) {
-              lastErr = retryErr;
-              console.warn(`Recreate attempt after ${waitMs}ms failed:`, retryErr?.message);
-            }
-          }
-          if (lastErr && !evoData) {
-            // All retries failed — fall through to adoption below
-            console.warn("All recreate retries failed; trying adoption fallback.");
-          }
-        }
-
-        // Adoption fallback: if delete/recreate didn't work, just connect to
-        // the existing instance and adopt it. The QR code from /connect lets
-        // the user finish onboarding regardless of the orphan's prior state.
-        if (!evoData) {
-          try {
-            const connectData = await evoFetch(`/instance/connect/${instanceName}`);
-            evoData = {
-              instance: { instanceName },
-              qrcode: connectData?.base64
-                ? { base64: connectData.base64 }
-                : connectData?.qrcode || null,
-            };
-            console.log(`Adopted existing instance ${instanceName}.`);
-          } catch (adoptErr) {
-            console.error("Adoption fallback also failed:", adoptErr);
-            throw createErr; // surface the original error
-          }
-        }
+        // With the timestamp-suffixed name above, a "name in use" collision
+        // is essentially impossible — but we keep one quick retry for any
+        // transient Evolution hiccup (network blip, momentary 5xx).
+        console.warn(`Create failed for ${instanceName}, retrying once:`, createErr?.message);
+        await new Promise((r) => setTimeout(r, 1500));
+        evoData = await evoFetch("/instance/create", {
+          method: "POST",
+          body: JSON.stringify({
+            instanceName,
+            integration: "WHATSAPP-BAILEYS",
+            qrcode: true,
+          }),
+        });
       }
 
       // Save to DB
