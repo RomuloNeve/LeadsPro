@@ -61,6 +61,7 @@ import { WhatsAppIcon } from "@/components/WhatsAppIcon";
 import ExitIntentPopup from "@/components/ExitIntentPopup";
 import FloatingCTA from "@/components/FloatingCTA";
 import HeroProductMockup from "@/components/HeroProductMockup";
+import TestimonialMarquee from "@/components/TestimonialMarquee";
 import RoiCalculator from "@/components/RoiCalculator";
 import HowItWorks3Steps from "@/components/HowItWorks3Steps";
 import Features3DStack from "@/components/Features3DStack";
@@ -788,50 +789,47 @@ const LandingPage = () => {
         <Features3DStack />
       </Section>
 
-      {/* ═══ TESTIMONIALS — editorial cards ═══ */}
-      <Section id="testimonials" className="border-t border-zinc-800 bg-black" ariaLabel="Depoimentos de clientes">
-        <SectionHeader
-          badge="Resultados reais"
-          title={<>Profissionais que <span className="text-primary">já transformaram</span> seus resultados</>}
+      {/* ═══ TESTIMONIALS — 3-column infinite marquee (creative-agency ref) ═══ */}
+      <section
+        id="testimonials"
+        className="border-t border-zinc-800 bg-black py-16 sm:py-24 md:py-32 relative overflow-hidden"
+        aria-label="Depoimentos de clientes"
+      >
+        {/* Soft blue glow behind the wall */}
+        <div
+          aria-hidden
+          className="absolute bottom-20 right-10 w-96 h-96 rounded-full blur-[120px] pointer-events-none -z-10"
+          style={{ background: "hsl(var(--primary) / 0.12)" }}
         />
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 max-w-6xl mx-auto border border-zinc-800">
-          {testimonials.map((t, i) => (
-            <motion.article
-              key={t.name}
-              className={`relative p-5 sm:p-6 group hover:bg-zinc-900/40 transition-colors flex flex-col ${
-                i < 3 ? "border-b lg:border-b-0 lg:border-r border-zinc-800" : ""
-              } ${
-                i === 1 ? "sm:border-r-0 lg:border-r border-zinc-800" : ""
-              } ${
-                i === 0 ? "sm:border-r border-zinc-800" : ""
-              } ${
-                i === 2 ? "sm:border-b-0 lg:border-b-0 border-zinc-800 sm:border-r border-r-0" : ""
-              }`}
-            >
-              {/* Quote mark */}
-              <Quote className="h-8 w-8 text-primary/30 mb-4" aria-hidden="true" strokeWidth={1.5} />
-              <p className="text-sm text-zinc-300 leading-relaxed flex-1 font-sans">{t.text}</p>
-              {/* Divider — dashed editorial */}
-              <div className="border-t border-zinc-800 border-dashed pt-4 mt-5 space-y-3">
-                <div className="flex items-baseline gap-2">
-                  <span className="text-3xl font-medium font-display text-primary tabular-nums tracking-tighter">{t.metric}</span>
-                  <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-500">{t.metricLabel}</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <img src={t.avatar} alt={t.name} className="h-9 w-9 object-cover" />
-                  <div>
-                    <p className="font-medium text-white text-sm font-sans">{t.name}</p>
-                    <p className="text-[10px] font-mono uppercase tracking-wider text-zinc-500">{t.role}</p>
-                  </div>
-                </div>
+        {/* Section header — editorial */}
+        <div className="container mx-auto px-6 lg:px-8 mb-12 relative z-30">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 max-w-7xl mx-auto">
+            <div className="flex flex-col gap-4 max-w-3xl">
+              <div className="flex items-center gap-3">
+                <span className="h-px w-8 bg-primary" />
+                <span className="font-mono uppercase tracking-[0.2em] text-xs font-medium text-primary">
+                  03 · Depoimentos
+                </span>
               </div>
-              {/* Hover side line */}
-              <span className="absolute left-0 top-0 h-full w-0.5 bg-primary scale-y-0 group-hover:scale-y-100 transition-transform origin-top duration-500" />
-            </motion.article>
-          ))}
+              <h2 className="text-4xl sm:text-5xl md:text-6xl font-medium font-display text-white tracking-tighter leading-[1.05]">
+                Adorado por <span className="text-primary">profissionais</span> que vendem
+              </h2>
+              <p className="text-base md:text-lg text-zinc-400 max-w-xl leading-relaxed">
+                Resultados reais de quem deixou de copiar e colar do WhatsApp e começou a vender de verdade.
+              </p>
+            </div>
+          </div>
+          {/* Subtle divider line */}
+          <div
+            aria-hidden
+            className="absolute left-0 right-0 -bottom-6 h-px bg-gradient-to-r from-transparent via-white/15 to-transparent"
+          />
         </div>
-      </Section>
+
+        {/* Marquee */}
+        <TestimonialMarquee />
+      </section>
 
       {/* ═══ BEFORE / AFTER ═══ */}
       <Section className="border-t border-zinc-800 bg-black" ariaLabel="Comparação antes e depois">
