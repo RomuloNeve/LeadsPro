@@ -62,6 +62,7 @@ import ExitIntentPopup from "@/components/ExitIntentPopup";
 import FloatingCTA from "@/components/FloatingCTA";
 import HeroProductMockup from "@/components/HeroProductMockup";
 import TestimonialMarquee from "@/components/TestimonialMarquee";
+import CursorTrail from "@/components/CursorTrail";
 import RoiCalculator from "@/components/RoiCalculator";
 import HowItWorks3Steps from "@/components/HowItWorks3Steps";
 import Features3DStack from "@/components/Features3DStack";
@@ -305,6 +306,8 @@ const LandingPage = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <CursorTrail />
+
       {/* ═══ NAV — editorial floating bar ═══ */}
       <div className="fixed flex w-full z-50 pt-4 sm:pt-6 px-3 sm:px-4 top-0 left-0 justify-center pointer-events-none">
         <nav
