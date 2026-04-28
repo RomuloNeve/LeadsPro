@@ -34,6 +34,9 @@ interface Testimonial {
 const ru = (gender: "men" | "women", id: number) =>
   `https://randomuser.me/api/portraits/${gender}/${id}.jpg`;
 
+// 18 testimonials total — 6 per column. All 18 avatars are unique.
+// Local: 5 curated. Remote: 13 distinct randomuser.me IDs.
+
 const COLUMN_A: Testimonial[] = [
   {
     text: "Antes eu perdia 2 horas por dia copiando dados. Com o LeadsPro, capturo mais de 50 leads por dia em minutos. Meu faturamento triplicou em 60 dias.",
@@ -65,6 +68,22 @@ const COLUMN_A: Testimonial[] = [
     name: "Diego S.",
     role: "@founder.flowx",
     avatar: ru("men", 47),
+    variant: "italic",
+  },
+  {
+    text: "Onde estava essa ferramenta nos últimos 5 anos? Já paguei 3x o que custou.",
+    name: "Henrique B.",
+    role: "Imobiliária",
+    metric: "ROI 3×",
+    stars: 5,
+    avatar: ru("men", 11),
+    variant: "long",
+  },
+  {
+    text: "Configurei a cadência de follow-up domingo, segunda fechei 4 leads frios.",
+    name: "Aline V.",
+    role: "@aline.consultoria",
+    avatar: ru("women", 9),
     variant: "italic",
   },
 ];
@@ -104,6 +123,22 @@ const COLUMN_B: Testimonial[] = [
     avatar: ru("women", 56),
     variant: "long",
   },
+  {
+    text: "Importei 3 mil leads de planilha em 1 click. CRM lindo de organizado.",
+    name: "Pedro N.",
+    role: "Coach Vendas",
+    avatar: ru("men", 22),
+    variant: "short",
+  },
+  {
+    text: "Lista personalizada por cor + segmentação por categoria. Detalhe que muda tudo.",
+    name: "Beatriz O.",
+    role: "Agência Local",
+    metric: "Top 3",
+    stars: 5,
+    avatar: ru("women", 38),
+    variant: "long",
+  },
 ];
 
 const COLUMN_C: Testimonial[] = [
@@ -137,6 +172,22 @@ const COLUMN_C: Testimonial[] = [
     name: "Bruno A.",
     role: "@bruno.vendas",
     avatar: ru("men", 83),
+    variant: "italic",
+  },
+  {
+    text: "Vou contratar mais um vendedor só pra atender o volume novo de leads.",
+    name: "Rafael S.",
+    role: "Construtora",
+    metric: "+5 vendas/mês",
+    stars: 5,
+    avatar: ru("men", 53),
+    variant: "long",
+  },
+  {
+    text: "Widget de captura no site começou a gerar leads na primeira hora 😍",
+    name: "Camila R.",
+    role: "@camila.lead",
+    avatar: ru("women", 16),
     variant: "italic",
   },
 ];
