@@ -881,49 +881,53 @@ const LandingPage = () => {
         className="border-t border-border/40 relative overflow-hidden"
         ariaLabel="Planos e preços"
       >
-        {/* Section-level cursor tracker — shifts blobs subtly toward the
-            cursor for ambient response. Listens at the section root. */}
+        {/* Mouse tracker wraps everything inside the section so cursor
+            events from any child (cards included) reach the listener. */}
         <div
-          className="absolute inset-0 pointer-events-none"
-          aria-hidden="true"
+          className="relative"
           onMouseMove={(e) => {
-            const root = e.currentTarget.parentElement as HTMLElement | null;
-            if (!root) return;
+            const root = e.currentTarget as HTMLElement;
             const rect = root.getBoundingClientRect();
             const x = (e.clientX - rect.left) / rect.width - 0.5;
             const y = (e.clientY - rect.top) / rect.height - 0.5;
             root.style.setProperty("--sx", String(x));
             root.style.setProperty("--sy", String(y));
           }}
-          style={{ pointerEvents: "auto" }}
+          onMouseLeave={(e) => {
+            const root = e.currentTarget as HTMLElement;
+            root.style.setProperty("--sx", "0");
+            root.style.setProperty("--sy", "0");
+          }}
         >
-          <div
-            className="blob top-1/4 left-1/4 w-[28rem] h-[28rem] bg-primary/30"
-            style={{
-              animationDelay: "0s",
-              transform: "translate(calc(var(--sx, 0) * 40px), calc(var(--sy, 0) * 30px))",
-              transition: "transform 0.8s cubic-bezier(0.25, 0.1, 0.25, 1)",
-            }}
-          />
-          <div
-            className="blob bottom-1/4 right-1/4 w-[24rem] h-[24rem] bg-emerald-500/20"
-            style={{
-              animationDelay: "4s",
-              transform: "translate(calc(var(--sx, 0) * -30px), calc(var(--sy, 0) * -25px))",
-              transition: "transform 0.8s cubic-bezier(0.25, 0.1, 0.25, 1)",
-            }}
-          />
-          <div
-            className="blob top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[36rem] h-[36rem] bg-primary/15"
-            style={{
-              animationDelay: "8s",
-              transform: "translate(calc(-50% + var(--sx, 0) * 20px), calc(-50% + var(--sy, 0) * 20px))",
-              transition: "transform 0.8s cubic-bezier(0.25, 0.1, 0.25, 1)",
-            }}
-          />
-        </div>
+          {/* Animated background blobs — drift toward cursor */}
+          <div className="absolute inset-0 pointer-events-none -z-0" aria-hidden="true">
+            <div
+              className="blob top-1/4 left-1/4 w-[28rem] h-[28rem] bg-primary/30"
+              style={{
+                animationDelay: "0s",
+                transform: "translate(calc(var(--sx, 0) * 40px), calc(var(--sy, 0) * 30px))",
+                transition: "transform 0.8s cubic-bezier(0.25, 0.1, 0.25, 1)",
+              }}
+            />
+            <div
+              className="blob bottom-1/4 right-1/4 w-[24rem] h-[24rem] bg-emerald-500/20"
+              style={{
+                animationDelay: "4s",
+                transform: "translate(calc(var(--sx, 0) * -30px), calc(var(--sy, 0) * -25px))",
+                transition: "transform 0.8s cubic-bezier(0.25, 0.1, 0.25, 1)",
+              }}
+            />
+            <div
+              className="blob top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[36rem] h-[36rem] bg-primary/15"
+              style={{
+                animationDelay: "8s",
+                transform: "translate(calc(-50% + var(--sx, 0) * 20px), calc(-50% + var(--sy, 0) * 20px))",
+                transition: "transform 0.8s cubic-bezier(0.25, 0.1, 0.25, 1)",
+              }}
+            />
+          </div>
 
-        <div className="relative">
+          <div className="relative">
           <SectionHeader
             badge="Investimento"
             title={<>Quanto custa <span className="gradient-text">dominar seu mercado</span>?</>}
@@ -1026,12 +1030,49 @@ const LandingPage = () => {
                       </div>
                     )}
 
-                    {/* Decorative card peeking from behind (popular only) */}
+                    {/* ── Decorative cards peeking from behind (popular only) ──
+                        Two depth layers that drift with the section's --sx/--sy
+                        cursor variables. The deeper layer moves more (parallax). */}
                     {plan.popular && (
-                      <div
-                        aria-hidden
-                        className="absolute inset-0 rounded-2xl bg-gradient-to-br from-primary/30 to-emerald-500/20 translate-x-3 translate-y-3 -z-10 opacity-60"
-                      />
+                      <>
+                        {/* Far layer — bigger movement, more transparent, blurred */}
+                        <div
+                          aria-hidden
+                          className="absolute inset-0 rounded-2xl bg-gradient-to-br from-primary/35 to-emerald-500/25 -z-20 opacity-50 blur-[2px]"
+                          style={{
+                            transform: `
+                              translate3d(
+                                calc(18px + var(--sx, 0) * 28px),
+                                calc(18px + var(--sy, 0) * 22px),
+                                0
+                              )
+                              rotate(calc(var(--sx, 0) * 2.4deg))
+                              scale(calc(1 + var(--sx, 0) * 0.015))
+                            `,
+                            transition:
+                              "transform 0.7s cubic-bezier(0.22, 1, 0.36, 1)",
+                          }}
+                        />
+                        {/* Near layer — smaller offset, sharper, more saturated */}
+                        <div
+                          aria-hidden
+                          className="absolute inset-0 rounded-2xl bg-gradient-to-br from-primary/40 to-emerald-500/30 -z-10 opacity-70"
+                          style={{
+                            transform: `
+                              translate3d(
+                                calc(8px + var(--sx, 0) * 14px),
+                                calc(8px + var(--sy, 0) * 11px),
+                                0
+                              )
+                              rotate(calc(var(--sx, 0) * 1.2deg))
+                            `,
+                            transition:
+                              "transform 0.6s cubic-bezier(0.22, 1, 0.36, 1)",
+                            boxShadow:
+                              "0 30px 80px -10px hsl(var(--primary) / 0.35)",
+                          }}
+                        />
+                      </>
                     )}
 
                     {/* Glass card with cursor-aware spotlight + interactive lift */}
@@ -1151,6 +1192,7 @@ const LandingPage = () => {
             <span className="flex items-center gap-1.5"><Shield className="h-3.5 w-3.5" /> Garantia de satisfação</span>
             <span className="flex items-center gap-1.5"><PhoneCall className="h-3.5 w-3.5" /> Suporte humano</span>
           </motion.div>
+        </div>
         </div>
       </Section>
 
