@@ -94,6 +94,44 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // Public diagnostic endpoint — short-circuits before auth so we can
+    // verify the function is reading the right secrets even without a
+    // valid session. Returns no sensitive values.
+    {
+      const dbgUrl = new URL(req.url);
+      if (dbgUrl.searchParams.get("action") === "debug") {
+        const k = EVOLUTION_API_KEY || "";
+        const u = EVOLUTION_API_URL || "";
+        let probeStatus: number | null = null;
+        let probeError: string | null = null;
+        try {
+          const probeRes = await fetch(
+            `${u.replace(/\/+$/, "")}/instance/fetchInstances`,
+            { headers: { apikey: k } },
+          );
+          probeStatus = probeRes.status;
+        } catch (e: any) {
+          probeError = e?.message || String(e);
+        }
+        return new Response(
+          JSON.stringify({
+            key_present: k.length > 0,
+            key_length: k.length,
+            key_first4: k.slice(0, 4),
+            key_last4: k.slice(-4),
+            key_has_leading_space: k.startsWith(" "),
+            key_has_trailing_space: k.endsWith(" "),
+            key_matches_expected: k === "leadspro-evo-2026",
+            url_present: u.length > 0,
+            url_value: u,
+            evolution_probe_status: probeStatus,
+            evolution_probe_error: probeError,
+          }, null, 2),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+    }
+
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
@@ -139,14 +177,57 @@ Deno.serve(async (req) => {
 
       const instanceName = `user_${userId.replace(/-/g, "").substring(0, 16)}`;
 
-      const evoData = await evoFetch("/instance/create", {
-        method: "POST",
-        body: JSON.stringify({
-          instanceName,
-          integration: "WHATSAPP-BAILEYS",
-          qrcode: true,
-        }),
-      });
+      // First-pass create — most users hit this path.
+      let evoData: any;
+      try {
+        evoData = await evoFetch("/instance/create", {
+          method: "POST",
+          body: JSON.stringify({
+            instanceName,
+            integration: "WHATSAPP-BAILEYS",
+            qrcode: true,
+          }),
+        });
+      } catch (createErr: any) {
+        // Self-heal: if Evolution thinks the instance already exists (left
+        // over from a previous attempt that failed before the DB insert),
+        // delete it and retry once. Most "Forbidden / already in use"
+        // responses from Evolution land here.
+        const msg = String(createErr?.message || "").toLowerCase();
+        const looksLikeOrphan =
+          msg.includes("already") ||
+          msg.includes("exist") ||
+          msg.includes("forbidden") ||
+          msg.includes("uso") ||
+          msg.includes("conflict") ||
+          msg.includes("409") ||
+          msg.includes("rejeitada");
+        if (!looksLikeOrphan) throw createErr;
+
+        console.warn(
+          `Possible orphan instance detected for ${instanceName} — deleting and retrying.`,
+          createErr?.message,
+        );
+        try {
+          await evoFetch(`/instance/logout/${instanceName}`, { method: "DELETE" });
+        } catch { /* ignore — instance may not be logged in */ }
+        try {
+          await evoFetch(`/instance/delete/${instanceName}`, { method: "DELETE" });
+        } catch (delErr) {
+          console.error("Orphan delete failed:", delErr);
+          throw createErr; // surface the original error if cleanup didn't work
+        }
+        // Brief pause so Evolution's internal state catches up
+        await new Promise((r) => setTimeout(r, 800));
+        evoData = await evoFetch("/instance/create", {
+          method: "POST",
+          body: JSON.stringify({
+            instanceName,
+            integration: "WHATSAPP-BAILEYS",
+            qrcode: true,
+          }),
+        });
+      }
 
       // Save to DB
       const { error: insertError } = await supabase
@@ -157,7 +238,12 @@ Deno.serve(async (req) => {
           status: "created",
         });
 
-      if (insertError) throw insertError;
+      if (insertError) {
+        // Roll back the Evolution instance so we don't leave orphans for the
+        // next attempt.
+        try { await evoFetch(`/instance/delete/${instanceName}`, { method: "DELETE" }); } catch { /* best effort */ }
+        throw insertError;
+      }
 
       return new Response(
         JSON.stringify({ instance_name: instanceName, qrcode: evoData?.qrcode }),
