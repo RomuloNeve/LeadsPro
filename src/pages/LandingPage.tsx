@@ -834,12 +834,23 @@ const LandingPage = () => {
       </Section>
 
       {/* ═══ BEFORE / AFTER ═══ */}
-      <Section className="border-t border-zinc-800" ariaLabel="Comparação antes e depois">
+      <Section className="border-t border-zinc-800 bg-black" ariaLabel="Comparação antes e depois">
         <SectionHeader
-          title={<>O que muda <span className="gradient-text">quando você começa</span></>}
+          badge="Antes & depois"
+          title={<>O que muda <span className="text-primary">quando você começa</span></>}
         />
 
-        <div className="max-w-4xl mx-auto space-y-0">
+        <div className="max-w-4xl mx-auto border border-zinc-800">
+          {/* Headers */}
+          <div className="grid grid-cols-1 md:grid-cols-2 border-b border-zinc-800">
+            <div className="px-5 py-3 flex items-center gap-2 border-b md:border-b-0 md:border-r border-zinc-800 bg-zinc-900/30">
+              <span className="font-mono text-[10px] uppercase tracking-widest text-zinc-500">[ Sem LeadsPro ]</span>
+            </div>
+            <div className="px-5 py-3 flex items-center gap-2 bg-primary/[0.05]">
+              <span className="font-mono text-[10px] uppercase tracking-widest text-primary font-medium">[ Com LeadsPro ]</span>
+            </div>
+          </div>
+
           {[
             { sem: "10–15 leads por dia, copiando manualmente", com: "80+ leads por dia com busca inteligente" },
             { sem: "Mensagens enviadas uma por uma no WhatsApp", com: "Disparo em massa para centenas de leads" },
@@ -847,43 +858,25 @@ const LandingPage = () => {
             { sem: "3+ ferramentas diferentes (custo alto)", com: "Uma única plataforma integrada" },
             { sem: "Planilhas desorganizadas e confusas", com: "Dashboard organizado e inteligente" },
             { sem: "Horas perdidas em trabalho operacional", com: "Mais tempo vendendo, menos operando" },
-          ].map((row, i) => (
+          ].map((row, i, arr) => (
             <motion.div
               key={i}
-              className="grid grid-cols-1 md:grid-cols-2 group"
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
+              className={`grid grid-cols-1 md:grid-cols-2 ${i < arr.length - 1 ? "border-b border-zinc-800" : ""}`}
+              initial={{ opacity: 0, x: -20 }}
+              whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.4, delay: i * 0.08 }}
             >
-              {/* Lado negativo */}
-              <div className={`flex items-center gap-3 px-4 sm:px-6 py-3 sm:py-4 border-b border-border/30 bg-destructive/[0.03] ${i === 0 ? 'md:rounded-tl-xl' : ''} ${i === 5 ? 'md:rounded-bl-xl' : ''}`}>
-                <div className="h-6 w-6 sm:h-7 sm:w-7 rounded-full bg-destructive/10 flex items-center justify-center shrink-0">
-                  <span className="text-destructive text-xs font-bold">✗</span>
-                </div>
-                <span className="text-xs sm:text-sm text-muted-foreground line-through decoration-destructive/30">{row.sem}</span>
+              <div className="flex items-center gap-3 px-5 py-4 border-b md:border-b-0 md:border-r border-zinc-800 group">
+                <span className="font-mono text-[10px] text-zinc-600 shrink-0">{String(i+1).padStart(2,'0')}</span>
+                <span className="text-sm text-zinc-500 line-through decoration-destructive/40 group-hover:text-zinc-400 transition-colors">{row.sem}</span>
               </div>
-              {/* Lado positivo */}
-              <div className={`flex items-center gap-3 px-4 sm:px-6 py-3 sm:py-4 border-b border-primary/10 bg-primary/[0.03] ${i === 0 ? 'md:rounded-tr-xl' : ''} ${i === 5 ? 'md:rounded-br-xl' : ''}`}>
-                <div className="h-6 w-6 sm:h-7 sm:w-7 rounded-full bg-primary/15 flex items-center justify-center shrink-0">
-                  <CheckCircle2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary" />
-                </div>
-                <span className="text-xs sm:text-sm text-foreground font-medium">{row.com}</span>
+              <div className="flex items-center gap-3 px-5 py-4 group hover:bg-primary/[0.04] transition-colors">
+                <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
+                <span className="text-sm text-white font-medium">{row.com}</span>
               </div>
             </motion.div>
           ))}
-
-          {/* Headers fixos no topo */}
-          <div className="grid grid-cols-1 md:grid-cols-2 -order-1">
-            <div className="px-4 sm:px-6 py-2 sm:py-3 flex items-center gap-2">
-              <AlertTriangle className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-destructive" />
-              <span className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-destructive">Sem LeadsPro</span>
-            </div>
-            <div className="px-4 sm:px-6 py-2 sm:py-3 flex items-center gap-2">
-              <Zap className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary" />
-              <span className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-primary">Com LeadsPro</span>
-            </div>
-          </div>
         </div>
 
         <motion.div
@@ -893,11 +886,14 @@ const LandingPage = () => {
           viewport={{ once: true }}
           transition={{ duration: 0.5, delay: 0.5 }}
         >
-          <a href="#pricing">
-            <Button size="lg" className="gradient-bg text-primary-foreground font-bold px-10 text-base rounded-full shadow-lg">
-              Quero esses resultados <ArrowRight className="h-4 w-4 ml-1" />
-            </Button>
-          </a>
+          <button
+            onClick={() => scrollTo("pricing")}
+            className="group inline-flex items-center justify-center gap-3 h-12 sm:h-14 px-8 sm:px-12 bg-primary text-primary-foreground text-xs sm:text-sm font-medium uppercase tracking-wider hover:bg-primary/90 transition-all"
+            style={{ boxShadow: "0 0 30px -5px hsl(var(--primary) / 0.5)" }}
+          >
+            Quero esses resultados
+            <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+          </button>
         </motion.div>
       </Section>
 
@@ -910,36 +906,38 @@ const LandingPage = () => {
           </svg>
         </div>
 
-        <div className="max-w-4xl mx-auto text-center">
+        <div className="max-w-4xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
+            className="flex items-center gap-3 mb-6"
           >
-            <Badge variant="outline" className="mb-5 border-primary/30 text-primary text-xs tracking-wide uppercase px-4 py-1.5">
-              <Gift className="h-3.5 w-3.5 mr-2" /> Programa de Afiliados
-            </Badge>
+            <span className="h-px w-8 bg-primary" />
+            <span className="font-mono uppercase tracking-[0.2em] text-xs font-medium text-primary">
+              Programa de afiliados
+            </span>
           </motion.div>
 
           <motion.h2
-            className="text-2xl sm:text-4xl md:text-5xl lg:text-[3.5rem] font-bold font-display leading-[1.1] tracking-tight mb-6"
+            className="text-3xl sm:text-4xl md:text-5xl lg:text-[3.5rem] font-medium font-display leading-[1.05] tracking-tighter text-white mb-6"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5, delay: 0.1 }}
           >
-            Ganhe <span className="gradient-text">30% de comissões recorrentes</span> para cada pagamento feito pelos clientes indicados!
+            Ganhe <span className="text-primary">30% de comissão recorrente</span> em cada pagamento dos clientes que indicar.
           </motion.h2>
 
           <motion.p
-            className="text-muted-foreground text-base md:text-lg max-w-2xl mx-auto mb-10 leading-relaxed"
+            className="text-zinc-400 text-base md:text-lg max-w-2xl mb-10 leading-relaxed"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5, delay: 0.2 }}
           >
-            Indique o LeadsPro e receba <strong className="text-foreground">30% de comissão recorrente</strong> em cada pagamento — nos planos Starter, Pro ou Enterprise — enquanto o cliente indicado permanecer ativo. Sem limite de indicações.
+            Indique o LeadsPro e receba <strong className="text-white">30% de comissão recorrente</strong> em cada pagamento — nos planos Starter, Pro ou Enterprise — enquanto o cliente indicado permanecer ativo. Sem limite de indicações.
           </motion.p>
 
           <motion.div
@@ -948,15 +946,15 @@ const LandingPage = () => {
             viewport={{ once: true }}
             transition={{ duration: 0.5, delay: 0.3 }}
           >
-            <Button
-              size="lg"
-              className="gradient-bg text-primary-foreground h-14 px-12 text-lg gap-3 rounded-xl hover:opacity-90 transition-opacity"
+            <button
               onClick={() => navigate("/afiliados/cadastro")}
+              className="group inline-flex items-center justify-center gap-3 h-12 sm:h-14 px-6 sm:px-10 bg-primary text-primary-foreground text-xs sm:text-sm font-medium uppercase tracking-wider hover:bg-primary/90 transition-all"
+              style={{ boxShadow: "0 0 30px -5px hsl(var(--primary) / 0.5)" }}
             >
-              <Gift className="h-5 w-5" />
+              <Gift className="h-4 w-4" />
               Quero ser afiliado
-              <ArrowRight className="h-5 w-5" />
-            </Button>
+              <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+            </button>
           </motion.div>
         </div>
       </Section>
@@ -1122,7 +1120,7 @@ const LandingPage = () => {
                     {plan.popular && (
                       <div
                         aria-hidden
-                        className="absolute inset-0 rounded-2xl pointer-events-none -z-10"
+                        className="absolute inset-0 rounded-none pointer-events-none -z-10"
                         style={{
                           background:
                             "linear-gradient(135deg, hsl(var(--primary) / 0.38), hsl(160 60% 45% / 0.28))",
@@ -1144,7 +1142,7 @@ const LandingPage = () => {
 
                     {/* Glass card with cursor-aware spotlight + interactive lift */}
                     <div
-                      className="relative rounded-2xl overflow-hidden h-full flex flex-col p-5 sm:p-6 glass-card glass-card-interactive"
+                      className="relative rounded-none overflow-hidden h-full flex flex-col p-5 sm:p-6 glass-card glass-card-interactive"
                       onMouseMove={(e) => {
                         const el = e.currentTarget as HTMLElement;
                         const rect = el.getBoundingClientRect();
@@ -1155,13 +1153,13 @@ const LandingPage = () => {
                       }}
                     >
                       {/* Diagonal split borders (white top-left, primary bottom-right) */}
-                      <div className="glass-border-overlay rounded-2xl" />
+                      <div className="glass-border-overlay rounded-none" />
 
                       {/* Cursor-aware radial spotlight (fills the card on hover) */}
-                      <div className="glass-spotlight rounded-2xl" />
+                      <div className="glass-spotlight rounded-none" />
 
                       {/* Cursor-aware bright border ring (chases the cursor along the edge) */}
-                      <div className="glass-spotlight-border rounded-2xl" />
+                      <div className="glass-spotlight-border rounded-none" />
 
                       {/* Card content */}
                       <div className="relative flex flex-col flex-1">
@@ -1221,69 +1219,84 @@ const LandingPage = () => {
             );
           })()}
 
-          {/* Credits extra info */}
+          {/* Credits extra info — editorial */}
           <motion.div
-            className="max-w-2xl mx-auto mt-10 p-6 rounded-2xl border border-border/60 bg-card card-shadow text-center"
+            className="max-w-3xl mx-auto mt-12 p-6 sm:p-8 border border-zinc-800 bg-zinc-900/30"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
           >
-            <h4 className="text-base font-bold font-display text-foreground mb-2">Precisa de mais créditos?</h4>
-            <p className="text-sm text-muted-foreground mb-4">
-              Compre créditos extras diretamente na plataforma via PIX. Liberação automática.
+            <div className="flex items-center gap-3 mb-3">
+              <span className="font-mono text-[10px] uppercase tracking-widest text-primary font-medium">[ Add-on ]</span>
+              <span className="h-px flex-1 bg-zinc-800" />
+            </div>
+            <h4 className="text-lg font-medium font-display text-white mb-2">Precisa de mais créditos?</h4>
+            <p className="text-sm text-zinc-400 mb-5 max-w-md">
+              Compre créditos extras direto na plataforma via PIX. Liberação automática.
             </p>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-0 border border-zinc-800">
               {[
                 { credits: "+100", price: "R$29,90" },
                 { credits: "+500", price: "R$59,90" },
                 { credits: "+1.000", price: "R$97,90" },
                 { credits: "+2.000", price: "R$137,90" },
-              ].map((pkg) => (
-                <div key={pkg.credits} className="p-3 rounded-xl bg-muted/50 border border-border/40">
-                  <p className="font-semibold text-foreground">{pkg.credits}</p>
-                  <p className="text-xs text-muted-foreground">{pkg.price}</p>
+              ].map((pkg, i) => (
+                <div
+                  key={pkg.credits}
+                  className={`p-4 hover:bg-primary/5 transition-colors group ${
+                    i < 3 ? "border-b sm:border-b-0 sm:border-r border-zinc-800" : ""
+                  } ${i === 1 ? "border-r-0 sm:border-r border-zinc-800" : ""} ${i === 0 ? "border-r border-zinc-800" : ""}`}
+                >
+                  <p className="text-xl font-medium font-display text-white tabular-nums tracking-tighter group-hover:text-primary transition-colors">{pkg.credits}</p>
+                  <p className="text-[11px] font-mono uppercase tracking-wider text-zinc-500 mt-1">{pkg.price}</p>
                 </div>
               ))}
             </div>
           </motion.div>
 
-          {/* Trust signals */}
+          {/* Trust signals — mono editorial */}
           <motion.div
-            className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 mt-12 text-xs text-muted-foreground"
+            className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3 mt-12 text-[11px] font-mono uppercase tracking-wider text-zinc-500"
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
           >
-            <span className="flex items-center gap-1.5"><Lock className="h-3.5 w-3.5" /> Pagamento 100% seguro</span>
-            <span className="flex items-center gap-1.5"><Zap className="h-3.5 w-3.5" /> Acesso imediato</span>
-            <span className="flex items-center gap-1.5"><Shield className="h-3.5 w-3.5" /> Garantia de satisfação</span>
-            <span className="flex items-center gap-1.5"><PhoneCall className="h-3.5 w-3.5" /> Suporte humano</span>
+            <span className="flex items-center gap-2"><Lock className="h-3.5 w-3.5 text-primary/70" /> Pagamento seguro</span>
+            <span className="flex items-center gap-2"><Zap className="h-3.5 w-3.5 text-primary/70" /> Acesso imediato</span>
+            <span className="flex items-center gap-2"><Shield className="h-3.5 w-3.5 text-primary/70" /> Garantia</span>
+            <span className="flex items-center gap-2"><PhoneCall className="h-3.5 w-3.5 text-primary/70" /> Suporte humano</span>
           </motion.div>
         </div>
         </div>
       </Section>
 
-      {/* ═══ FAQ ═══ */}
-      <Section id="faq" className="border-t border-zinc-800" ariaLabel="Perguntas frequentes">
+      {/* ═══ FAQ — editorial accordion ═══ */}
+      <Section id="faq" className="border-t border-zinc-800 bg-black" ariaLabel="Perguntas frequentes">
         <SectionHeader
-          title={<>Perguntas <span className="gradient-text">frequentes</span></>}
+          badge="FAQ"
+          title={<>Perguntas <span className="text-primary">frequentes</span></>}
         />
 
-        <div className="max-w-2xl mx-auto space-y-3">
-          {faqs.map((faq, i) => (
+        <div className="max-w-3xl mx-auto border border-zinc-800">
+          {faqs.map((faq, i, arr) => (
             <motion.details
               key={faq.q}
-              className="group p-5 rounded-xl border border-border/60 bg-card card-shadow cursor-pointer"
+              className={`group cursor-pointer ${i < arr.length - 1 ? "border-b border-zinc-800" : ""}`}
               initial={{ opacity: 0, y: 8 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ delay: i * 0.05 }}
+              transition={{ delay: i * 0.04 }}
             >
-              <summary className="font-semibold font-display text-foreground text-sm list-none flex items-center justify-between">
-                {faq.q}
-                <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-open:rotate-180 shrink-0 ml-4" />
+              <summary className="flex items-center justify-between gap-4 px-5 py-4 list-none [&::-webkit-details-marker]:hidden hover:bg-zinc-900/30 transition-colors">
+                <div className="flex items-center gap-3 min-w-0 flex-1">
+                  <span className="font-mono text-[10px] text-primary tracking-widest font-medium shrink-0">{String(i+1).padStart(2,'0')}</span>
+                  <span className="text-sm sm:text-base font-medium font-display text-white">{faq.q}</span>
+                </div>
+                <ChevronDown className="h-4 w-4 text-zinc-500 transition-transform group-open:rotate-180 shrink-0" />
               </summary>
-              <p className="text-sm text-muted-foreground leading-relaxed mt-3 pr-8">{faq.a}</p>
+              <div className="px-5 pb-5 pt-0 border-t border-zinc-800 border-dashed">
+                <p className="text-sm text-zinc-400 leading-relaxed pt-4 pl-7">{faq.a}</p>
+              </div>
             </motion.details>
           ))}
         </div>
@@ -1308,7 +1321,7 @@ const LandingPage = () => {
             ].map((item, i) => (
               <motion.div
                 key={item.title}
-                className="p-4 sm:p-6 rounded-2xl border border-border/60 bg-card card-shadow"
+                className="p-4 sm:p-6 rounded-none border border-zinc-800 bg-card card-shadow"
                 initial={{ opacity: 0, y: 12 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
@@ -1324,7 +1337,7 @@ const LandingPage = () => {
           </div>
 
           <motion.div
-            className="text-center p-6 rounded-2xl border border-primary/20 bg-primary/5"
+            className="text-center p-6 rounded-none border border-primary/20 bg-primary/5"
             initial={{ opacity: 0, y: 12 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
