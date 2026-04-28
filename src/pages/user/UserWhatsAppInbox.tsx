@@ -730,10 +730,17 @@ const UserWhatsAppInbox = () => {
         `https://${projectId}.supabase.co/functions/v1/whatsapp-inbox?action=chats`,
         { method: "POST", headers: { Authorization: `Bearer ${session.access_token}`, apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY, "Content-Type": "application/json" } }
       );
-      const data = await res.json();
+      const data = await res.json().catch(() => ({ error: "Resposta inválida do servidor" }));
       if (data.error) {
         if (data.error.includes("não conectada") || data.error.includes("not connected")) {
           setInstanceDisconnected(true);
+          if (!silent) setLoadingChats(false);
+          return;
+        }
+        // Transient network errors (timeout / connection reset) — show a soft
+        // toast on user-initiated loads, swallow silently on background polls.
+        if (data.transient) {
+          if (!silent) toast({ title: "Conexão instável", description: data.error, variant: "destructive" });
           if (!silent) setLoadingChats(false);
           return;
         }

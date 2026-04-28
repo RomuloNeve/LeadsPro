@@ -125,12 +125,38 @@ Deno.serve(async (req) => {
     // LIST CHATS
     if (action === "chats") {
       console.log("Fetching chats for instance:", instance.instance_name);
-      
-      // Try findChats without body first (Evolution API v2 spec)
-      const res = await fetch(`${EVOLUTION_API_URL}/chat/findChats/${instance.instance_name}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", apikey: EVOLUTION_API_KEY },
-      });
+
+      // Wrap with timeout + try/catch — Evolution API can hang or drop the
+      // connection mid-request (reported as "connection reset"); without
+      // this guard the whole edge function throws to the platform error log.
+      let res: Response;
+      try {
+        const ctrl = new AbortController();
+        const timer = setTimeout(() => ctrl.abort(), 25000);
+        try {
+          res = await fetch(`${EVOLUTION_API_URL}/chat/findChats/${instance.instance_name}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", apikey: EVOLUTION_API_KEY },
+            signal: ctrl.signal,
+          });
+        } finally {
+          clearTimeout(timer);
+        }
+      } catch (e: any) {
+        const isTimeout = e?.name === "AbortError";
+        const isReset = String(e?.message || "").includes("connection reset")
+          || String(e?.message || "").includes("connection error");
+        const friendly = isTimeout
+          ? "Tempo esgotado ao buscar conversas. Tente recarregar."
+          : isReset
+            ? "Conexão com o WhatsApp instável. Tente recarregar em alguns segundos."
+            : "Não foi possível buscar suas conversas agora. Tente novamente.";
+        console.warn("findChats network error:", e?.message || e);
+        return new Response(
+          JSON.stringify({ chats: [], error: friendly, transient: true }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
       if (!res.ok) {
         console.error(`findChats failed: HTTP ${res.status}`);
         const errText = await res.text();
@@ -155,11 +181,19 @@ Deno.serve(async (req) => {
       let contactsMapByJid: Record<string, string> = {};
       let contactsMapByPhone: Record<string, string> = {};
       try {
-        const contactsRes = await fetch(`${EVOLUTION_API_URL}/chat/findContacts/${instance.instance_name}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", apikey: EVOLUTION_API_KEY },
-          body: JSON.stringify({}),
-        });
+        const ctCtrl = new AbortController();
+        const ctTimer = setTimeout(() => ctCtrl.abort(), 15000);
+        let contactsRes: Response;
+        try {
+          contactsRes = await fetch(`${EVOLUTION_API_URL}/chat/findContacts/${instance.instance_name}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", apikey: EVOLUTION_API_KEY },
+            body: JSON.stringify({}),
+            signal: ctCtrl.signal,
+          });
+        } finally {
+          clearTimeout(ctTimer);
+        }
         const contactsData = await safeJson(contactsRes);
         if (Array.isArray(contactsData)) {
           for (const ct of contactsData) {
