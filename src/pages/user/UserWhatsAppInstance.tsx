@@ -201,6 +201,22 @@ const UserWhatsAppInstance = () => {
     }
   };
 
+  const [forcingSync, setForcingSync] = useState(false);
+  const handleForceSync = async () => {
+    setForcingSync(true);
+    try {
+      const data = await invokeFunction("force-sync", "POST");
+      toast({
+        title: "Sincronização iniciada",
+        description: data?.message || "Aguarde 30-60 segundos para o histórico aparecer.",
+      });
+    } catch (err: any) {
+      toast({ title: "Erro ao sincronizar", description: err.message, variant: "destructive" });
+    } finally {
+      setForcingSync(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -307,19 +323,37 @@ const UserWhatsAppInstance = () => {
                     </div>
                   </div>
                 </div>
-                <Button
-                  variant="destructive"
-                  onClick={handleDisconnect}
-                  disabled={disconnecting}
-                  className="w-full"
-                >
-                  {disconnecting ? (
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  ) : (
-                    <Trash2 className="h-4 w-4 mr-2" />
-                  )}
-                  Desconectar e Remover
-                </Button>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={handleForceSync}
+                    disabled={forcingSync}
+                    className="w-full"
+                  >
+                    {forcingSync ? (
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    ) : (
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                    )}
+                    Sincronizar conversas
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    onClick={handleDisconnect}
+                    disabled={disconnecting}
+                    className="w-full"
+                  >
+                    {disconnecting ? (
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    ) : (
+                      <Trash2 className="h-4 w-4 mr-2" />
+                    )}
+                    Desconectar
+                  </Button>
+                </div>
+                <p className="text-[11px] text-muted-foreground text-center leading-relaxed">
+                  Sem mensagens aparecendo? Clique em <strong>Sincronizar conversas</strong> — força o servidor a recarregar o histórico do WhatsApp (~30-60s).
+                </p>
               </div>
             )}
 

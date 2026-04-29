@@ -31,6 +31,30 @@ async function configureWebhook(instanceName: string) {
   }
 }
 
+/** Apply the operating settings to an instance: full history sync,
+ *  always online (so we keep receiving messages even when the
+ *  WhatsApp app isn't foregrounded), reject calls automatically.
+ *  Best-effort — never blocks the create flow. */
+async function configureInstanceSettings(instanceName: string) {
+  try {
+    await evoFetch(`/settings/set/${instanceName}`, {
+      method: "POST",
+      body: JSON.stringify({
+        rejectCall: false,
+        msgCall: "",
+        groupsIgnore: false,
+        alwaysOnline: true,        // keep WS alive; required for live message flow
+        readMessages: false,
+        readStatus: false,
+        syncFullHistory: true,     // download chat history on first pair
+      }),
+    });
+    console.log(`Settings configured for ${instanceName} (history sync + alwaysOnline)`);
+  } catch (e) {
+    console.error(`Failed to set settings for ${instanceName}:`, e);
+  }
+}
+
 async function evoFetch(path: string, options: RequestInit = {}) {
   if (!EVOLUTION_API_URL || !EVOLUTION_API_KEY) {
     throw new Error("Servidor WhatsApp não configurado (env vars ausentes). Contate o suporte.");
@@ -227,31 +251,33 @@ Deno.serve(async (req) => {
       } catch { /* not present, fine */ }
 
       // First-pass create — most users hit this path.
+      // syncFullHistory: true is critical — without it, Baileys connects
+      // but never downloads the user's existing chat history, and the
+      // inbox stays empty until a brand-new message arrives.
+      const createBody = JSON.stringify({
+        instanceName,
+        integration: "WHATSAPP-BAILEYS",
+        qrcode: true,
+        syncFullHistory: true,
+        alwaysOnline: true,
+        rejectCall: false,
+        readMessages: false,
+        readStatus: false,
+      });
+
       let evoData: any;
       try {
-        evoData = await evoFetch("/instance/create", {
-          method: "POST",
-          body: JSON.stringify({
-            instanceName,
-            integration: "WHATSAPP-BAILEYS",
-            qrcode: true,
-          }),
-        });
+        evoData = await evoFetch("/instance/create", { method: "POST", body: createBody });
       } catch (createErr: any) {
-        // With the timestamp-suffixed name above, a "name in use" collision
-        // is essentially impossible — but we keep one quick retry for any
-        // transient Evolution hiccup (network blip, momentary 5xx).
         console.warn(`Create failed for ${instanceName}, retrying once:`, createErr?.message);
         await new Promise((r) => setTimeout(r, 1500));
-        evoData = await evoFetch("/instance/create", {
-          method: "POST",
-          body: JSON.stringify({
-            instanceName,
-            integration: "WHATSAPP-BAILEYS",
-            qrcode: true,
-          }),
-        });
+        evoData = await evoFetch("/instance/create", { method: "POST", body: createBody });
       }
+
+      // Belt-and-suspenders: re-apply settings via /settings/set in case
+      // Evolution's create endpoint silently ignored the inline flags
+      // (different versions accept different body shapes).
+      await configureInstanceSettings(instanceName);
 
       // Save to DB
       const { error: insertError } = await supabase
@@ -386,6 +412,53 @@ Deno.serve(async (req) => {
           { headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
+    }
+
+    // FORCE SYNC — re-applies syncFullHistory + alwaysOnline settings and
+    // restarts the instance to force Baileys to re-download history. Used
+    // when an instance is "open" but reports zero chats/messages (zombie
+    // WebSocket).
+    if (action === "force-sync" && req.method === "POST") {
+      const { data: instance } = await supabase
+        .from("whatsapp_instances")
+        .select("instance_name")
+        .eq("user_id", userId)
+        .maybeSingle();
+
+      if (!instance) {
+        return new Response(
+          JSON.stringify({ error: "Nenhuma instância encontrada. Crie uma primeiro." }),
+          { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // 1. Re-apply settings (history + alwaysOnline)
+      await configureInstanceSettings(instance.instance_name);
+
+      // 2. Re-apply webhook so MESSAGES_UPSERT events keep flowing in
+      await configureWebhook(instance.instance_name);
+
+      // 3. Restart the instance so Baileys reconnects with the new
+      //    settings and triggers a history download.
+      let restartedOk = false;
+      try {
+        await evoFetch(`/instance/restart/${instance.instance_name}`, { method: "POST" });
+        restartedOk = true;
+      } catch (e: any) {
+        console.warn("instance/restart failed (continuing):", e?.message);
+      }
+
+      return new Response(
+        JSON.stringify({
+          ok: true,
+          restarted: restartedOk,
+          instance_name: instance.instance_name,
+          message: restartedOk
+            ? "Sincronização forçada — aguarde 30-60 segundos para o histórico aparecer na inbox."
+            : "Configurações reaplicadas, mas o restart falhou. Reconecte manualmente se necessário.",
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     // DISCONNECT / DELETE - accept both DELETE and POST methods
