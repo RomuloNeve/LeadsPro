@@ -1,6 +1,5 @@
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { ThemeToggle } from "@/components/ThemeToggle";
 import { motion, useInView, AnimatePresence, useReducedMotion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -372,7 +371,6 @@ const LandingPage = () => {
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
-            <ThemeToggle className="text-zinc-400 hover:text-white hover:bg-white/5" />
             <button
               onClick={() => navigate("/auth")}
               className="hidden sm:inline-flex text-xs sm:text-sm font-medium text-zinc-400 hover:text-white transition-colors px-2 sm:px-3"

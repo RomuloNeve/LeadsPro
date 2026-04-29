@@ -22,7 +22,6 @@ import {
 } from "lucide-react";
 import { WhatsAppIcon } from "@/components/WhatsAppIcon";
 import { supabase } from "@/integrations/supabase/client";
-import { ThemeToggle } from "@/components/ThemeToggle";
 
 const mainTabs = [
   { title: "Painel", url: "/user-dashboard", icon: LayoutDashboard, end: true },
@@ -77,7 +76,6 @@ export function MobileBottomNav() {
             <div className="flex items-center justify-between p-4 border-b border-border">
               <h3 className="text-sm font-semibold font-display text-foreground">Menu</h3>
               <div className="flex items-center gap-2">
-                <ThemeToggle />
                 <button onClick={() => setDrawerOpen(false)} className="p-1.5 rounded-lg hover:bg-muted">
                   <X className="h-5 w-5 text-muted-foreground" />
                 </button>

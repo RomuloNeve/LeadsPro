@@ -15,7 +15,6 @@ import {
   SidebarFooter,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { ThemeToggle } from "@/components/ThemeToggle";
 import { Button } from "@/components/ui/button";
 import {
   LayoutDashboard,
@@ -200,7 +199,6 @@ export function UserSidebar() {
           </div>
         )}
         <div className={`flex items-center ${collapsed ? "flex-col gap-2" : "justify-between"} px-2 py-2`}>
-          <ThemeToggle />
           <Button variant="ghost" size="icon" onClick={handleLogout} title="Sair" className="text-muted-foreground hover:text-foreground">
             <LogOut className="h-4 w-4" />
           </Button>

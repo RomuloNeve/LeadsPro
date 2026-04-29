@@ -9,7 +9,6 @@ import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, ArrowRight, Clock, Timer, LogOut, Coins, ArrowUpRight, Shield } from "lucide-react";
-import { ThemeToggle } from "@/components/ThemeToggle";
 import BuyCreditsDialog from "@/components/BuyCreditsDialog";
 import logoFull from "@/assets/logo-full-text.png";
 import { useState, useEffect, useRef } from "react";
@@ -233,7 +232,6 @@ const AffiliateLayout = () => {
           onClick={() => navigate("/")}
         />
         <div className="flex items-center gap-2">
-          <ThemeToggle />
           <Button variant="ghost" size="icon" onClick={handleLogout} title="Sair" className="text-muted-foreground hover:text-foreground">
             <LogOut className="h-4 w-4" />
           </Button>

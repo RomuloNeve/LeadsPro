@@ -8,7 +8,6 @@ import {
   DeleteUserDialog,
 } from "@/components/AdminUserActions";
 import { useNavigate } from "react-router-dom";
-import { ThemeToggle } from "@/components/ThemeToggle";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -566,7 +565,6 @@ const Dashboard = () => {
             <Button variant="ghost" size="icon" onClick={fetchAdminData} title="Atualizar">
               <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
             </Button>
-            <ThemeToggle />
             <Button variant="ghost" size="sm" onClick={handleLogout} className="text-muted-foreground hover:text-foreground">
               <LogOut className="h-4 w-4 mr-2" /> Sair
             </Button>
