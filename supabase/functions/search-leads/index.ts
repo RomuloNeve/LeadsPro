@@ -485,10 +485,24 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Cap results at available credits
+    // Cap results at available credits AND at a safety ceiling tied to the
+    // edge function's wallclock budget. Even with parallel socials
+    // enrichment, ~600 leads is the realistic max within 150s before the
+    // platform kills the worker.
+    const HARD_CAP = 600;
+    if (places.length > HARD_CAP) {
+      console.log(`Capping ${places.length} places to ${HARD_CAP} (timeout safety).`);
+      places = places.slice(0, HARD_CAP);
+    }
     if (licenseId && availableCredits > 0 && places.length > availableCredits) {
       places = places.slice(0, availableCredits);
     }
+
+    // Process socials enrichment in parallel batches. Without this the loop
+    // takes ~1s per lead (Serper round-trip) and runs out of edge runtime
+    // around ~120 leads. With BATCH_SIZE=8 we get a ~6-8x speedup so 500+
+    // leads finish comfortably inside the 150s window.
+    const BATCH_SIZE = 8;
 
     // Stream results using SSE — deduct 1 credit per lead as it streams
     const encoder = new TextEncoder();
@@ -497,61 +511,83 @@ Deno.serve(async (req) => {
         controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: "total", count: places.length })}\n\n`));
 
         let leadsStreamed = 0;
-        for (let i = 0; i < places.length; i++) {
-          const p = places[i];
-          const name = p.title || "Não encontrado";
-          const phone = p.phoneNumber || p.phone || "";
+        // Process places in parallel batches. Each batch: fetch socials,
+        // insert into DB, stream SSE event, deduct credit. Within a batch
+        // the operations run concurrently; batches run sequentially so we
+        // don't hammer Serper with hundreds of parallel requests.
+        for (let batchStart = 0; batchStart < places.length; batchStart += BATCH_SIZE) {
+          const batch = places.slice(batchStart, batchStart + BATCH_SIZE);
 
-          const socials = await searchSocials(name);
+          // Parallelize the slow Serper enrichment across the batch
+          const enriched = await Promise.all(
+            batch.map(async (p, j) => {
+              const i = batchStart + j;
+              const name = p.title || "Não encontrado";
+              const phone = p.phoneNumber || p.phone || "";
+              let socials;
+              try {
+                socials = await searchSocials(name);
+              } catch (e) {
+                console.warn("searchSocials failed for", name, e);
+                socials = { instagram: "", linkedin: "", site: "", email: "" };
+              }
+              const lead = {
+                name,
+                phone,
+                email: socials.email,
+                instagram: socials.instagram,
+                linkedin: socials.linkedin,
+                website: p.website || socials.site,
+                city: city || p.address || "",
+                state: state || country || "",
+                category: role,
+              };
+              let savedLeadId: string | null = null;
+              if (licenseId) {
+                try {
+                  const { data: ins } = await supabase
+                    .from("leads")
+                    .insert({
+                      license_id: licenseId,
+                      name: lead.name && lead.name !== "Não encontrado" ? lead.name : null,
+                      email: lead.email && lead.email !== "Não encontrado" ? lead.email : null,
+                      instagram: lead.instagram && lead.instagram !== "Não encontrado" ? lead.instagram : null,
+                      phone: lead.phone && lead.phone !== "Não encontrado" ? lead.phone : null,
+                      website: lead.website && lead.website !== "Não encontrado" ? lead.website : null,
+                      linkedin: lead.linkedin && lead.linkedin !== "Não encontrado" ? lead.linkedin : null,
+                      category: lead.category || null,
+                    })
+                    .select("id")
+                    .single();
+                  savedLeadId = ins?.id || null;
+                } catch (e) {
+                  console.error("Failed to persist lead", i, e);
+                }
+              }
+              return { lead, savedLeadId, index: i };
+            })
+          );
 
-          const lead = {
-            name,
-            phone,
-            email: socials.email,
-            instagram: socials.instagram,
-            linkedin: socials.linkedin,
-            website: p.website || socials.site,
-            city: city || p.address || "",
-            state: state || country || "",
-            category: role,
-          };
-
-          // Persist lead to DB immediately so it survives navigation and shows
-          // up live in the CRM via the existing realtime subscription.
-          // (Previously the lead only lived in frontend state and was lost when
-          // the user left the search page without clicking "Save to CRM".)
-          let savedLeadId: string | null = null;
-          if (licenseId) {
-            try {
-              const { data: ins } = await supabase
-                .from("leads")
-                .insert({
-                  license_id: licenseId,
-                  name: lead.name && lead.name !== "Não encontrado" ? lead.name : null,
-                  email: lead.email && lead.email !== "Não encontrado" ? lead.email : null,
-                  instagram: lead.instagram && lead.instagram !== "Não encontrado" ? lead.instagram : null,
-                  phone: lead.phone && lead.phone !== "Não encontrado" ? lead.phone : null,
-                  website: lead.website && lead.website !== "Não encontrado" ? lead.website : null,
-                  linkedin: lead.linkedin && lead.linkedin !== "Não encontrado" ? lead.linkedin : null,
-                  category: lead.category || null,
-                })
-                .select("id")
-                .single();
-              savedLeadId = ins?.id || null;
-            } catch (e) {
-              console.error("Failed to persist lead", i, e);
-            }
+          // Stream the batch results in original order
+          for (const { lead, savedLeadId, index: i } of enriched) {
+            controller.enqueue(
+              encoder.encode(
+                `data: ${JSON.stringify({ type: "lead", lead: { ...lead, id: savedLeadId }, index: i })}\n\n`
+              )
+            );
+            leadsStreamed++;
           }
 
-          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: "lead", lead: { ...lead, id: savedLeadId }, index: i })}\n\n`));
-          leadsStreamed++;
-
-          // Deduct 1 credit immediately for this lead
-          if (licenseId) {
+          // Deduct credits for the whole batch in one RPC call (faster than
+          // N round-trips and reduces race conditions).
+          if (licenseId && enriched.length > 0) {
             try {
-              await supabase.rpc("increment_used_credits", { p_license_id: licenseId, p_amount: 1 });
+              await supabase.rpc("increment_used_credits", {
+                p_license_id: licenseId,
+                p_amount: enriched.length,
+              });
             } catch (e) {
-              console.error("Failed to increment credit for lead", i, e);
+              console.error("Failed to increment credits for batch", batchStart, e);
             }
           }
         }
