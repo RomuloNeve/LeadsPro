@@ -111,75 +111,87 @@ const Auth = () => {
   };
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen bg-black">
       {/* Left side - Form */}
-      <div className="relative flex w-full lg:w-1/2 flex-col justify-center px-8 sm:px-16 lg:px-20 xl:px-28 bg-background overflow-hidden">
-        {/* Ambient glow */}
-        <div aria-hidden className="pointer-events-none absolute -top-40 -left-40 h-[28rem] w-[28rem] rounded-full bg-primary/15 blur-3xl" />
-        <div aria-hidden className="pointer-events-none absolute -bottom-40 -right-10 h-80 w-80 rounded-full bg-accent/15 blur-3xl" />
-        {/* Back button */}
-        <Button
-          variant="ghost"
-          size="sm"
+      <div className="relative flex w-full lg:w-1/2 flex-col justify-center px-8 sm:px-16 lg:px-20 xl:px-28 bg-black overflow-hidden">
+        {/* Editorial ambient glow — single crimson radial */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute top-1/3 left-1/2 -translate-x-1/2 w-[80%] h-[60%]"
+          style={{
+            background: "radial-gradient(60% 60% at 50% 50%, hsl(var(--primary) / 0.12), transparent 70%)",
+            filter: "blur(40px)",
+          }}
+        />
+        {/* Back button — editorial style */}
+        <button
           onClick={() => navigate("/")}
-          className="absolute top-6 left-6 gap-1.5 text-muted-foreground hover:text-foreground"
+          className="absolute top-6 left-6 flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-zinc-500 hover:text-white transition-colors"
         >
-          <ArrowLeft className="h-4 w-4" /> Voltar
-        </Button>
+          <ArrowLeft className="h-3.5 w-3.5" /> Voltar
+        </button>
 
-        <div className="relative w-full max-w-[380px] mx-auto space-y-8">
-          {/* Logo */}
-          <img src={logoAuth} alt="LeadsPro" className="h-20 sm:h-24 drop-shadow-[0_4px_20px_hsl(var(--primary)/0.25)]" />
+        <div className="relative w-full max-w-[400px] mx-auto space-y-8">
+          {/* Editorial logo block */}
+          <div className="flex items-center gap-2.5">
+            <div className="grid grid-cols-2 w-6 h-6 gap-0.5">
+              <div className="bg-primary w-full h-full" />
+              <div className="bg-zinc-700 w-full h-full" />
+              <div className="bg-zinc-800 w-full h-full" />
+              <div className="bg-white w-full h-full shadow-[0_0_8px_rgba(255,255,255,0.4)]" />
+            </div>
+            <span className="text-xl font-bold font-display tracking-tight text-white">
+              LeadsPro
+            </span>
+          </div>
 
-          {/* Header */}
-          <div className="space-y-2">
-            <h1 className="text-2xl md:text-3xl font-bold font-display text-foreground tracking-tight">
-              {isFreeTrial ? "Teste Grátis — 7 dias" : isPaid ? "Crie sua conta" : mode === "login" ? "Acesse nossa Plataforma" : "Crie sua conta"}
+          {/* Header — editorial label + Manrope */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <span className="h-px w-8 bg-primary" />
+              <span className="font-mono uppercase tracking-[0.2em] text-[10px] font-medium text-primary">
+                {isFreeTrial ? "Teste grátis · 7 dias" : isPaid ? "Pagamento confirmado" : mode === "login" ? "Acessar conta" : "Criar conta"}
+              </span>
+            </div>
+            <h1 className="text-3xl md:text-4xl font-medium font-display text-white tracking-tighter leading-[1.05]">
+              {isFreeTrial ? <>Teste por <span className="text-primary">7 dias</span></> : isPaid ? <>Crie sua conta</> : mode === "login" ? <>Bem-vindo de <span className="text-primary">volta</span></> : <>Comece <span className="text-primary">agora</span></>}
             </h1>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-zinc-400 leading-relaxed">
               {isFreeTrial
-                ? "Crie sua conta e explore todos os recursos por 7 dias — 60 créditos por dia, acesso completo!"
+                ? "Acesso completo por 7 dias com 60 créditos por dia. Sem cartão de crédito."
                 : isPaid
                 ? "Cadastre-se para acessar o sistema."
                 : mode === "login"
-                ? "Digite suas credenciais para acessar os recursos."
+                ? "Digite suas credenciais para acessar a plataforma."
                 : "Preencha os dados abaixo para começar."}
             </p>
           </div>
 
           {(isFreeTrial || isPaid) && (
-            <div className="grid grid-cols-2 gap-2 rounded-lg border border-border bg-muted/30 p-1">
-              <Button
+            <div className="grid grid-cols-2 gap-0 border border-zinc-800">
+              <button
                 type="button"
-                size="sm"
-                variant={mode === "login" ? "default" : "ghost"}
                 onClick={() => setMode("login")}
-                className="w-full"
+                className={`h-10 text-xs font-mono uppercase tracking-wider transition-colors ${
+                  mode === "login"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-transparent text-zinc-400 hover:bg-zinc-900/50 hover:text-white"
+                }`}
               >
                 Entrar
-              </Button>
-              <Button
+              </button>
+              <button
                 type="button"
-                size="sm"
-                variant={mode === "signup" ? "default" : "ghost"}
                 onClick={() => setMode("signup")}
-                className="w-full"
+                className={`h-10 text-xs font-mono uppercase tracking-wider transition-colors border-l border-zinc-800 ${
+                  mode === "signup"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-transparent text-zinc-400 hover:bg-zinc-900/50 hover:text-white"
+                }`}
               >
                 Cadastre-se
-              </Button>
+              </button>
             </div>
-          )}
-
-          {isFreeTrial && (
-            <Badge className="bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20 px-4 py-1.5 text-sm">
-              <Gift className="h-4 w-4 mr-1.5" /> Teste grátis de 7 dias
-            </Badge>
-          )}
-
-          {isPaid && !isFreeTrial && (
-            <Badge className="gradient-bg text-primary-foreground border-0 px-4 py-1.5 text-sm">
-              <CheckCircle2 className="h-4 w-4 mr-1.5" /> Pagamento confirmado
-            </Badge>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-5">
@@ -254,13 +266,15 @@ const Auth = () => {
               </div>
             )}
 
-            <Button
+            {/* Submit — editorial sharp rectangle with crimson glow */}
+            <button
               type="submit"
-              className="w-full h-11 gradient-bg text-primary-foreground font-semibold shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/40 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300"
               disabled={loading}
+              className="w-full h-12 bg-primary text-primary-foreground text-xs font-medium uppercase tracking-wider hover:bg-primary/90 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              style={{ boxShadow: "0 0 30px -5px hsl(var(--primary) / 0.5)" }}
             >
-              {loading ? "Carregando..." : isFreeTrial ? "Começar teste grátis" : mode === "login" ? "Continuar" : "Cadastrar"}
-            </Button>
+              {loading ? "Carregando..." : isFreeTrial ? "Começar teste grátis" : mode === "login" ? "Continuar →" : "Cadastrar →"}
+            </button>
           </form>
 
           {/* Forgot password */}
@@ -314,34 +328,60 @@ const Auth = () => {
         </div>
       </div>
 
-      {/* Right side - Hero image */}
-      <div className="hidden lg:block lg:w-1/2 relative overflow-hidden">
+      {/* Right side - Hero image with editorial overlay */}
+      <div className="hidden lg:block lg:w-1/2 relative overflow-hidden bg-black">
         <img
           src={authHero}
           alt="LeadsPro"
-          className="absolute inset-0 w-full h-full object-cover object-top"
+          className="absolute inset-0 w-full h-full object-cover object-top opacity-50"
           decoding="async"
           loading="eager"
         />
-        {/* Dark gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-black/10" />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/20 to-transparent" />
+        {/* Dark gradient overlays */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-black/20" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/40 to-transparent" />
 
-        {/* Testimonial */}
-        <div className="absolute bottom-10 left-9 right-9">
-          <div className="bg-white/10 backdrop-blur-xl rounded-2xl p-6 border border-white/20 shadow-2xl">
-            <p className="text-white text-sm leading-relaxed italic mb-5">
+        {/* Sci-fi corner brackets on the panel */}
+        <div className="absolute top-6 left-6 w-3 h-3 border-t border-l border-primary" />
+        <div className="absolute top-6 right-6 w-3 h-3 border-t border-r border-primary" />
+        <div className="absolute bottom-6 left-6 w-3 h-3 border-b border-l border-primary" />
+        <div className="absolute bottom-6 right-6 w-3 h-3 border-b border-r border-primary" />
+
+        {/* Editorial label top-left */}
+        <div className="absolute top-10 left-10 flex items-center gap-3">
+          <span className="h-px w-8 bg-primary" />
+          <span className="font-mono uppercase tracking-[0.2em] text-[10px] font-medium text-primary">
+            01 · Customer story
+          </span>
+        </div>
+
+        {/* Testimonial — editorial card */}
+        <div className="absolute bottom-10 left-10 right-10">
+          <div className="bg-black/80 backdrop-blur-xl border border-zinc-800 p-6 relative">
+            {/* Quote mark in corner */}
+            <span className="absolute -top-4 left-5 px-2 py-0.5 bg-black border border-zinc-800 font-mono text-[9px] uppercase tracking-widest text-primary">
+              " quote "
+            </span>
+            <p className="text-white text-sm leading-relaxed mb-5 font-sans">
               "O LeadsPro transformou a maneira como prospectamos clientes. Conseguimos capturar e organizar leads de forma automática, economizando horas de trabalho manual."
             </p>
-            <div className="flex items-center gap-3">
-              <img
-                src={authHero}
-                alt="Helena Oliveira"
-                className="h-10 w-10 rounded-full object-cover object-top ring-2 ring-white/30"
-              />
-              <div>
-                <p className="text-sm font-semibold text-white">Helena Oliveira</p>
-                <p className="text-xs text-white/70">CEO, Agência Digital</p>
+            <div className="flex items-center justify-between gap-3 pt-4 border-t border-zinc-800 border-dashed">
+              <div className="flex items-center gap-3">
+                <img
+                  src={authHero}
+                  alt="Helena Oliveira"
+                  className="h-9 w-9 object-cover object-top border border-white/15"
+                />
+                <div>
+                  <p className="text-sm font-medium text-white font-display">Helena Oliveira</p>
+                  <p className="text-[10px] font-mono uppercase tracking-wider text-zinc-500">
+                    CEO · Agência Digital
+                  </p>
+                </div>
+              </div>
+              <div className="text-right">
+                <span className="text-base font-medium font-display text-primary tabular-nums">+450%</span>
+                <p className="text-[9px] font-mono uppercase tracking-wider text-zinc-500 leading-none">leads/mês</p>
               </div>
             </div>
           </div>

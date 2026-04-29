@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { PwaInstallBanner } from "@/components/PwaInstallBanner";
+import CursorTrail from "@/components/CursorTrail";
 
 // Critical path — eagerly loaded
 import LandingPage from "./pages/LandingPage";
@@ -69,6 +70,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <PwaInstallBanner />
+        <CursorTrail />
         <BrowserRouter>
           <Suspense fallback={<div className="flex min-h-screen items-center justify-center bg-background"><div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" /></div>}>
           <Routes>
