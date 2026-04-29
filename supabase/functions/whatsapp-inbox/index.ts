@@ -112,9 +112,50 @@ Deno.serve(async (req) => {
       .eq("user_id", userId)
       .maybeSingle();
 
-    if (!instance || instance.status !== "connected") {
+    if (!instance) {
       return new Response(
-        JSON.stringify({ error: "Instância WhatsApp não conectada." }),
+        JSON.stringify({ error: "Nenhuma instância WhatsApp criada. Vá em Integração via QR Code." }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Trust Evolution as source of truth, not the stale DB status. Local
+    // status is updated lazily and frequently lags behind the real WS
+    // state. We poll connectionState here, sync the DB on the side, and
+    // proceed if Evolution itself reports the instance as open.
+    let liveState: string = "unknown";
+    try {
+      const stateRes = await fetch(
+        `${EVOLUTION_API_URL.replace(/\/+$/, "")}/instance/connectionState/${instance.instance_name}`,
+        { headers: { apikey: EVOLUTION_API_KEY } },
+      );
+      if (stateRes.ok) {
+        const stateData = await stateRes.json().catch(() => ({}));
+        liveState = stateData?.instance?.state || stateData?.state || "unknown";
+      }
+    } catch (e) {
+      console.warn("connectionState probe failed:", (e as Error).message);
+    }
+
+    // Sync DB if it disagrees with Evolution
+    const expectedStatus = liveState === "open" ? "connected" : (liveState === "connecting" ? "created" : "disconnected");
+    if (expectedStatus !== instance.status) {
+      try {
+        await supabase
+          .from("whatsapp_instances")
+          .update({ status: expectedStatus })
+          .eq("user_id", userId);
+        instance.status = expectedStatus;
+      } catch { /* best-effort */ }
+    }
+
+    if (liveState !== "open") {
+      return new Response(
+        JSON.stringify({
+          error: liveState === "connecting"
+            ? "Aguardando pareamento — escaneie o QR Code."
+            : "Instância WhatsApp desconectada. Reconecte em Integração via QR Code.",
+        }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
