@@ -9,6 +9,7 @@ import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, ArrowRight, Clock, Timer, LogOut, Coins, ArrowUpRight, Shield } from "lucide-react";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import BuyCreditsDialog from "@/components/BuyCreditsDialog";
 import logoFull from "@/assets/logo-full-text.png";
 import { useState, useEffect, useRef } from "react";
@@ -307,6 +308,7 @@ const DashboardHeader = () => {
               Upgrade
             </Button>
           )}
+          <ThemeToggle className="h-8 w-8" />
         </div>
       </header>
       <BuyCreditsDialog open={buyCreditsOpen} onOpenChange={setBuyCreditsOpen} />

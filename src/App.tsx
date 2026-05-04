@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { PwaInstallBanner } from "@/components/PwaInstallBanner";
 import CursorTrail from "@/components/CursorTrail";
@@ -63,16 +63,22 @@ const AffiliateSignup = lazy(() => import("./pages/AffiliateSignup"));
 
 const queryClient = new QueryClient();
 
+const ConditionalCursorTrail = () => {
+  const { pathname } = useLocation();
+  if (pathname.startsWith("/user-dashboard") || pathname.startsWith("/dashboard")) return null;
+  return <CursorTrail />;
+};
+
 const App = () => (
-  <ThemeProvider attribute="class" defaultTheme="dark" forcedTheme="dark">
+  <ThemeProvider attribute="class" defaultTheme="dark">
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Toaster />
         <Sonner />
         <PwaInstallBanner />
-        <CursorTrail />
         <BrowserRouter>
           <Suspense fallback={<div className="flex min-h-screen items-center justify-center bg-background"><div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" /></div>}>
+          <ConditionalCursorTrail />
           <Routes>
             <Route path="/" element={<LandingPage />} />
             <Route path="/app" element={<Index />} />
