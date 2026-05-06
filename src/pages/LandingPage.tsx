@@ -515,10 +515,10 @@ const LandingPage = () => {
         </div>
 
         <div className="container mx-auto px-5 sm:px-6 lg:px-8 relative z-10 pt-28 sm:pt-36 lg:pt-32 pb-16 sm:pb-20">
-          <div className="grid lg:grid-cols-[1.1fr_1fr] gap-10 lg:gap-12 xl:gap-16 items-center">
+          <div className="grid lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] gap-10 lg:gap-12 xl:gap-16 items-center">
 
             {/* ── LEFT: Editorial copy ── */}
-            <motion.div className="max-w-xl" initial="hidden" animate="visible">
+            <motion.div className="min-w-0 max-w-xl" initial="hidden" animate="visible">
               {/* Top mono badges */}
               <motion.div variants={fadeUp} custom={0} className="flex flex-wrap items-center gap-2 mb-6 sm:mb-8">
                 <span className="inline-flex items-center gap-2 px-3 py-1.5 border border-white/15 bg-white/[0.03] backdrop-blur-sm">
@@ -602,7 +602,7 @@ const LandingPage = () => {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.4 }}
-              className="relative flex items-center justify-center lg:justify-end mt-8 lg:mt-0"
+              className="relative min-w-0 flex items-center justify-center lg:justify-end mt-8 lg:mt-0"
             >
               <div className="corner-brackets-full w-full max-w-[680px] p-4 sm:p-6">
                 <span className="cb-tl" />
