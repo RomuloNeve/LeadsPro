@@ -389,7 +389,7 @@ const LayoutContent = () => {
     return (
       <div className="min-h-screen flex flex-col bg-background">
         <FreeTrialCountdown />
-        <main className="flex-1 px-3 py-4 pb-24 overflow-y-auto overscroll-y-contain" style={{ WebkitOverflowScrolling: 'touch' }}>
+        <main className="flex-1 px-3 sm:px-5 md:px-8 py-4 sm:py-6 pb-24 w-full max-w-screen-lg mx-auto">
           <Outlet />
           <div className="mt-4">
             <LowCreditsAlert />
@@ -411,7 +411,7 @@ const LayoutContent = () => {
           <UserSidebar />
           <div className="flex-1 flex flex-col min-w-0">
             <DashboardHeader />
-            <main className="flex-1 px-6 py-8 w-full">
+            <main className="flex-1 px-4 lg:px-6 xl:px-8 py-6 lg:py-8 w-full max-w-screen-2xl mx-auto">
               <Outlet />
               <div className="mt-4">
                 <LowCreditsAlert />
