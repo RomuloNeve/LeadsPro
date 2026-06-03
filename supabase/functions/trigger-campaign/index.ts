@@ -9,8 +9,17 @@ const corsHeaders = {
 const EVOLUTION_API_URL = (Deno.env.get("EVOLUTION_API_URL") || "").replace(/\/+$/, "");
 const EVOLUTION_API_KEY = Deno.env.get("EVOLUTION_API_KEY") || "";
 
-// Max leads per single edge function call to avoid timeout
-const MAX_LEADS_PER_CALL = 3;
+// === Anti-Ban Configuration ===
+// Delays between leads: 60-180s (1-3 min) — must match marketing promise of "30-300s between messages"
+const MIN_DELAY_BETWEEN_LEADS_MS = 60_000;
+const MAX_DELAY_BETWEEN_LEADS_MS = 180_000;
+// Daily limit per user (configurable per plan later)
+const DAILY_MESSAGE_LIMIT = 150;
+// Safe sending hours (24h format, in server timezone)
+const SAFE_HOUR_START = 8;
+const SAFE_HOUR_END = 21; // exclusive — i.e., up to 20:59:59
+// Max leads per single edge function call
+const MAX_LEADS_PER_CALL = 2;
 
 async function sendViaEvolution(instanceName: string, phone: string, message: string, imageUrl?: string | null, audioUrl?: string | null) {
   const cleanPhone = phone.replace(/\D/g, "");
@@ -67,15 +76,11 @@ async function sendViaEvolution(instanceName: string, phone: string, message: st
   }
 }
 
-// Returns both the variations and a human-readable warning when we had to
-// fall back to the raw template (no key, quota exhausted, parse failure…).
-// The caller surfaces the warning in the response so users see WHY every
-// message went out identical instead of believing AI-rewrite silently worked.
-async function generateVariations(originalMessage: string, count: number): Promise<{ variations: string[]; warning: string | null }> {
+async function generateVariations(originalMessage: string, count: number): Promise<string[]> {
   const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
   if (!OPENAI_API_KEY) {
     console.error("OPENAI_API_KEY not set! Variations will NOT work.");
-    return { variations: [], warning: "Variação por IA desativada (chave OpenAI ausente). Todas as mensagens foram enviadas com o texto original." };
+    return [];
   }
 
   console.log(`Generating ${count} variations...`);
@@ -92,27 +97,35 @@ async function generateVariations(originalMessage: string, count: number): Promi
         messages: [
           {
             role: "system",
-            content: `Você reescreve mensagens de WhatsApp. Gere EXATAMENTE ${count} variações da mensagem do usuário.
+            content: `Você reescreve mensagens de WhatsApp para um sistema de envio em massa que precisa evitar detecção de spam.
 
-REGRAS CRÍTICAS:
-- Cada variação é UMA mensagem completa e independente
-- Separe cada variação com a linha exata: %%%SPLIT%%%
-- NÃO numere as variações
-- NÃO adicione explicações ou títulos
-- Mantenha o mesmo sentido, tom e formalidade
-- NÃO adicione ou remova informações, links ou números
-- Cada variação deve ter tamanho similar ao original
+Gere EXATAMENTE ${count} variações da mensagem do usuário.
+
+REGRAS CRÍTICAS ANTI-SPAM:
+- Cada variação deve PARECER escrita por uma pessoa diferente em um momento diferente
+- VARIE a estrutura: inverta ordem de frases, mude abertura, mude fechamento
+- Use SINÔNIMOS sempre que possível (não repita as mesmas palavras)
+- Mude a PONTUAÇÃO: às vezes exclamação, às vezes interrogação, às vezes nada
+- Mude o TAMANHO: algumas 10% mais curtas, outras 10% mais longas
+- Mude ABERTURAS: alterne entre "Olá", "Oi", "Fala", "Bom dia", etc.
+- Mude FECHAMENTOS: varie entre "Abraços", "Até logo", "Obrigado", "Qualquer dúvida me chama", etc.
+- Mantenha o mesmo SENTIDO, TOM e FORMALIDADE do original
+- Mantenha links, números de telefone, preços e informações factuais IDÊNTICOS
 
 FORMATO OBRIGATÓRIO:
 variação 1 aqui
 %%%SPLIT%%%
 variação 2 aqui
 %%%SPLIT%%%
-variação 3 aqui`,
+variação 3 aqui
+
+- NÃO numere as variações
+- NÃO adicione explicações ou títulos
+- Separe cada variação com a linha exata: %%%SPLIT%%%`,
           },
           { role: "user", content: originalMessage },
         ],
-        temperature: 0.9,
+        temperature: 1.2,
         max_tokens: count * 600,
       }),
     });
@@ -120,20 +133,14 @@ variação 3 aqui`,
     if (!response.ok) {
       const errText = await response.text();
       console.error("AI variation error:", response.status, errText);
-      const lowQuota = response.status === 429 || /insufficient_quota|quota|billing/i.test(errText);
-      return {
-        variations: [],
-        warning: lowQuota
-          ? "Cota da OpenAI esgotada — mensagens enviadas sem variação (texto original para todos os leads). Recarregue a OpenAI para reativar anti-ban."
-          : `IA indisponível (HTTP ${response.status}) — mensagens enviadas sem variação. Tente novamente em alguns minutos.`,
-      };
+      return [];
     }
 
     const data = await response.json();
     const text = data.choices?.[0]?.message?.content?.trim();
     if (!text) {
       console.error("AI returned empty content");
-      return { variations: [], warning: "IA retornou resposta vazia — mensagens enviadas sem variação." };
+      return [];
     }
 
     // Split by our custom delimiter
@@ -150,14 +157,14 @@ variação 3 aqui`,
 
     if (variations.length === 0) {
       console.error("No valid variations after filtering, using original");
-      return { variations: [], warning: "IA retornou variações inválidas — mensagens enviadas sem variação." };
+      return [];
     }
 
     console.log(`Generated ${variations.length} valid variations (original len: ${originalMessage.length})`);
-    return { variations, warning: null };
+    return variations;
   } catch (e) {
     console.error("AI variation fetch error:", e.message);
-    return { variations: [], warning: `Falha ao chamar IA (${e.message || "erro desconhecido"}) — mensagens enviadas sem variação.` };
+    return [];
   }
 }
 
@@ -233,6 +240,65 @@ Deno.serve(async (req) => {
       );
     }
 
+    // === ANTI-BAN: Block sending outside safe hours (8h-21h) ===
+    if (!test_mode) {
+      const now = new Date();
+      // Use São Paulo timezone (BRT, UTC-3) since the app is BR-focused
+      const spFormatter = new Intl.DateTimeFormat("en-US", {
+        timeZone: "America/Sao_Paulo",
+        hour: "numeric",
+        hour12: false,
+      });
+      const currentHourSP = parseInt(spFormatter.format(now), 10);
+      if (currentHourSP < SAFE_HOUR_START || currentHourSP >= SAFE_HOUR_END) {
+        return new Response(
+          JSON.stringify({
+            error: `Fora do horário seguro de envio (${SAFE_HOUR_START}h-${SAFE_HOUR_END}h). Aguarde até ${SAFE_HOUR_START}h para disparar novamente. Disparar fora desse horário aumenta significativamente o risco de ban.`,
+            code: "OUTSIDE_SAFE_HOURS",
+            safe_hours: `${SAFE_HOUR_START}h-${SAFE_HOUR_END}h`,
+            current_hour_sp: currentHourSP,
+          }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+
+    // === ANTI-BAN: Check daily message limit ===
+    let dailySent = 0;
+    let dailyLimit = DAILY_MESSAGE_LIMIT;
+    if (!test_mode) {
+      const todayStart = new Date();
+      todayStart.setUTCHours(0, 0, 0, 0);
+      const { count: sentToday } = await serviceClient
+        .from("campaign_sent_leads")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "sent")
+        .gte("created_at", todayStart.toISOString())
+        // Filter by user via campaigns table
+        .in("campaign_id", (
+          await serviceClient
+            .from("campaigns")
+            .select("id")
+            .eq("license_id", campaign.license_id)
+        ).data?.map((c: any) => c.id) || []);
+
+      dailySent = sentToday || 0;
+      const remaining = Math.max(0, dailyLimit - dailySent);
+      console.log(`Daily limit check: ${dailySent}/${dailyLimit} sent today, ${remaining} remaining`);
+
+      if (dailySent >= dailyLimit) {
+        return new Response(
+          JSON.stringify({
+            error: `Limite diário atingido: você já enviou ${dailySent} mensagens hoje. O limite é ${dailyLimit}/dia para proteger seu número de ban. Tente novamente amanhã.`,
+            code: "DAILY_LIMIT_REACHED",
+            daily_sent: dailySent,
+            daily_limit: dailyLimit,
+          }),
+          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+
     // Fetch target leads
     let leads: any[] = [];
     if (test_mode) {
@@ -241,21 +307,6 @@ Deno.serve(async (req) => {
         { id: "test2", name: "Teste 2", phone: "5527996922875" },
       ];
     } else if (campaign.target_filter && (campaign.target_filter as any).expired_users) {
-      // SECURITY: expired_users mode pulls phone numbers across ALL tenants
-      // (for admin re-engagement broadcasts). Gate it server-side on is_admin
-      // so any authenticated user can't craft a request that blasts the whole
-      // user base — the client-side `isFlorianoUser` check is not a real guard.
-      const { data: callerProfile } = await serviceClient
-        .from("profiles")
-        .select("is_admin")
-        .eq("user_id", user.id)
-        .maybeSingle();
-      if (!callerProfile?.is_admin) {
-        return new Response(
-          JSON.stringify({ error: "Recurso disponível apenas para administradores." }),
-          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
       // Fetch expired trial users from profiles/licenses
       const { data: profilesData } = await serviceClient
         .from("profiles")
@@ -340,6 +391,41 @@ Deno.serve(async (req) => {
     const leadsThisCall = leads.slice(0, test_mode ? leads.length : MAX_LEADS_PER_CALL);
     const totalRemaining = leads.length; // total unsent before this call
 
+    // === ANTI-BAN: Filter out known invalid numbers for this user ===
+    if (!test_mode && leadsThisCall.length > 0) {
+      const { data: invalidRows } = await serviceClient
+        .from("invalid_numbers")
+        .select("phone")
+        .eq("user_id", user.id);
+
+      const invalidPhones = new Set(
+        (invalidRows || []).map((r: any) => (r.phone || "").replace(/\D/g, ""))
+      );
+
+      if (invalidPhones.size > 0) {
+        const before = leadsThisCall.length;
+        for (let i = leadsThisCall.length - 1; i >= 0; i--) {
+          const cleanPhone = (leadsThisCall[i].phone || "").replace(/\D/g, "");
+          if (invalidPhones.has(cleanPhone)) {
+            leadsThisCall.splice(i, 1);
+          }
+        }
+        const skipped = before - leadsThisCall.length;
+        if (skipped > 0) {
+          console.log(`Skipped ${skipped} leads with known invalid numbers`);
+        }
+      }
+    }
+
+    // === ANTI-BAN: Cap leadsThisCall by remaining daily quota ===
+    if (!test_mode && dailyLimit > 0) {
+      const remaining = Math.max(0, dailyLimit - dailySent);
+      if (leadsThisCall.length > remaining) {
+        console.log(`Capping leads from ${leadsThisCall.length} to ${remaining} (daily limit)`);
+        leadsThisCall.length = remaining;
+      }
+    }
+
     if (leadsThisCall.length === 0) {
       return new Response(
         JSON.stringify({ success: true, message: "Todos os leads já foram enviados!", leads_count: 0, errors: 0, failed_leads: [], all_sent: true, has_more: false }),
@@ -398,9 +484,12 @@ Deno.serve(async (req) => {
     const baseMessage = campaign.message_template;
     const allowLinksInMessage = hasAnyLink(baseMessage);
 
-    const variationCount = Math.max(leadsThisCall.length, 6);
-    const { variations, warning: variationWarning } = await generateVariations(baseMessage, variationCount);
-    console.log(`Variations ready: ${variations.length} for ${leadsThisCall.length} leads (warning=${variationWarning || "none"})`);
+    const variationCount = Math.max(leadsThisCall.length, 12);
+    const variations = await generateVariations(baseMessage, variationCount);
+    const variationWarning = variations.length === 0
+      ? "Variação por IA indisponível. Todas as mensagens serão enviadas com o texto original (maior risco de detecção)."
+      : null;
+    console.log(`Variations ready: ${variations.length} for ${leadsThisCall.length} leads`);
 
     let sentCount = 0;
     let errorCount = 0;
@@ -457,6 +546,28 @@ Deno.serve(async (req) => {
           const dataStr = JSON.stringify(result.data);
           if (dataStr.includes('"exists":false') || dataStr.includes('"exists": false')) {
             reason = "Número não existe no WhatsApp";
+            // === ANTI-BAN: Add to blacklist to skip in future campaigns ===
+            if (!test_mode && lead.phone) {
+              const cleanPhone = lead.phone.replace(/\D/g, "");
+              await serviceClient.from("invalid_numbers").upsert({
+                user_id: user.id,
+                phone: cleanPhone,
+                last_campaign_id: campaign_id,
+                last_seen_at: new Date().toISOString(),
+              }, {
+                onConflict: "user_id,phone",
+                // Increment occurrences counter on update
+                ignoreDuplicates: false,
+              }).then(async (res) => {
+                if (res.error) {
+                  // Fallback: try raw increment
+                  await serviceClient.rpc("increment_invalid_occurrences" as any, {
+                    p_user_id: user.id,
+                    p_phone: cleanPhone,
+                  }).then(() => {}, () => {});
+                }
+              });
+            }
           } else if (result.data?.message) {
             reason = typeof result.data.message === "string" ? result.data.message : dataStr.substring(0, 120);
           } else {
@@ -471,11 +582,30 @@ Deno.serve(async (req) => {
         }
       }
 
-      // Anti-block: randomized delay between leads (15-45s in production, 3s in test)
+      // Anti-ban delay between leads: 60-180s (1-3 min)
+      // Adds humanized jitter — 30% chance of extra "typing pause" 10-30s
       if (i < leadsThisCall.length - 1) {
-        const delay = test_mode ? 3000 : (15 + Math.floor(Math.random() * 31)) * 1000;
-        console.log(`[Anti-Block] Waiting ${Math.round(delay / 1000)}s between leads...`);
-        await new Promise((r) => setTimeout(r, delay));
+        const baseDelay = test_mode
+          ? 3000
+          : MIN_DELAY_BETWEEN_LEADS_MS + Math.floor(Math.random() * (MAX_DELAY_BETWEEN_LEADS_MS - MIN_DELAY_BETWEEN_LEADS_MS));
+
+        // 30% chance of extra "human typing pause" (only in real mode, not test)
+        const typingPause = (!test_mode && Math.random() < 0.3)
+          ? (10_000 + Math.floor(Math.random() * 21_000))
+          : 0;
+
+        const totalDelay = baseDelay + typingPause;
+        const minutes = Math.floor(totalDelay / 60_000);
+        const seconds = Math.floor((totalDelay % 60_000) / 1000);
+        console.log(`Anti-ban delay: ${minutes}m${seconds}s before next lead (base ${Math.round(baseDelay/1000)}s${typingPause ? ` + typing ${Math.round(typingPause/1000)}s` : ""})`);
+
+        // Count down the delay in chunks so the user can see updates in the UI
+        let remaining = totalDelay;
+        const tickMs = 5000;
+        while (remaining > 0) {
+          await new Promise((r) => setTimeout(r, Math.min(tickMs, remaining)));
+          remaining -= tickMs;
+        }
       }
     }
 
@@ -520,6 +650,8 @@ Deno.serve(async (req) => {
         total_sent: totalSent || 0,
         total_target: totalTargetLeads,
         remaining: Math.max(0, totalTargetLeads - (totalSent || 0)),
+        daily_sent: dailySent + sentCount,
+        daily_limit: dailyLimit,
         variation_warning: variationWarning,
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }

@@ -8,7 +8,14 @@ const corsHeaders = {
 
 const EVOLUTION_API_URL = (Deno.env.get("EVOLUTION_API_URL") || "").replace(/\/+$/, "");
 const EVOLUTION_API_KEY = Deno.env.get("EVOLUTION_API_KEY") || "";
-const MAX_PER_CALL = 3;
+const MAX_PER_CALL = 2;
+
+// === Anti-Ban Configuration ===
+const MIN_DELAY_BETWEEN_MS = 60_000;
+const MAX_DELAY_BETWEEN_MS = 180_000;
+const DAILY_MESSAGE_LIMIT = 150;
+const SAFE_HOUR_START = 8;
+const SAFE_HOUR_END = 21;
 
 async function fetchGroupParticipants(instanceName: string, groupId: string): Promise<string[]> {
   try {
@@ -210,6 +217,54 @@ Deno.serve(async (req) => {
       );
     }
 
+    // === ANTI-BAN: Block outside safe hours ===
+    const now = new Date();
+    const spFormatter = new Intl.DateTimeFormat("en-US", {
+      timeZone: "America/Sao_Paulo",
+      hour: "numeric",
+      hour12: false,
+    });
+    const currentHourSP = parseInt(spFormatter.format(now), 10);
+    if (currentHourSP < SAFE_HOUR_START || currentHourSP >= SAFE_HOUR_END) {
+      return new Response(
+        JSON.stringify({
+          error: `Fora do horário seguro (${SAFE_HOUR_START}h-${SAFE_HOUR_END}h). Aguarde até ${SAFE_HOUR_START}h.`,
+          code: "OUTSIDE_SAFE_HOURS",
+        }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // === ANTI-BAN: Daily limit ===
+    const todayStart = new Date();
+    todayStart.setUTCHours(0, 0, 0, 0);
+    const userCampaignIds = (
+      await serviceClient
+        .from("campaigns")
+        .select("id")
+        .eq("license_id", (
+          await serviceClient.from("licenses").select("id").eq("assigned_to", user.id).maybeSingle()
+        ).data?.id || "")
+    ).data?.map((c: any) => c.id) || [];
+
+    const { count: sentToday } = await serviceClient
+      .from("campaign_sent_leads")
+      .select("*", { count: "exact", head: true })
+      .eq("status", "sent")
+      .gte("created_at", todayStart.toISOString())
+      .in("campaign_id", userCampaignIds);
+
+    const dailySent = sentToday || 0;
+    if (dailySent >= DAILY_MESSAGE_LIMIT) {
+      return new Response(
+        JSON.stringify({
+          error: `Limite diário atingido: ${dailySent}/${DAILY_MESSAGE_LIMIT}. Tente amanhã.`,
+          code: "DAILY_LIMIT_REACHED",
+        }),
+        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // Fetch participants from all selected groups
     const allPhones = new Set<string>();
     for (const groupId of group_ids) {
@@ -280,11 +335,21 @@ Deno.serve(async (req) => {
         newSentPhones.push(phone);
       }
 
-      // Delay between sends (8-20s)
+      // Anti-ban delay between sends: 60-180s (1-3 min)
+      // 30% chance of extra "typing pause" 10-30s for humanization
       if (i < thisCallPhones.length - 1) {
-        const delay = (8 + Math.floor(Math.random() * 13)) * 1000;
-        console.log(`Waiting ${Math.round(delay / 1000)}s between sends...`);
-        await new Promise((r) => setTimeout(r, delay));
+        const baseDelay = MIN_DELAY_BETWEEN_MS + Math.floor(Math.random() * (MAX_DELAY_BETWEEN_MS - MIN_DELAY_BETWEEN_MS));
+        const typingPause = Math.random() < 0.3 ? (10_000 + Math.floor(Math.random() * 21_000)) : 0;
+        const totalDelay = baseDelay + typingPause;
+        const minutes = Math.floor(totalDelay / 60_000);
+        const seconds = Math.floor((totalDelay % 60_000) / 1000);
+        console.log(`Anti-ban delay: ${minutes}m${seconds}s before next phone`);
+        // Count down in chunks
+        let remaining = totalDelay;
+        while (remaining > 0) {
+          await new Promise((r) => setTimeout(r, Math.min(5000, remaining)));
+          remaining -= 5000;
+        }
       }
     }
 
@@ -305,6 +370,8 @@ Deno.serve(async (req) => {
         total_sent: updatedSentPhones.length,
         remaining,
         sent_phones_list: updatedSentPhones,
+        daily_sent: dailySent + sentCount,
+        daily_limit: DAILY_MESSAGE_LIMIT,
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

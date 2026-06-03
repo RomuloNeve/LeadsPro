@@ -37,7 +37,7 @@ const STEPS: {
     icon: MessageCircle,
     title: "Disparar",
     description: "Mande mensagens em massa pelo WhatsApp com proteção anti-banimento. IA varia o texto e o intervalo automaticamente.",
-    bullets: ["Variação de texto por IA", "Intervalo aleatório 30-300s", "Seu próprio número via QR"],
+    bullets: ["Variação de texto por IA", "Intervalo aleatório 60-180s", "Limite diário de 150 mensagens"],
   },
   {
     key: "fechar",
@@ -223,7 +223,7 @@ function DispararScreen() {
       <div className="flex items-center justify-between">
         <div>
           <p className="text-xs font-bold text-foreground">Campanha: Dentistas SP</p>
-          <p className="text-[10px] text-muted-foreground">Variação por IA · Intervalo 30-300s</p>
+          <p className="text-[10px] text-muted-foreground">Variação por IA · Intervalo 60-180s · Limite 150/dia</p>
         </div>
         <Badge variant="outline" className="text-[10px] border-primary/30 text-primary">
           Em execução

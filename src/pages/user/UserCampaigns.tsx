@@ -366,6 +366,8 @@ const UserCampaigns = () => {
 
   const [scheduling, setScheduling] = useState<string | null>(null);
   const [hasEvolutionInstance, setHasEvolutionInstance] = useState(false);
+  const [dailySent, setDailySent] = useState(0);
+  const DAILY_LIMIT = 150;
 
   useEffect(() => {
     const checkInstance = async () => {
@@ -389,6 +391,34 @@ const UserCampaigns = () => {
     };
     checkInstance();
   }, []);
+
+  // Fetch how many messages were sent today (daily quota)
+  useEffect(() => {
+    const fetchDailyCount = async () => {
+      if (!license?.id) return;
+      try {
+        const todayStart = new Date();
+        todayStart.setUTCHours(0, 0, 0, 0);
+        // Get campaigns of this license
+        const { data: camps } = await supabase
+          .from("campaigns")
+          .select("id")
+          .eq("license_id", license.id);
+        if (!camps || camps.length === 0) {
+          setDailySent(0);
+          return;
+        }
+        const { count } = await supabase
+          .from("campaign_sent_leads")
+          .select("*", { count: "exact", head: true })
+          .eq("status", "sent")
+          .gte("created_at", todayStart.toISOString())
+          .in("campaign_id", camps.map((c) => c.id));
+        setDailySent(count || 0);
+      } catch { /* ignore */ }
+    };
+    fetchDailyCount();
+  }, [license?.id]);
 
   const [showBatchDialog, setShowBatchDialog] = useState(false);
   const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(null);
@@ -430,10 +460,32 @@ const UserCampaigns = () => {
           break;
         }
 
+        // === Anti-ban error handling ===
+        if (data?.code === "DAILY_LIMIT_REACHED") {
+          toast({
+            title: "Limite diário atingido",
+            description: data.error || `Você já enviou ${data.daily_sent} mensagens hoje. Limite: ${data.daily_limit}/dia.`,
+            variant: "destructive",
+          });
+          break;
+        }
+        if (data?.code === "OUTSIDE_SAFE_HOURS") {
+          toast({
+            title: "Fora do horário seguro",
+            description: data.error || "Disparos só são permitidos entre 8h e 21h para proteger seu número.",
+            variant: "destructive",
+          });
+          break;
+        }
+
         totalSentAcrossLoops += data.leads_count || 0;
         totalErrorsAcrossLoops += data.errors || 0;
         if (data.failed_leads?.length > 0) {
           allFailedLeads.push(...data.failed_leads);
+        }
+        // Update daily counter from backend
+        if (typeof data.daily_sent === "number") {
+          setDailySent(data.daily_sent);
         }
 
         // Warn on the FIRST loop that the AI fallback kicked in. Without
@@ -462,8 +514,8 @@ const UserCampaigns = () => {
           break;
         }
 
-        // Anti-block: random pause between micro-batches (45-120s)
-        const pauseSeconds = 45 + Math.floor(Math.random() * 76);
+        // Anti-block: long pause between micro-batches (2-5 min) for safety
+        const pauseSeconds = 120 + Math.floor(Math.random() * 181);
         for (let s = pauseSeconds; s > 0; s--) {
           if (cancelRef.current) break;
           setSendingProgress(`Aguardando ${s}s antes do próximo lote... (${totalSentAcrossLoops} enviados)`);
@@ -718,8 +770,8 @@ const UserCampaigns = () => {
           break;
         }
 
-        // Anti-block: pause between micro-batches (45-120s)
-        const pauseSeconds = 45 + Math.floor(Math.random() * 76);
+        // Anti-block: pause between micro-batches (20-60s)
+        const pauseSeconds = 20 + Math.floor(Math.random() * 41);
         for (let s = pauseSeconds; s > 0; s--) {
           if (groupCancelRef.current) break;
           setSendingProgress(`Aguardando ${s}s antes do próximo lote... (${totalSent} enviados)`);
@@ -761,7 +813,7 @@ const UserCampaigns = () => {
       />
       {/* Anti-Block Shield Panel */}
       <div className="rounded-xl border-2 border-green-500/30 bg-gradient-to-br from-green-500/5 via-background to-emerald-500/5 p-5 space-y-4">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-full bg-green-500/15 flex items-center justify-center">
               <ShieldAlert className="h-5 w-5 text-green-500" />
@@ -774,7 +826,22 @@ const UserCampaigns = () => {
                   <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500" />
                 </span>
               </h3>
-              <p className="text-xs text-muted-foreground">Seu numero esta protegido com 6 camadas de seguranca</p>
+              <p className="text-xs text-muted-foreground">Seu numero esta protegido com 7 camadas de seguranca</p>
+            </div>
+          </div>
+          <div className="rounded-lg border border-border bg-card/60 px-3 py-2 min-w-[180px]">
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Cota diária</p>
+            <div className="flex items-baseline gap-1.5 mt-0.5">
+              <span className={`text-lg font-bold ${dailySent >= DAILY_LIMIT ? "text-destructive" : "text-foreground"}`}>
+                {dailySent}
+              </span>
+              <span className="text-xs text-muted-foreground">/ {DAILY_LIMIT} mensagens hoje</span>
+            </div>
+            <div className="mt-1.5 h-1.5 w-full bg-muted rounded-full overflow-hidden">
+              <div
+                className={`h-full transition-all ${dailySent >= DAILY_LIMIT ? "bg-destructive" : "bg-green-500"}`}
+                style={{ width: `${Math.min(100, (dailySent / DAILY_LIMIT) * 100)}%` }}
+              />
             </div>
           </div>
         </div>
@@ -792,21 +859,21 @@ const UserCampaigns = () => {
               <Clock className="h-4 w-4 text-blue-500" />
               <span className="text-xs font-semibold text-foreground">Delays Aleatorios</span>
             </div>
-            <p className="text-[11px] text-muted-foreground">Intervalos randomicos de 30-300s entre mensagens simulam comportamento humano natural.</p>
+            <p className="text-[11px] text-muted-foreground">Intervalos randomicos de 60-180s entre mensagens (com pausas extras de digitacao) simulam comportamento humano natural.</p>
           </div>
           <div className="rounded-lg border border-border/60 bg-card/50 p-3 space-y-1">
             <div className="flex items-center gap-2">
               <Users className="h-4 w-4 text-orange-500" />
               <span className="text-xs font-semibold text-foreground">Micro-Lotes</span>
             </div>
-            <p className="text-[11px] text-muted-foreground">Envio em lotes pequenos (20-50) com pausas longas entre cada lote para evitar deteccao.</p>
+            <p className="text-[11px] text-muted-foreground">Envio em micro-lotes (1-2) com pausas longas (2-5 min) entre cada lote para evitar deteccao.</p>
           </div>
           <div className="rounded-lg border border-border/60 bg-card/50 p-3 space-y-1">
             <div className="flex items-center gap-2">
               <Smartphone className="h-4 w-4 text-green-500" />
-              <span className="text-xs font-semibold text-foreground">Horario Seguro</span>
+              <span className="text-xs font-semibold text-foreground">Horario Seguro (Bloqueio)</span>
             </div>
-            <p className="text-[11px] text-muted-foreground">Recomendacao automatica para enviar entre 8h-21h, quando denuncias tem menor impacto.</p>
+            <p className="text-[11px] text-muted-foreground">Sistema BLOQUEIA envios fora do horario 8h-21h (horario de Brasilia). Voce nao precisa se preocupar.</p>
           </div>
           <div className="rounded-lg border border-border/60 bg-card/50 p-3 space-y-1">
             <div className="flex items-center gap-2">
@@ -821,6 +888,13 @@ const UserCampaigns = () => {
               <span className="text-xs font-semibold text-foreground">Numero Dedicado</span>
             </div>
             <p className="text-[11px] text-muted-foreground">Use um chip separado para disparos. Nunca use seu numero pessoal principal.</p>
+          </div>
+          <div className="rounded-lg border border-border/60 bg-card/50 p-3 space-y-1">
+            <div className="flex items-center gap-2">
+              <ShieldAlert className="h-4 w-4 text-red-500" />
+              <span className="text-xs font-semibold text-foreground">Limite Diario 150</span>
+            </div>
+            <p className="text-[11px] text-muted-foreground">Sistema BLOQUEIA envios apos 150 mensagens por dia. Veja sua cota atual no topo deste painel.</p>
           </div>
         </div>
 
@@ -1296,7 +1370,7 @@ const UserCampaigns = () => {
             <Alert className="border-yellow-500/30 bg-yellow-500/5">
               <ShieldAlert className="h-3.5 w-3.5 text-yellow-600 dark:text-yellow-400" />
               <AlertDescription className="text-xs text-muted-foreground">
-                <strong className="text-foreground">Recomendação:</strong> envie no máximo 20-50 por vez. Intervalo entre cada mensagem: 30-300 segundos.
+                <strong className="text-foreground">Recomendação:</strong> envie no máximo 20-50 por vez. Intervalo entre cada mensagem: 60-180 segundos. Limite diário: 150 mensagens. Apenas entre 8h-21h.
               </AlertDescription>
             </Alert>
           </div>

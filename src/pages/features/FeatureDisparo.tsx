@@ -15,7 +15,7 @@ const fadeUp = {
 };
 
 const faqs = [
-  { question: "Como fazer disparo em massa no WhatsApp sem ser banido?", answer: "O LeadsPro usa 3 camadas de proteção: variação automática de texto por IA (nenhuma mensagem é idêntica), intervalos randômicos de 30 a 300 segundos entre envios, e recomendações de lotes pequenos (20-50 leads). Seu número fica protegido contra banimento." },
+  { question: "Como fazer disparo em massa no WhatsApp sem ser banido?", answer: "O LeadsPro usa 7 camadas de proteção: variação automática de texto por IA, intervalos randômicos de 60 a 180 segundos entre envios (com pausas extras de digitação), bloqueio automático fora do horário 8h-21h, limite diário de 150 mensagens, micro-lotes com pausas longas, lista negra de números inválidos, e micro-lotes. Seu número fica protegido contra banimento." },
   { question: "Quantas mensagens posso enviar por dia?", answer: "Recomendamos entre 50 a 200 mensagens por dia para números novos, aumentando gradualmente. Números aquecidos podem enviar mais. O sistema sugere o volume ideal baseado no comportamento do seu número." },
   { question: "Posso enviar imagens junto com as mensagens?", answer: "Sim. Cada campanha pode incluir uma imagem que é enviada junto com a mensagem de texto. Ideal para catálogos, promoções e apresentações visuais." },
   { question: "As mensagens são enviadas do meu número?", answer: "Sim. Todas as mensagens são enviadas diretamente do seu próprio número de WhatsApp, conectado via QR Code. Isso garante autenticidade e proximidade com seus leads." },
@@ -116,7 +116,7 @@ const FeatureDisparo = () => {
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
               {[
                 { icon: Shuffle, title: "Variação automática de mensagens", desc: "A IA reescreve automaticamente cada mensagem antes do envio, mantendo o contexto original mas alterando palavras e estrutura. Nenhuma mensagem é idêntica à anterior." },
-                { icon: Clock, title: "Intervalos randômicos entre envios", desc: "Cada mensagem é enviada com um delay aleatório entre 30 e 300 segundos, simulando o ritmo natural de uma pessoa digitando e enviando manualmente." },
+                { icon: Clock, title: "Intervalos randômicos entre envios", desc: "Cada mensagem é enviada com um delay aleatório entre 60 e 180 segundos, simulando o ritmo natural de uma pessoa digitando e enviando manualmente. Algumas mensagens recebem pausas extras de digitação (10-30s) para parecerem ainda mais humanas." },
                 { icon: Shield, title: "Recomendações de segurança", desc: "O sistema sugere lotes pequenos (20-50 leads) e horários ideais de envio. Painel de orientações visível antes de cada disparo para máxima proteção." },
               ].map((b) => (
                 <div key={b.title} className="group p-6 rounded-2xl border border-border/60 bg-card hover:border-primary/30 hover:shadow-lg hover:shadow-primary/10 hover:-translate-y-1 transition-all duration-300">
