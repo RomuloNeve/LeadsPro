@@ -811,98 +811,154 @@ const UserCampaigns = () => {
           { emoji: "💡", text: "O sistema marca os leads já enviados. Dispare novamente para enviar aos restantes." },
         ]}
       />
-      {/* Anti-Block Shield Panel */}
-      <div className="rounded-xl border-2 border-green-500/30 bg-gradient-to-br from-green-500/5 via-background to-emerald-500/5 p-5 space-y-4">
-        <div className="flex items-center justify-between gap-3 flex-wrap">
+      {/* Anti-Block Shield Panel — Premium */}
+      <div className="rounded-2xl border border-green-500/20 bg-gradient-to-br from-green-500/[0.03] via-background to-emerald-500/[0.03] overflow-hidden">
+        {/* Header */}
+        <div className="px-5 pt-5 pb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-full bg-green-500/15 flex items-center justify-center">
-              <ShieldAlert className="h-5 w-5 text-green-500" />
+            <div className="relative">
+              <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-green-500/20 to-emerald-500/20 flex items-center justify-center ring-1 ring-green-500/20">
+                <ShieldAlert className="h-5.5 w-5.5 text-green-500" />
+              </div>
+              <span className="absolute -top-0.5 -right-0.5 flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-60" />
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500 ring-2 ring-background" />
+              </span>
             </div>
             <div>
-              <h3 className="font-bold text-foreground flex items-center gap-2">
-                Sistema Anti-Block Ativo
-                <span className="relative flex h-2.5 w-2.5">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500" />
-                </span>
-              </h3>
-              <p className="text-xs text-muted-foreground">Seu numero esta protegido com 7 camadas de seguranca</p>
+              <h3 className="font-bold text-foreground text-sm">Sistema Anti-Block</h3>
+              <p className="text-[11px] text-muted-foreground">7 camadas de proteção ativas em tempo real</p>
             </div>
           </div>
-          <div className="rounded-lg border border-border bg-card/60 px-3 py-2 min-w-[180px]">
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Cota diária</p>
-            <div className="flex items-baseline gap-1.5 mt-0.5">
-              <span className={`text-lg font-bold ${dailySent >= DAILY_LIMIT ? "text-destructive" : "text-foreground"}`}>
+
+          {/* Quota Card */}
+          <div className="rounded-xl border border-border/80 bg-card/80 backdrop-blur-sm px-4 py-3 min-w-[200px] shadow-sm">
+            <div className="flex items-center justify-between mb-1.5">
+              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Cota Diária</p>
+              <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${
+                dailySent >= DAILY_LIMIT
+                  ? "bg-destructive/15 text-destructive"
+                  : dailySent >= DAILY_LIMIT * 0.8
+                  ? "bg-yellow-500/15 text-yellow-600 dark:text-yellow-400"
+                  : "bg-green-500/15 text-green-600 dark:text-green-400"
+              }`}>
+                {dailySent >= DAILY_LIMIT ? "ESGOTADO" : `${Math.max(0, DAILY_LIMIT - dailySent)} restantes`}
+              </span>
+            </div>
+            <div className="flex items-baseline gap-1.5">
+              <span className={`text-xl font-bold tabular-nums ${dailySent >= DAILY_LIMIT ? "text-destructive" : "text-foreground"}`}>
                 {dailySent}
               </span>
-              <span className="text-xs text-muted-foreground">/ {DAILY_LIMIT} mensagens hoje</span>
+              <span className="text-xs text-muted-foreground font-medium">/ {DAILY_LIMIT}</span>
             </div>
-            <div className="mt-1.5 h-1.5 w-full bg-muted rounded-full overflow-hidden">
+            <div className="mt-2 h-2 w-full bg-muted/80 rounded-full overflow-hidden">
               <div
-                className={`h-full transition-all ${dailySent >= DAILY_LIMIT ? "bg-destructive" : "bg-green-500"}`}
+                className={`h-full rounded-full transition-all duration-500 ${
+                  dailySent >= DAILY_LIMIT
+                    ? "bg-destructive"
+                    : dailySent >= DAILY_LIMIT * 0.8
+                    ? "bg-gradient-to-r from-yellow-500 to-orange-500"
+                    : "bg-gradient-to-r from-green-500 to-emerald-400"
+                }`}
                 style={{ width: `${Math.min(100, (dailySent / DAILY_LIMIT) * 100)}%` }}
               />
             </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          <div className="rounded-lg border border-border/60 bg-card/50 p-3 space-y-1">
-            <div className="flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-purple-500" />
-              <span className="text-xs font-semibold text-foreground">Variacao por IA</span>
+        {/* Protection Layers Grid */}
+        <div className="px-5 pb-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+            <div className="group rounded-xl border border-purple-500/15 bg-purple-500/[0.03] hover:bg-purple-500/[0.06] p-3 transition-colors">
+              <div className="flex items-center gap-2 mb-1.5">
+                <div className="h-6 w-6 rounded-md bg-purple-500/15 flex items-center justify-center">
+                  <Sparkles className="h-3.5 w-3.5 text-purple-500" />
+                </div>
+                <span className="text-[11px] font-bold text-foreground">Variação por IA</span>
+              </div>
+              <p className="text-[10px] text-muted-foreground leading-relaxed">Cada mensagem é reescrita com IA. Nenhuma é idêntica — estrutura, sinônimos e formato variam.</p>
             </div>
-            <p className="text-[11px] text-muted-foreground">Cada mensagem e reescrita automaticamente por IA. Nenhuma mensagem e identica a outra.</p>
-          </div>
-          <div className="rounded-lg border border-border/60 bg-card/50 p-3 space-y-1">
-            <div className="flex items-center gap-2">
-              <Clock className="h-4 w-4 text-blue-500" />
-              <span className="text-xs font-semibold text-foreground">Delays Aleatorios</span>
+
+            <div className="group rounded-xl border border-blue-500/15 bg-blue-500/[0.03] hover:bg-blue-500/[0.06] p-3 transition-colors">
+              <div className="flex items-center gap-2 mb-1.5">
+                <div className="h-6 w-6 rounded-md bg-blue-500/15 flex items-center justify-center">
+                  <Clock className="h-3.5 w-3.5 text-blue-500" />
+                </div>
+                <span className="text-[11px] font-bold text-foreground">Delays 60-180s</span>
+              </div>
+              <p className="text-[10px] text-muted-foreground leading-relaxed">Intervalos aleatórios de 1 a 3 minutos entre mensagens + pausas de digitação humanizadas.</p>
             </div>
-            <p className="text-[11px] text-muted-foreground">Intervalos randomicos de 60-180s entre mensagens (com pausas extras de digitacao) simulam comportamento humano natural.</p>
-          </div>
-          <div className="rounded-lg border border-border/60 bg-card/50 p-3 space-y-1">
-            <div className="flex items-center gap-2">
-              <Users className="h-4 w-4 text-orange-500" />
-              <span className="text-xs font-semibold text-foreground">Micro-Lotes</span>
+
+            <div className="group rounded-xl border border-orange-500/15 bg-orange-500/[0.03] hover:bg-orange-500/[0.06] p-3 transition-colors">
+              <div className="flex items-center gap-2 mb-1.5">
+                <div className="h-6 w-6 rounded-md bg-orange-500/15 flex items-center justify-center">
+                  <Users className="h-3.5 w-3.5 text-orange-500" />
+                </div>
+                <span className="text-[11px] font-bold text-foreground">Micro-Lotes</span>
+              </div>
+              <p className="text-[10px] text-muted-foreground leading-relaxed">Apenas 1-2 leads por execução com pausas de 2-5 min entre cada lote.</p>
             </div>
-            <p className="text-[11px] text-muted-foreground">Envio em micro-lotes (1-2) com pausas longas (2-5 min) entre cada lote para evitar deteccao.</p>
-          </div>
-          <div className="rounded-lg border border-border/60 bg-card/50 p-3 space-y-1">
-            <div className="flex items-center gap-2">
-              <Smartphone className="h-4 w-4 text-green-500" />
-              <span className="text-xs font-semibold text-foreground">Horario Seguro (Bloqueio)</span>
+
+            <div className="group rounded-xl border border-green-500/15 bg-green-500/[0.03] hover:bg-green-500/[0.06] p-3 transition-colors">
+              <div className="flex items-center gap-2 mb-1.5">
+                <div className="h-6 w-6 rounded-md bg-green-500/15 flex items-center justify-center">
+                  <Smartphone className="h-3.5 w-3.5 text-green-500" />
+                </div>
+                <span className="text-[11px] font-bold text-foreground">Horário 8h-21h</span>
+              </div>
+              <p className="text-[10px] text-muted-foreground leading-relaxed">Envios fora do horário seguro são BLOQUEADOS automaticamente pelo sistema.</p>
             </div>
-            <p className="text-[11px] text-muted-foreground">Sistema BLOQUEIA envios fora do horario 8h-21h (horario de Brasilia). Voce nao precisa se preocupar.</p>
-          </div>
-          <div className="rounded-lg border border-border/60 bg-card/50 p-3 space-y-1">
-            <div className="flex items-center gap-2">
-              <AlertTriangle className="h-4 w-4 text-yellow-500" />
-              <span className="text-xs font-semibold text-foreground">Deteccao de Risco</span>
+
+            <div className="group rounded-xl border border-yellow-500/15 bg-yellow-500/[0.03] hover:bg-yellow-500/[0.06] p-3 transition-colors">
+              <div className="flex items-center gap-2 mb-1.5">
+                <div className="h-6 w-6 rounded-md bg-yellow-500/15 flex items-center justify-center">
+                  <AlertTriangle className="h-3.5 w-3.5 text-yellow-500" />
+                </div>
+                <span className="text-[11px] font-bold text-foreground">Detecção de Risco</span>
+              </div>
+              <p className="text-[10px] text-muted-foreground leading-relaxed">Links encurtados e palavras sensíveis são detectados antes do envio.</p>
             </div>
-            <p className="text-[11px] text-muted-foreground">Links encurtados, palavras sensíveis e padroes de spam sao detectados e alertados antes do envio.</p>
-          </div>
-          <div className="rounded-lg border border-border/60 bg-card/50 p-3 space-y-1">
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-              <span className="text-xs font-semibold text-foreground">Numero Dedicado</span>
+
+            <div className="group rounded-xl border border-red-500/15 bg-red-500/[0.03] hover:bg-red-500/[0.06] p-3 transition-colors">
+              <div className="flex items-center gap-2 mb-1.5">
+                <div className="h-6 w-6 rounded-md bg-red-500/15 flex items-center justify-center">
+                  <XCircle className="h-3.5 w-3.5 text-red-500" />
+                </div>
+                <span className="text-[11px] font-bold text-foreground">Lista Negra</span>
+              </div>
+              <p className="text-[10px] text-muted-foreground leading-relaxed">Números inexistentes são detectados e bloqueados automaticamente em envios futuros.</p>
             </div>
-            <p className="text-[11px] text-muted-foreground">Use um chip separado para disparos. Nunca use seu numero pessoal principal.</p>
-          </div>
-          <div className="rounded-lg border border-border/60 bg-card/50 p-3 space-y-1">
-            <div className="flex items-center gap-2">
-              <ShieldAlert className="h-4 w-4 text-red-500" />
-              <span className="text-xs font-semibold text-foreground">Limite Diario 150</span>
+
+            <div className="group rounded-xl border border-emerald-500/15 bg-emerald-500/[0.03] hover:bg-emerald-500/[0.06] p-3 transition-colors">
+              <div className="flex items-center gap-2 mb-1.5">
+                <div className="h-6 w-6 rounded-md bg-emerald-500/15 flex items-center justify-center">
+                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+                </div>
+                <span className="text-[11px] font-bold text-foreground">Limite 150/dia</span>
+              </div>
+              <p className="text-[10px] text-muted-foreground leading-relaxed">Sistema bloqueia envios após 150 mensagens diárias para preservar seu número.</p>
             </div>
-            <p className="text-[11px] text-muted-foreground">Sistema BLOQUEIA envios apos 150 mensagens por dia. Veja sua cota atual no topo deste painel.</p>
+
+            <div className="group rounded-xl border border-cyan-500/15 bg-cyan-500/[0.03] hover:bg-cyan-500/[0.06] p-3 transition-colors">
+              <div className="flex items-center gap-2 mb-1.5">
+                <div className="h-6 w-6 rounded-md bg-cyan-500/15 flex items-center justify-center">
+                  <Smartphone className="h-3.5 w-3.5 text-cyan-500" />
+                </div>
+                <span className="text-[11px] font-bold text-foreground">Número Dedicado</span>
+              </div>
+              <p className="text-[10px] text-muted-foreground leading-relaxed">Use sempre um chip separado para disparos. Nunca use seu número pessoal principal.</p>
+            </div>
           </div>
         </div>
 
-        <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/5 px-4 py-2.5 flex items-start gap-2">
-          <AlertTriangle className="h-4 w-4 text-yellow-600 dark:text-yellow-400 shrink-0 mt-0.5" />
-          <p className="text-xs text-muted-foreground">
-            O uso de disparo em massa e de <strong className="text-foreground">total responsabilidade do usuario</strong>. O LeadsPro oferece as ferramentas de protecao, mas nenhum sistema pode garantir 100% de imunidade contra bloqueios do WhatsApp.
-          </p>
+        {/* Footer Warning */}
+        <div className="px-5 pb-4">
+          <div className="rounded-xl border border-yellow-500/20 bg-yellow-500/[0.04] px-4 py-3 flex items-start gap-2.5">
+            <AlertTriangle className="h-4 w-4 text-yellow-600 dark:text-yellow-400 shrink-0 mt-0.5" />
+            <p className="text-[11px] text-muted-foreground leading-relaxed">
+              O uso de disparo em massa é de <strong className="text-foreground">total responsabilidade do usuário</strong>. O LeadsPro oferece múltiplas camadas de proteção, mas nenhum sistema pode garantir 100% de imunidade contra bloqueios do WhatsApp. Siga as boas práticas: use chip dedicado, não envie spam, respeite o limite diário.
+            </p>
+          </div>
         </div>
       </div>
 
