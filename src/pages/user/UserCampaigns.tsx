@@ -367,7 +367,9 @@ const UserCampaigns = () => {
   const [scheduling, setScheduling] = useState<string | null>(null);
   const [hasEvolutionInstance, setHasEvolutionInstance] = useState(false);
   const [dailySent, setDailySent] = useState(0);
-  const DAILY_LIMIT = 150;
+  const [dailyLimit, setDailyLimit] = useState(150);
+  const [isWarmup, setIsWarmup] = useState(false);
+  const [warmupDay, setWarmupDay] = useState(0);
 
   useEffect(() => {
     const checkInstance = async () => {
@@ -387,6 +389,26 @@ const UserCampaigns = () => {
         );
         const data = await res.json();
         setHasEvolutionInstance(data.status === "connected");
+
+        // Calculate warm-up from instance age
+        const { data: inst } = await supabase
+          .from("whatsapp_instances")
+          .select("created_at")
+          .eq("user_id", session.user.id)
+          .maybeSingle();
+
+        if (inst?.created_at) {
+          const created = new Date(inst.created_at);
+          const now = new Date();
+          const days = Math.floor((now.getTime() - created.getTime()) / (1000 * 60 * 60 * 24));
+          setWarmupDay(days);
+          let limit = 150;
+          if (days <= 3) { limit = 30; setIsWarmup(true); }
+          else if (days <= 7) { limit = 60; setIsWarmup(true); }
+          else if (days <= 14) { limit = 100; setIsWarmup(true); }
+          else { setIsWarmup(false); }
+          setDailyLimit(limit);
+        }
       } catch { /* ignore */ }
     };
     checkInstance();
@@ -467,6 +489,7 @@ const UserCampaigns = () => {
             description: data.error || `Você já enviou ${data.daily_sent} mensagens hoje. Limite: ${data.daily_limit}/dia.`,
             variant: "destructive",
           });
+          if (typeof data.daily_limit === "number") setDailyLimit(data.daily_limit);
           break;
         }
         if (data?.code === "OUTSIDE_SAFE_HOURS") {
@@ -836,35 +859,56 @@ const UserCampaigns = () => {
             <div className="flex items-center justify-between mb-1.5">
               <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Cota Diária</p>
               <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${
-                dailySent >= DAILY_LIMIT
+                dailySent >= dailyLimit
                   ? "bg-destructive/15 text-destructive"
-                  : dailySent >= DAILY_LIMIT * 0.8
+                  : dailySent >= dailyLimit * 0.8
                   ? "bg-yellow-500/15 text-yellow-600 dark:text-yellow-400"
                   : "bg-green-500/15 text-green-600 dark:text-green-400"
               }`}>
-                {dailySent >= DAILY_LIMIT ? "ESGOTADO" : `${Math.max(0, DAILY_LIMIT - dailySent)} restantes`}
+                {dailySent >= dailyLimit ? "ESGOTADO" : `${Math.max(0, dailyLimit - dailySent)} restantes`}
               </span>
             </div>
             <div className="flex items-baseline gap-1.5">
-              <span className={`text-xl font-bold tabular-nums ${dailySent >= DAILY_LIMIT ? "text-destructive" : "text-foreground"}`}>
+              <span className={`text-xl font-bold tabular-nums ${dailySent >= dailyLimit ? "text-destructive" : "text-foreground"}`}>
                 {dailySent}
               </span>
-              <span className="text-xs text-muted-foreground font-medium">/ {DAILY_LIMIT}</span>
+              <span className="text-xs text-muted-foreground font-medium">/ {dailyLimit}</span>
             </div>
             <div className="mt-2 h-2 w-full bg-muted/80 rounded-full overflow-hidden">
               <div
                 className={`h-full rounded-full transition-all duration-500 ${
-                  dailySent >= DAILY_LIMIT
+                  dailySent >= dailyLimit
                     ? "bg-destructive"
-                    : dailySent >= DAILY_LIMIT * 0.8
+                    : dailySent >= dailyLimit * 0.8
                     ? "bg-gradient-to-r from-yellow-500 to-orange-500"
                     : "bg-gradient-to-r from-green-500 to-emerald-400"
                 }`}
-                style={{ width: `${Math.min(100, (dailySent / DAILY_LIMIT) * 100)}%` }}
+                style={{ width: `${Math.min(100, (dailySent / dailyLimit) * 100)}%` }}
               />
             </div>
           </div>
         </div>
+
+        {/* Warm-up indicator */}
+        {isWarmup && (
+          <div className="px-5 pb-3">
+            <div className="rounded-xl border border-blue-500/20 bg-blue-500/[0.04] px-4 py-3 flex items-start gap-2.5">
+              <Clock className="h-4 w-4 text-blue-500 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-[11px] font-semibold text-foreground">
+                  Aquecimento automático — Dia {warmupDay + 1}
+                </p>
+                <p className="text-[10px] text-muted-foreground leading-relaxed mt-0.5">
+                  Seu número está em período de aquecimento. O limite aumenta gradualmente:
+                  <span className={warmupDay <= 3 ? " font-bold text-blue-500" : ""}> 30/dia (dia 1-3)</span> →
+                  <span className={warmupDay > 3 && warmupDay <= 7 ? " font-bold text-blue-500" : ""}> 60/dia (dia 4-7)</span> →
+                  <span className={warmupDay > 7 && warmupDay <= 14 ? " font-bold text-blue-500" : ""}> 100/dia (dia 8-14)</span> →
+                  <span className={warmupDay > 14 ? " font-bold text-blue-500" : ""}> 150/dia (dia 15+)</span>
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Protection Layers Grid */}
         <div className="px-5 pb-4">
@@ -934,9 +978,13 @@ const UserCampaigns = () => {
                 <div className="h-6 w-6 rounded-md bg-emerald-500/15 flex items-center justify-center">
                   <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
                 </div>
-                <span className="text-[11px] font-bold text-foreground">Limite 150/dia</span>
+                <span className="text-[11px] font-bold text-foreground">Limite {dailyLimit}/dia</span>
               </div>
-              <p className="text-[10px] text-muted-foreground leading-relaxed">Sistema bloqueia envios após 150 mensagens diárias para preservar seu número.</p>
+              <p className="text-[10px] text-muted-foreground leading-relaxed">
+                {isWarmup
+                  ? `Número em aquecimento (dia ${warmupDay + 1}). Limite sobe automaticamente até 150/dia.`
+                  : "Sistema bloqueia envios após 150 mensagens diárias para preservar seu número."}
+              </p>
             </div>
 
             <div className="group rounded-xl border border-cyan-500/15 bg-cyan-500/[0.03] hover:bg-cyan-500/[0.06] p-3 transition-colors">
