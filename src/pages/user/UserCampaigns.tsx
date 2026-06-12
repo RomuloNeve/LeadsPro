@@ -477,61 +477,79 @@ const UserCampaigns = () => {
           body: { campaign_id: id, test_mode: testMode, batch_size: testMode ? 0 : size },
         });
 
+        // Handle errors - supabase SDK puts non-2xx responses in error
+        let responseData = data;
         if (error) {
-          toast({ title: "Erro no envio", description: error.message, variant: "destructive" });
-          break;
+          // Try to extract JSON body from FunctionsHttpError
+          try {
+            const ctx = (error as any).context;
+            if (ctx && typeof ctx.json === "function") {
+              responseData = await ctx.json();
+            } else if (error.message) {
+              try { responseData = JSON.parse(error.message); } catch {}
+            }
+          } catch {}
+
+          if (!responseData || !responseData.code) {
+            toast({ title: "Erro no envio", description: responseData?.error || error.message, variant: "destructive" });
+            break;
+          }
         }
 
         // === Anti-ban error handling ===
-        if (data?.code === "DAILY_LIMIT_REACHED") {
+        if (responseData?.code === "DAILY_LIMIT_REACHED") {
           toast({
             title: "Limite diário atingido",
-            description: data.error || `Você já enviou ${data.daily_sent} mensagens hoje. Limite: ${data.daily_limit}/dia.`,
+            description: responseData.error || `Você já enviou ${responseData.daily_sent} mensagens hoje. Limite: ${responseData.daily_limit}/dia.`,
             variant: "destructive",
           });
-          if (typeof data.daily_limit === "number") setDailyLimit(data.daily_limit);
+          if (typeof responseData.daily_limit === "number") setDailyLimit(responseData.daily_limit);
           break;
         }
-        if (data?.code === "OUTSIDE_SAFE_HOURS") {
+        if (responseData?.code === "OUTSIDE_SAFE_HOURS") {
           toast({
             title: "Fora do horário seguro",
-            description: data.error || "Disparos só são permitidos entre 8h e 21h para proteger seu número.",
+            description: responseData.error || "Disparos só são permitidos entre 8h e 21h para proteger seu número.",
             variant: "destructive",
           });
+          break;
+        }
+        if (responseData?.error && !responseData?.success) {
+          toast({ title: "Erro no envio", description: responseData.error, variant: "destructive" });
           break;
         }
 
-        totalSentAcrossLoops += data.leads_count || 0;
-        totalErrorsAcrossLoops += data.errors || 0;
-        if (data.failed_leads?.length > 0) {
-          allFailedLeads.push(...data.failed_leads);
+        totalSentAcrossLoops += responseData.leads_count || 0;
+        totalErrorsAcrossLoops += responseData.errors || 0;
+        if (responseData.failed_leads?.length > 0) {
+          allFailedLeads.push(...responseData.failed_leads);
         }
         // Update daily counter from backend
-        if (typeof data.daily_sent === "number") {
-          setDailySent(data.daily_sent);
+        if (typeof responseData.daily_sent === "number") {
+          setDailySent(responseData.daily_sent);
         }
 
         // Warn on the FIRST loop that the AI fallback kicked in. Without
         // this, the user thinks anti-ban variation worked when in fact
         // every lead got the same raw template.
-        if (data.variation_warning && loopCount === 1) {
+        if (responseData.variation_warning && loopCount === 1) {
           toast({
             title: "⚠️ Variação por IA indisponível",
-            description: data.variation_warning,
+            description: responseData.variation_warning,
             variant: "destructive",
           });
         }
 
-        if (data.all_sent || !data.has_more || testMode) {
-          if (data.all_sent) {
+        if (responseData.all_sent || !responseData.has_more || testMode) {
+          if (responseData.all_sent) {
             toast({
               title: "✅ Todos os leads foram enviados!",
-              description: `${data.total_sent} leads enviados com sucesso.${totalErrorsAcrossLoops > 0 ? ` (${totalErrorsAcrossLoops} erros)` : ""}`,
+              description: `${responseData.total_sent} leads enviados com sucesso.${totalErrorsAcrossLoops > 0 ? ` (${totalErrorsAcrossLoops} erros)` : ""}`,
             });
           } else {
             toast({
               title: testMode ? "🧪 Teste enviado!" : "📱 Lote enviado!",
-              description: `${totalSentAcrossLoops} enviados. ${data.remaining > 0 ? `Restam ${data.remaining} leads.` : ""}${totalErrorsAcrossLoops > 0 ? ` (${totalErrorsAcrossLoops} erros)` : ""}`,
+              description: `${totalSentAcrossLoops} enviados. ${responseData.remaining > 0 ? `Restam ${responseData.remaining} leads.` : ""}${totalErrorsAcrossLoops > 0 ? ` (${totalErrorsAcrossLoops} erros)` : ""}`,
             });
           }
           break;
@@ -766,29 +784,51 @@ const UserCampaigns = () => {
           },
         });
 
+        // Handle errors - supabase SDK puts non-2xx responses in error
+        let grpData = data;
         if (error) {
-          toast({ title: "Erro no envio", description: error.message, variant: "destructive" });
+          try {
+            const ctx = (error as any).context;
+            if (ctx && typeof ctx.json === "function") {
+              grpData = await ctx.json();
+            } else if (error.message) {
+              try { grpData = JSON.parse(error.message); } catch {}
+            }
+          } catch {}
+
+          if (!grpData || !grpData.code) {
+            toast({ title: "Erro no envio", description: grpData?.error || error.message, variant: "destructive" });
+            break;
+          }
+        }
+
+        if (grpData?.code === "DAILY_LIMIT_REACHED" || grpData?.code === "OUTSIDE_SAFE_HOURS" || grpData?.code === "INSTANCE_NOT_CONNECTED") {
+          toast({ title: "Erro no envio", description: grpData.error, variant: "destructive" });
+          break;
+        }
+        if (grpData?.error && !grpData?.success) {
+          toast({ title: "Erro no envio", description: grpData.error, variant: "destructive" });
           break;
         }
 
-        totalSent += data.sent_count || 0;
-        totalErrors += data.errors || 0;
-        if (data.failed?.length > 0) allFailed.push(...data.failed);
-        sentPhones = data.sent_phones_list || sentPhones;
+        totalSent += grpData.sent_count || 0;
+        totalErrors += grpData.errors || 0;
+        if (grpData.failed?.length > 0) allFailed.push(...grpData.failed);
+        sentPhones = grpData.sent_phones_list || sentPhones;
 
         // Update campaign in DB
-        const newStatus = data.all_sent ? "sent" : "partial";
+        const newStatus = grpData.all_sent ? "sent" : "partial";
         await supabase.from("campaigns").update({
           group_sent_phones: sentPhones,
           sent_count: sentPhones.length,
-          total_leads: data.total_participants || campaign.total_leads,
+          total_leads: grpData.total_participants || campaign.total_leads,
           status: newStatus,
         } as any).eq("id", campaign.id);
 
-        if (data.all_sent || !data.has_more) {
+        if (grpData.all_sent || !grpData.has_more) {
           toast({
-            title: data.all_sent ? "✅ Todos os participantes foram enviados!" : "📱 Lote enviado!",
-            description: `${data.total_sent} enviados de ${data.total_participants} participantes.${totalErrors > 0 ? ` (${totalErrors} erros)` : ""}`,
+            title: grpData.all_sent ? "✅ Todos os participantes foram enviados!" : "📱 Lote enviado!",
+            description: `${grpData.total_sent} enviados de ${grpData.total_participants} participantes.${totalErrors > 0 ? ` (${totalErrors} erros)` : ""}`,
           });
           break;
         }

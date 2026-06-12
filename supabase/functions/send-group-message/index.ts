@@ -17,6 +17,18 @@ const DAILY_MESSAGE_LIMIT = 150;
 const SAFE_HOUR_START = 8;
 const SAFE_HOUR_END = 21;
 
+// === Warm-up system ===
+function getWarmupLimit(instanceCreatedAt: string): number {
+  const created = new Date(instanceCreatedAt);
+  const now = new Date();
+  const daysConnected = Math.floor((now.getTime() - created.getTime()) / (1000 * 60 * 60 * 24));
+
+  if (daysConnected <= 3) return 30;
+  if (daysConnected <= 7) return 60;
+  if (daysConnected <= 14) return 100;
+  return DAILY_MESSAGE_LIMIT;
+}
+
 async function fetchGroupParticipants(instanceName: string, groupId: string): Promise<string[]> {
   try {
     const res = await fetch(
@@ -206,14 +218,14 @@ Deno.serve(async (req) => {
 
     const { data: instance } = await serviceClient
       .from("whatsapp_instances")
-      .select("instance_name, status, phone_connected")
+      .select("instance_name, status, phone_connected, created_at")
       .eq("user_id", user.id)
       .maybeSingle();
 
     if (!instance || instance.status !== "connected") {
       return new Response(
-        JSON.stringify({ error: "Sua instância WhatsApp não está conectada." }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ error: "Sua instância WhatsApp não está conectada.", code: "INSTANCE_NOT_CONNECTED" }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -231,7 +243,7 @@ Deno.serve(async (req) => {
           error: `Fora do horário seguro (${SAFE_HOUR_START}h-${SAFE_HOUR_END}h). Aguarde até ${SAFE_HOUR_START}h.`,
           code: "OUTSIDE_SAFE_HOURS",
         }),
-        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -255,13 +267,20 @@ Deno.serve(async (req) => {
       .in("campaign_id", userCampaignIds);
 
     const dailySent = sentToday || 0;
-    if (dailySent >= DAILY_MESSAGE_LIMIT) {
+    const dailyLimit = instance.created_at
+      ? getWarmupLimit(instance.created_at)
+      : DAILY_MESSAGE_LIMIT;
+
+    if (dailySent >= dailyLimit) {
+      const isWarmup = dailyLimit < DAILY_MESSAGE_LIMIT;
       return new Response(
         JSON.stringify({
-          error: `Limite diário atingido: ${dailySent}/${DAILY_MESSAGE_LIMIT}. Tente amanhã.`,
+          error: `Limite diário atingido: ${dailySent}/${dailyLimit}.${isWarmup ? ` Número em aquecimento (limite aumenta automaticamente até ${DAILY_MESSAGE_LIMIT}/dia).` : ""} Tente amanhã.`,
           code: "DAILY_LIMIT_REACHED",
+          daily_sent: dailySent,
+          daily_limit: dailyLimit,
         }),
-        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 

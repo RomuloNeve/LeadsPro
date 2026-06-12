@@ -64,6 +64,8 @@ Deno.serve(async (req) => {
       const authUsers = authUsersRes.data?.users || [];
 
       // Build user details with their auth info
+      const profileUserIds = new Set(profiles.map((p: any) => p.user_id));
+
       const users = profiles.map((p: any) => {
         const authUser = authUsers.find((u: any) => u.id === p.user_id);
         const userLicense = licenses.find((l: any) => l.assigned_to === p.user_id);
@@ -85,6 +87,48 @@ Deno.serve(async (req) => {
         };
       });
 
+      // Include orphan users (exist in auth.users but missing from profiles)
+      // This happens when the handle_new_user trigger fails silently
+      const orphanUsers = authUsers
+        .filter((u: any) => !profileUserIds.has(u.id))
+        .map((u: any) => {
+          const userLicense = licenses.find((l: any) => l.assigned_to === u.id);
+          const userInstance = instances.find((i: any) => i.user_id === u.id);
+          const metaName =
+            u.user_metadata?.display_name ||
+            u.user_metadata?.full_name ||
+            u.user_metadata?.name ||
+            null;
+
+          // Auto-create the missing profile row
+          supabase.from("profiles").insert({
+            user_id: u.id,
+            email: u.user_metadata?.email || u.email,
+            is_admin: false,
+            whatsapp_phone: u.user_metadata?.whatsapp_phone || null,
+            display_name: metaName,
+          }).then(() => {
+            console.log(`Auto-created missing profile for user ${u.id}`);
+          }).catch(() => {});
+
+          return {
+            id: null,
+            user_id: u.id,
+            email: u.user_metadata?.email || u.email || null,
+            display_name: metaName,
+            whatsapp_phone: u.user_metadata?.whatsapp_phone || null,
+            is_admin: false,
+            created_at: u.created_at,
+            last_sign_in: u.last_sign_in_at || null,
+            created_at_auth: u.created_at,
+            license: userLicense || null,
+            instance: userInstance || null,
+            _orphan: true,
+          };
+        });
+
+      users.push(...orphanUsers);
+
       return new Response(JSON.stringify({
         users,
         licenses,
@@ -94,7 +138,7 @@ Deno.serve(async (req) => {
         totalErrors: errorLogsRes.count || 0,
         recentErrors,
         stats: {
-          totalUsers: profiles.length,
+          totalUsers: users.length,
           adminUsers: profiles.filter((p: any) => p.is_admin).length,
           activeLicenses: licenses.filter((l: any) => l.is_active).length,
           inactiveLicenses: licenses.filter((l: any) => !l.is_active).length,

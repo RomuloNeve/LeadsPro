@@ -13,13 +13,26 @@ const EVOLUTION_API_KEY = Deno.env.get("EVOLUTION_API_KEY") || "";
 // Delays between leads: 60-180s (1-3 min) — must match marketing promise of "30-300s between messages"
 const MIN_DELAY_BETWEEN_LEADS_MS = 60_000;
 const MAX_DELAY_BETWEEN_LEADS_MS = 180_000;
-// Daily limit per user (configurable per plan later)
+// Daily limit per user — base max (adjusted by warm-up below)
 const DAILY_MESSAGE_LIMIT = 150;
 // Safe sending hours (24h format, in server timezone)
 const SAFE_HOUR_START = 8;
 const SAFE_HOUR_END = 21; // exclusive — i.e., up to 20:59:59
 // Max leads per single edge function call
 const MAX_LEADS_PER_CALL = 2;
+
+// === Warm-up system ===
+// New numbers get banned easily. Gradually increase the daily limit.
+function getWarmupLimit(instanceCreatedAt: string): number {
+  const created = new Date(instanceCreatedAt);
+  const now = new Date();
+  const daysConnected = Math.floor((now.getTime() - created.getTime()) / (1000 * 60 * 60 * 24));
+
+  if (daysConnected <= 3) return 30;     // Day 0-3: max 30/day
+  if (daysConnected <= 7) return 60;     // Day 4-7: max 60/day
+  if (daysConnected <= 14) return 100;   // Day 8-14: max 100/day
+  return DAILY_MESSAGE_LIMIT;            // Day 15+: full 150/day
+}
 
 async function sendViaEvolution(instanceName: string, phone: string, message: string, imageUrl?: string | null, audioUrl?: string | null) {
   const cleanPhone = phone.replace(/\D/g, "");
@@ -229,14 +242,14 @@ Deno.serve(async (req) => {
     // Get user's whatsapp instance
     const { data: instance } = await serviceClient
       .from("whatsapp_instances")
-      .select("instance_name, status")
+      .select("instance_name, status, created_at")
       .eq("user_id", user.id)
       .maybeSingle();
 
     if (!instance || instance.status !== "connected") {
       return new Response(
-        JSON.stringify({ error: "Sua instância WhatsApp não está conectada." }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ error: "Sua instância WhatsApp não está conectada.", code: "INSTANCE_NOT_CONNECTED" }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -258,14 +271,16 @@ Deno.serve(async (req) => {
             safe_hours: `${SAFE_HOUR_START}h-${SAFE_HOUR_END}h`,
             current_hour_sp: currentHourSP,
           }),
-          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
     }
 
-    // === ANTI-BAN: Check daily message limit ===
+    // === ANTI-BAN: Check daily message limit (with warm-up) ===
     let dailySent = 0;
-    let dailyLimit = DAILY_MESSAGE_LIMIT;
+    let dailyLimit = instance.created_at
+      ? getWarmupLimit(instance.created_at)
+      : DAILY_MESSAGE_LIMIT;
     if (!test_mode) {
       const todayStart = new Date();
       todayStart.setUTCHours(0, 0, 0, 0);
@@ -287,14 +302,20 @@ Deno.serve(async (req) => {
       console.log(`Daily limit check: ${dailySent}/${dailyLimit} sent today, ${remaining} remaining`);
 
       if (dailySent >= dailyLimit) {
+        const isWarmup = dailyLimit < DAILY_MESSAGE_LIMIT;
+        const warmupMsg = isWarmup
+          ? ` Seu número está em período de aquecimento (limite atual: ${dailyLimit}/dia). O limite aumenta automaticamente com o tempo até ${DAILY_MESSAGE_LIMIT}/dia.`
+          : "";
         return new Response(
           JSON.stringify({
-            error: `Limite diário atingido: você já enviou ${dailySent} mensagens hoje. O limite é ${dailyLimit}/dia para proteger seu número de ban. Tente novamente amanhã.`,
+            error: `Limite diário atingido: você já enviou ${dailySent} mensagens hoje. O limite é ${dailyLimit}/dia para proteger seu número de ban.${warmupMsg} Tente novamente amanhã.`,
             code: "DAILY_LIMIT_REACHED",
             daily_sent: dailySent,
             daily_limit: dailyLimit,
+            max_limit: DAILY_MESSAGE_LIMIT,
+            is_warmup: isWarmup,
           }),
-          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
     }
