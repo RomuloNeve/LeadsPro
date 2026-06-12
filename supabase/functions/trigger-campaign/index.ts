@@ -18,8 +18,10 @@ const DAILY_MESSAGE_LIMIT = 150;
 // Safe sending hours (24h format, in server timezone)
 const SAFE_HOUR_START = 8;
 const SAFE_HOUR_END = 21; // exclusive — i.e., up to 20:59:59
-// Max leads per single edge function call
-const MAX_LEADS_PER_CALL = 2;
+// Max leads per single edge function call — MUST be 1 to avoid timeout.
+// Each send + AI variation takes 5-15s, and the edge runtime limit is 150s.
+// The inter-message delay (60-180s anti-ban) happens CLIENT-SIDE between calls.
+const MAX_LEADS_PER_CALL = 1;
 
 // === Warm-up system ===
 // New numbers get banned easily. Gradually increase the daily limit.
@@ -603,30 +605,12 @@ Deno.serve(async (req) => {
         }
       }
 
-      // Anti-ban delay between leads: 60-180s (1-3 min)
-      // Adds humanized jitter — 30% chance of extra "typing pause" 10-30s
-      if (i < leadsThisCall.length - 1) {
-        const baseDelay = test_mode
-          ? 3000
-          : MIN_DELAY_BETWEEN_LEADS_MS + Math.floor(Math.random() * (MAX_DELAY_BETWEEN_LEADS_MS - MIN_DELAY_BETWEEN_LEADS_MS));
-
-        // 30% chance of extra "human typing pause" (only in real mode, not test)
-        const typingPause = (!test_mode && Math.random() < 0.3)
-          ? (10_000 + Math.floor(Math.random() * 21_000))
-          : 0;
-
-        const totalDelay = baseDelay + typingPause;
-        const minutes = Math.floor(totalDelay / 60_000);
-        const seconds = Math.floor((totalDelay % 60_000) / 1000);
-        console.log(`Anti-ban delay: ${minutes}m${seconds}s before next lead (base ${Math.round(baseDelay/1000)}s${typingPause ? ` + typing ${Math.round(typingPause/1000)}s` : ""})`);
-
-        // Count down the delay in chunks so the user can see updates in the UI
-        let remaining = totalDelay;
-        const tickMs = 5000;
-        while (remaining > 0) {
-          await new Promise((r) => setTimeout(r, Math.min(tickMs, remaining)));
-          remaining -= tickMs;
-        }
+      // Anti-ban delay between leads is now handled CLIENT-SIDE (frontend
+      // loop pauses 60-180s between each invoke call). With MAX_LEADS_PER_CALL=1
+      // there's nothing to delay here. Keeping this block only for test_mode
+      // with multiple leads or if MAX is increased in the future.
+      if (i < leadsThisCall.length - 1 && test_mode) {
+        await new Promise((r) => setTimeout(r, 3000));
       }
     }
 

@@ -555,11 +555,15 @@ const UserCampaigns = () => {
           break;
         }
 
-        // Anti-block: long pause between micro-batches (2-5 min) for safety
-        const pauseSeconds = 120 + Math.floor(Math.random() * 181);
+        // Anti-ban: delay between each message (60-180s with 30% chance of extra 10-30s)
+        const baseDelay = 60 + Math.floor(Math.random() * 121); // 60-180s
+        const extraPause = Math.random() < 0.3 ? (10 + Math.floor(Math.random() * 21)) : 0;
+        const pauseSeconds = baseDelay + extraPause;
         for (let s = pauseSeconds; s > 0; s--) {
           if (cancelRef.current) break;
-          setSendingProgress(`Aguardando ${s}s antes do próximo lote... (${totalSentAcrossLoops} enviados)`);
+          const mins = Math.floor(s / 60);
+          const secs = s % 60;
+          setSendingProgress(`⏳ Anti-ban: aguardando ${mins > 0 ? `${mins}m` : ""}${secs}s... (${totalSentAcrossLoops} enviados)`);
           await new Promise((r) => setTimeout(r, 1000));
         }
       }
