@@ -524,6 +524,17 @@ const UserCampaigns = () => {
         if (responseData.failed_leads?.length > 0) {
           allFailedLeads.push(...responseData.failed_leads);
         }
+
+        // Safety: if backend returned 0 leads sent and didn't say all_sent,
+        // something unexpected happened — break to avoid infinite loop
+        if ((responseData.leads_count || 0) === 0 && !responseData.all_sent) {
+          toast({
+            title: "Disparo pausado",
+            description: responseData.message || "Nenhum lead disponível para envio neste lote.",
+          });
+          break;
+        }
+
         // Update daily counter from backend
         if (typeof responseData.daily_sent === "number") {
           setDailySent(responseData.daily_sent);
@@ -540,7 +551,7 @@ const UserCampaigns = () => {
           });
         }
 
-        if (responseData.all_sent || !responseData.has_more || testMode) {
+        if (responseData.all_sent || responseData.has_more === false || testMode) {
           if (responseData.all_sent) {
             toast({
               title: "✅ Todos os leads foram enviados!",

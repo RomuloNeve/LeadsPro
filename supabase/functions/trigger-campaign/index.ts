@@ -621,16 +621,31 @@ Deno.serve(async (req) => {
       .eq("campaign_id", campaign_id)
       .eq("status", "sent");
 
-    // Check remaining unsent leads  
+    // Check remaining unsent leads — must use the SAME filters as the leads query above
     let totalTargetLeads = 0;
     if (!test_mode) {
-      let q = serviceClient.from("leads").select("*", { count: "exact", head: true })
-        .eq("license_id", campaign.license_id).eq("is_duplicate", false);
-      if (campaign.target_filter && (campaign.target_filter as any).category) {
-        q = q.eq("category", (campaign.target_filter as any).category);
+      if (campaign.target_filter && (campaign.target_filter as any).expired_users) {
+        // For expired users campaigns, count from the leads we fetched
+        totalTargetLeads = totalRemaining + (totalSent || 0);
+      } else {
+        let q = serviceClient.from("leads").select("*", { count: "exact", head: true })
+          .eq("license_id", campaign.license_id).eq("is_duplicate", false);
+        if (campaign.target_filter && (campaign.target_filter as any).category) {
+          q = q.eq("category", (campaign.target_filter as any).category);
+        }
+        const { count } = await q;
+        let targetCount = count || 0;
+
+        // If campaign uses a list filter, count only leads in that list
+        if (campaign.target_filter && (campaign.target_filter as any).list_id) {
+          const { count: listCount } = await serviceClient
+            .from("lead_list_items")
+            .select("*", { count: "exact", head: true })
+            .eq("list_id", (campaign.target_filter as any).list_id);
+          targetCount = Math.min(targetCount, listCount || 0);
+        }
+        totalTargetLeads = targetCount;
       }
-      const { count } = await q;
-      totalTargetLeads = count || 0;
     }
 
     const allSent = test_mode || (totalSent || 0) >= totalTargetLeads;
@@ -664,8 +679,8 @@ Deno.serve(async (req) => {
   } catch (error) {
     console.error("Error in trigger-campaign:", error);
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : "Erro interno" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      JSON.stringify({ error: error instanceof Error ? error.message : "Erro interno", code: "INTERNAL_ERROR" }),
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });
