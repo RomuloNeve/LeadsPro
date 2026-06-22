@@ -388,20 +388,20 @@ Deno.serve(async (req) => {
       }
     }
 
-    // === Cleanup stale "sending" locks (older than 5 minutes) ===
+    // === Cleanup stale "sending" locks (older than 2 minutes) ===
     // If a previous call crashed/timed out, leads stay locked as "sending" forever.
     // This unblocks them so they can be retried.
     if (!test_mode) {
-      const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+      const twoMinAgo = new Date(Date.now() - 2 * 60 * 1000).toISOString();
       const { data: staleRows } = await serviceClient
         .from("campaign_sent_leads")
         .select("id")
         .eq("campaign_id", campaign_id)
         .eq("status", "sending")
-        .lt("created_at", fiveMinAgo);
+        .lt("created_at", twoMinAgo);
 
       if (staleRows && staleRows.length > 0) {
-        console.log(`Cleaning ${staleRows.length} stale "sending" locks (>5min old)`);
+        console.log(`Cleaning ${staleRows.length} stale "sending" locks (>2min old)`);
         await serviceClient
           .from("campaign_sent_leads")
           .delete()
@@ -447,11 +447,12 @@ Deno.serve(async (req) => {
         phone: p.whatsapp_phone,
       }));
 
-      // Get already sent phones for this campaign to prevent duplicates
+      // Get already sent phones for this campaign to prevent duplicates (only final statuses)
       const { data: sentRows } = await serviceClient
         .from("campaign_sent_leads")
-        .select("lead_id")
-        .eq("campaign_id", campaign_id);
+        .select("lead_id, status")
+        .eq("campaign_id", campaign_id)
+        .in("status", ["sent", "failed", "skipped"]);
       const sentIds = new Set((sentRows || []).map((r: any) => r.lead_id));
       leads = leads.filter((l: any) => !sentIds.has(l.id));
     } else {
@@ -479,11 +480,13 @@ Deno.serve(async (req) => {
         filteredLeads = filteredLeads.filter((l: any) => listLeadIds!.has(l.id));
       }
 
-      // Get already sent/sending lead IDs (prevent duplicates AND race conditions)
+      // Get already processed lead IDs — only exclude FINAL statuses (sent, failed, skipped).
+      // "sending" entries are transient locks cleaned up above; they should NOT permanently block leads.
       const { data: sentRows } = await serviceClient
         .from("campaign_sent_leads")
-        .select("lead_id")
-        .eq("campaign_id", campaign_id);
+        .select("lead_id, status")
+        .eq("campaign_id", campaign_id)
+        .in("status", ["sent", "failed", "skipped"]);
 
       const sentIds = new Set((sentRows || []).map((r: any) => r.lead_id));
       leads = filteredLeads.filter((l: any) => !sentIds.has(l.id));
