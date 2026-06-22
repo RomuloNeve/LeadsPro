@@ -8,11 +8,12 @@ const corsHeaders = {
 
 const EVOLUTION_API_URL = (Deno.env.get("EVOLUTION_API_URL") || "").replace(/\/+$/, "");
 const EVOLUTION_API_KEY = Deno.env.get("EVOLUTION_API_KEY") || "";
-const MAX_PER_CALL = 2;
+// Max phones per single edge function call — MUST be 1 to avoid timeout.
+// Each send + AI variation takes 5-15s, and the edge runtime limit is 150s.
+// The inter-message delay (60-180s anti-ban) happens CLIENT-SIDE between calls.
+const MAX_PER_CALL = 1;
 
 // === Anti-Ban Configuration ===
-const MIN_DELAY_BETWEEN_MS = 60_000;
-const MAX_DELAY_BETWEEN_MS = 180_000;
 const DAILY_MESSAGE_LIMIT = 150;
 const SAFE_HOUR_START = 8;
 const SAFE_HOUR_END = 21;
@@ -141,26 +142,34 @@ async function generateVariations(originalMessage: string, count: number): Promi
         messages: [
           {
             role: "system",
-            content: `Você reescreve mensagens de WhatsApp. Gere EXATAMENTE ${count} variações da mensagem do usuário.
+            content: `Você é um humanizador de mensagens de WhatsApp. Sua tarefa é criar variações QUASE IDÊNTICAS ao original, mudando apenas 1-2 palavras por frase para evitar detecção de spam.
 
-REGRAS CRÍTICAS:
-- Cada variação é UMA mensagem completa e independente
-- Separe cada variação com a linha exata: %%%SPLIT%%%
-- NÃO numere as variações
-- NÃO adicione explicações ou títulos
-- Mantenha o mesmo sentido, tom e formalidade
-- NÃO adicione ou remova informações, links ou números
-- Cada variação deve ter tamanho similar ao original
+REGRAS ABSOLUTAS (violar qualquer uma = resposta inválida):
+1. COPIE o texto original e mude APENAS 1-2 palavras por frase (sinônimos diretos)
+2. NUNCA mude a estrutura das frases
+3. NUNCA adicione ou remova frases, saudações, despedidas ou parágrafos
+4. NUNCA adicione emojis, sinais (*, #, ~, etc.) ou pontuação que não existem no original
+5. NUNCA remova emojis ou formatação que existem no original
+6. NUNCA corrija erros de português — copie os erros exatamente como estão
+7. NUNCA mude links, URLs, números de telefone, preços ou dados
+8. NUNCA mude nomes próprios, marcas ou palavras em inglês
+9. Cada variação deve ter entre 90% e 110% do tamanho do original
+10. O leitor NÃO deve perceber que é uma variação — deve parecer a mesma mensagem
 
-FORMATO OBRIGATÓRIO:
-variação 1 aqui
-%%%SPLIT%%%
-variação 2 aqui`,
+EXEMPLO:
+Original: "Oi tudo bem? To vendendo uns doces caseiros, tem brigadeiro por 3 reais e beijinho por 2,50. Me chama se quiser!"
+Variação OK: "Oi tudo bem? Estou vendendo uns doces caseiros, tem brigadeiro por 3 reais e beijinho por 2,50. Me chama se tiver interesse!"
+Variação OK: "Oi tudo bem? To vendendo doces caseiros, tem brigadeiro por 3 reais e beijinho por 2,50. Me manda msg se quiser!"
+Variação RUIM: "Olá! 🍬 Está tudo bem? Estou comercializando doces artesanais..." (mudou demais, adicionou emoji, mudou tom)
+
+Gere EXATAMENTE ${count} variações.
+Separe cada variação com: %%%SPLIT%%%
+NÃO numere. NÃO explique. Apenas as variações separadas por %%%SPLIT%%%`,
           },
           { role: "user", content: originalMessage },
         ],
-        temperature: 0.9,
-        max_tokens: count * 600,
+        temperature: 0.4,
+        max_tokens: count * 400,
       }),
     });
 
@@ -170,11 +179,45 @@ variação 2 aqui`,
     const text = data.choices?.[0]?.message?.content?.trim();
     if (!text) return [];
 
-    const maxLen = originalMessage.length * 2.5;
-    let variations = text.split("%%%SPLIT%%%").map((v: string) => v.trim()).filter((v: string) => v.length > 10 && v.length <= maxLen);
-    if (variations.length === 0) {
-      variations = text.split("---").map((v: string) => v.trim()).filter((v: string) => v.length > 10 && v.length <= maxLen);
+    // Split by our custom delimiter
+    let variations = text.split("%%%SPLIT%%%").map((v: string) => v.trim()).filter((v: string) => v.length > 10);
+    if (variations.length <= 1) {
+      variations = text.split("---").map((v: string) => v.trim()).filter((v: string) => v.length > 10);
     }
+
+    // === STRICT POST-GENERATION VALIDATION ===
+    const origLen = originalMessage.length;
+    const maxLen = origLen * 1.3;
+    const minLen = origLen * 0.7;
+    const origEmojis = originalMessage.match(/[\u{1F000}-\u{1FFFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu) || [];
+    const origSpecialChars = (originalMessage.match(/[~^`|\\<>{}[\]@#$%&*+=]/g) || []).length;
+    const origExclamations = (originalMessage.match(/!/g) || []).length;
+    const origQuestions = (originalMessage.match(/\?/g) || []).length;
+    const origLines = originalMessage.split("\n").length;
+    const origWords = originalMessage.split(/\s+/).length;
+
+    variations = variations.filter((v: string) => {
+      if (v.length > maxLen || v.length < minLen) return false;
+      const vLines = v.split("\n").length;
+      if (Math.abs(vLines - origLines) > 2) return false;
+      const vWords = v.split(/\s+/).length;
+      if (vWords > origWords * 1.3 || vWords < origWords * 0.7) return false;
+      const vSpecialChars = (v.match(/[~^`|\\<>{}[\]@#$%&*+=]/g) || []).length;
+      if (vSpecialChars > origSpecialChars + 1) return false;
+      const vEmojis = v.match(/[\u{1F000}-\u{1FFFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu) || [];
+      if (vEmojis.length > origEmojis.length + 1) return false;
+      const vExclamations = (v.match(/!/g) || []).length;
+      if (vExclamations > origExclamations + 2) return false;
+      const vQuestions = (v.match(/\?/g) || []).length;
+      if (vQuestions > origQuestions + 2) return false;
+      if (/^(variação|versão|opção|\d+[\.\)\-])\s/i.test(v)) return false;
+      const origUrls = originalMessage.match(/https?:\/\/\S+/g) || [];
+      for (const url of origUrls) { if (!v.includes(url)) return false; }
+      const origPhones = originalMessage.match(/\(\d{2}\)\s?\d{4,5}[-\s]?\d{4}|\d{10,13}/g) || [];
+      for (const phone of origPhones) { if (!v.includes(phone)) return false; }
+      return true;
+    });
+
     return variations;
   } catch {
     return [];
@@ -354,22 +397,6 @@ Deno.serve(async (req) => {
         newSentPhones.push(phone);
       }
 
-      // Anti-ban delay between sends: 60-180s (1-3 min)
-      // 30% chance of extra "typing pause" 10-30s for humanization
-      if (i < thisCallPhones.length - 1) {
-        const baseDelay = MIN_DELAY_BETWEEN_MS + Math.floor(Math.random() * (MAX_DELAY_BETWEEN_MS - MIN_DELAY_BETWEEN_MS));
-        const typingPause = Math.random() < 0.3 ? (10_000 + Math.floor(Math.random() * 21_000)) : 0;
-        const totalDelay = baseDelay + typingPause;
-        const minutes = Math.floor(totalDelay / 60_000);
-        const seconds = Math.floor((totalDelay % 60_000) / 1000);
-        console.log(`Anti-ban delay: ${minutes}m${seconds}s before next phone`);
-        // Count down in chunks
-        let remaining = totalDelay;
-        while (remaining > 0) {
-          await new Promise((r) => setTimeout(r, Math.min(5000, remaining)));
-          remaining -= 5000;
-        }
-      }
     }
 
     const updatedSentPhones = [...Array.from(alreadySent), ...newSentPhones];

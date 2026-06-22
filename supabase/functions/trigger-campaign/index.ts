@@ -91,18 +91,21 @@ async function sendViaEvolution(instanceName: string, phone: string, message: st
   }
 }
 
-async function generateVariations(originalMessage: string, count: number): Promise<string[]> {
+async function generateVariations(originalMessage: string, count: number): Promise<{ variations: string[]; error?: string }> {
   const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
   if (!OPENAI_API_KEY) {
     console.error("OPENAI_API_KEY not set! Variations will NOT work.");
-    return [];
+    return { variations: [], error: "OPENAI_API_KEY não configurada" };
   }
 
-  console.log(`Generating ${count} variations...`);
+  console.log(`Generating ${count} variations for message (${originalMessage.length} chars)...`);
 
   try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 90000);
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
+      signal: controller.signal,
       headers: {
         Authorization: `Bearer ${OPENAI_API_KEY}`,
         "Content-Type": "application/json",
@@ -112,74 +115,126 @@ async function generateVariations(originalMessage: string, count: number): Promi
         messages: [
           {
             role: "system",
-            content: `Você reescreve mensagens de WhatsApp para um sistema de envio em massa que precisa evitar detecção de spam.
+            content: `Você é um humanizador de mensagens de WhatsApp. Sua tarefa é criar variações QUASE IDÊNTICAS ao original, mudando apenas 1-2 palavras por frase para evitar detecção de spam.
 
-Gere EXATAMENTE ${count} variações da mensagem do usuário.
+REGRAS ABSOLUTAS (violar qualquer uma = resposta inválida):
+1. COPIE o texto original e mude APENAS 1-2 palavras por frase (sinônimos diretos)
+2. NUNCA mude a estrutura das frases
+3. NUNCA adicione ou remova frases, saudações, despedidas ou parágrafos
+4. NUNCA adicione emojis, sinais (*, #, ~, etc.) ou pontuação que não existem no original
+5. NUNCA remova emojis ou formatação que existem no original
+6. NUNCA corrija erros de português — copie os erros exatamente como estão
+7. NUNCA mude links, URLs, números de telefone, preços ou dados
+8. NUNCA mude nomes próprios, marcas ou palavras em inglês
+9. Cada variação deve ter entre 90% e 110% do tamanho do original
+10. O leitor NÃO deve perceber que é uma variação — deve parecer a mesma mensagem
 
-REGRAS CRÍTICAS ANTI-SPAM:
-- Cada variação deve PARECER escrita por uma pessoa diferente em um momento diferente
-- VARIE a estrutura: inverta ordem de frases, mude abertura, mude fechamento
-- Use SINÔNIMOS sempre que possível (não repita as mesmas palavras)
-- Mude a PONTUAÇÃO: às vezes exclamação, às vezes interrogação, às vezes nada
-- Mude o TAMANHO: algumas 10% mais curtas, outras 10% mais longas
-- Mude ABERTURAS: alterne entre "Olá", "Oi", "Fala", "Bom dia", etc.
-- Mude FECHAMENTOS: varie entre "Abraços", "Até logo", "Obrigado", "Qualquer dúvida me chama", etc.
-- Mantenha o mesmo SENTIDO, TOM e FORMALIDADE do original
-- Mantenha links, números de telefone, preços e informações factuais IDÊNTICOS
+EXEMPLO:
+Original: "Oi tudo bem? To vendendo uns doces caseiros, tem brigadeiro por 3 reais e beijinho por 2,50. Me chama se quiser!"
+Variação OK: "Oi tudo bem? Estou vendendo uns doces caseiros, tem brigadeiro por 3 reais e beijinho por 2,50. Me chama se tiver interesse!"
+Variação OK: "Oi tudo bem? To vendendo doces caseiros, tem brigadeiro por 3 reais e beijinho por 2,50. Me manda msg se quiser!"
+Variação RUIM: "Olá! 🍬 Está tudo bem? Estou comercializando doces artesanais..." (mudou demais, adicionou emoji, mudou tom)
 
-FORMATO OBRIGATÓRIO:
-variação 1 aqui
-%%%SPLIT%%%
-variação 2 aqui
-%%%SPLIT%%%
-variação 3 aqui
-
-- NÃO numere as variações
-- NÃO adicione explicações ou títulos
-- Separe cada variação com a linha exata: %%%SPLIT%%%`,
+Gere EXATAMENTE ${count} variações.
+Separe cada variação com: %%%SPLIT%%%
+NÃO numere. NÃO explique. Apenas as variações separadas por %%%SPLIT%%%`,
           },
           { role: "user", content: originalMessage },
         ],
-        temperature: 1.2,
-        max_tokens: count * 600,
+        temperature: 0.4,
+        max_tokens: count * 400,
       }),
     });
+    clearTimeout(timeout);
 
     if (!response.ok) {
       const errText = await response.text();
       console.error("AI variation error:", response.status, errText);
-      return [];
+      return { variations: [], error: `OpenAI erro ${response.status}: ${errText.substring(0, 150)}` };
     }
 
     const data = await response.json();
     const text = data.choices?.[0]?.message?.content?.trim();
     if (!text) {
       console.error("AI returned empty content");
-      return [];
+      return { variations: [], error: "OpenAI retornou resposta vazia" };
     }
 
-    // Split by our custom delimiter
-    let variations = text.split("%%%SPLIT%%%").map((v: string) => v.trim()).filter((v: string) => v.length > 10);
+    // Split by our custom delimiter (tolerant: 2-4 % signs on each side)
+    let variations = text.split(/%%+SPLIT%%+/).map((v: string) => v.trim()).filter((v: string) => v.length > 10);
 
-    // Fallback: try splitting by "---" if custom delimiter wasn't used
+    // Fallback: try splitting by "---" or double newlines if custom delimiter wasn't used
     if (variations.length <= 1) {
-      variations = text.split("---").map((v: string) => v.trim()).filter((v: string) => v.length > 10);
+      variations = text.split(/\n{2,}|---/).map((v: string) => v.trim()).filter((v: string) => v.length > 10);
     }
 
-    // Safety: discard any "variation" that is way too long (merged multiple variations)
-    const maxLen = originalMessage.length * 2.5;
-    variations = variations.filter((v: string) => v.length <= maxLen);
+    // === POST-GENERATION VALIDATION ===
+    const origLen = originalMessage.length;
+    const maxLen = origLen * 1.5; // max 50% longer
+    const minLen = origLen * 0.5; // min 50% of original
+
+    // Analyze original characteristics
+    const origLines = originalMessage.split("\n").length;
+    const origWords = originalMessage.split(/\s+/).length;
+
+    variations = variations.filter((v: string) => {
+      // 1. Size check
+      if (v.length > maxLen || v.length < minLen) {
+        console.log(`REJECTED (size): ${v.length} chars, orig=${origLen}`);
+        return false;
+      }
+
+      // 2. Line count check (should not add/remove many paragraphs)
+      const vLines = v.split("\n").length;
+      if (Math.abs(vLines - origLines) > 3) {
+        console.log(`REJECTED (lines): ${vLines} lines, orig=${origLines}`);
+        return false;
+      }
+
+      // 3. Word count check
+      const vWords = v.split(/\s+/).length;
+      if (vWords > origWords * 1.5 || vWords < origWords * 0.5) {
+        console.log(`REJECTED (words): ${vWords} words, orig=${origWords}`);
+        return false;
+      }
+
+      // 4. Reject if it looks like the AI added labels/numbering
+      if (/^(variação|versão|opção|\d+[\.\)\-])\s/i.test(v)) {
+        console.log(`REJECTED (has label/numbering)`);
+        return false;
+      }
+
+      // 5. Reject if links/URLs in original were changed or removed
+      const origUrls = originalMessage.match(/https?:\/\/\S+/g) || [];
+      for (const url of origUrls) {
+        if (!v.includes(url)) {
+          console.log(`REJECTED (URL changed/removed): ${url}`);
+          return false;
+        }
+      }
+
+      // 6. Reject if phone numbers in original were changed
+      const origPhones = originalMessage.match(/\(\d{2}\)\s?\d{4,5}[-\s]?\d{4}|\d{10,13}/g) || [];
+      for (const phone of origPhones) {
+        if (!v.includes(phone)) {
+          console.log(`REJECTED (phone changed): ${phone}`);
+          return false;
+        }
+      }
+
+      return true;
+    });
 
     if (variations.length === 0) {
-      console.error("No valid variations after filtering, using original");
-      return [];
+      console.error("All variations rejected by strict filters — using original message");
+      return { variations: [], error: "Todas as variações foram rejeitadas pelos filtros de qualidade" };
     }
 
-    console.log(`Generated ${variations.length} valid variations (original len: ${originalMessage.length})`);
-    return variations;
+    console.log(`APPROVED ${variations.length}/${text.split("%%%SPLIT%%%").length} variations (orig: ${origLen} chars)`);
+    return { variations };
   } catch (e) {
     console.error("AI variation fetch error:", e.message);
-    return [];
+    return { variations: [], error: `Erro de conexão com OpenAI: ${e.message}` };
   }
 }
 
@@ -205,8 +260,8 @@ Deno.serve(async (req) => {
   try {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
-      return new Response(JSON.stringify({ error: "Não autorizado" }), {
-        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      return new Response(JSON.stringify({ error: "Não autorizado", code: "UNAUTHORIZED" }), {
+        status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -218,15 +273,26 @@ Deno.serve(async (req) => {
 
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
-      return new Response(JSON.stringify({ error: "Não autorizado" }), {
-        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      return new Response(JSON.stringify({ error: "Não autorizado", code: "UNAUTHORIZED" }), {
+        status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const { campaign_id, test_mode, batch_size } = await req.json();
+    let campaign_id: string | undefined;
+    let test_mode: boolean | undefined;
+    try {
+      const body = await req.json();
+      campaign_id = body.campaign_id;
+      test_mode = body.test_mode;
+    } catch (parseErr) {
+      console.error("Body parse error:", parseErr);
+      return new Response(JSON.stringify({ error: "Corpo da requisição inválido", code: "PARSE_ERROR" }), {
+        status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
     if (!campaign_id) {
-      return new Response(JSON.stringify({ error: "campaign_id é obrigatório" }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      return new Response(JSON.stringify({ error: "campaign_id é obrigatório", code: "VALIDATION_ERROR" }), {
+        status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -234,8 +300,8 @@ Deno.serve(async (req) => {
       .from("campaigns").select("*").eq("id", campaign_id).single();
 
     if (campError || !campaign) {
-      return new Response(JSON.stringify({ error: "Campanha não encontrada" }), {
-        status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      return new Response(JSON.stringify({ error: "Campanha não encontrada", code: "NOT_FOUND" }), {
+        status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -322,6 +388,27 @@ Deno.serve(async (req) => {
       }
     }
 
+    // === Cleanup stale "sending" locks (older than 5 minutes) ===
+    // If a previous call crashed/timed out, leads stay locked as "sending" forever.
+    // This unblocks them so they can be retried.
+    if (!test_mode) {
+      const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+      const { data: staleRows } = await serviceClient
+        .from("campaign_sent_leads")
+        .select("id")
+        .eq("campaign_id", campaign_id)
+        .eq("status", "sending")
+        .lt("created_at", fiveMinAgo);
+
+      if (staleRows && staleRows.length > 0) {
+        console.log(`Cleaning ${staleRows.length} stale "sending" locks (>5min old)`);
+        await serviceClient
+          .from("campaign_sent_leads")
+          .delete()
+          .in("id", staleRows.map((r: any) => r.id));
+      }
+    }
+
     // Fetch target leads
     let leads: any[] = [];
     if (test_mode) {
@@ -367,9 +454,6 @@ Deno.serve(async (req) => {
         .eq("campaign_id", campaign_id);
       const sentIds = new Set((sentRows || []).map((r: any) => r.lead_id));
       leads = leads.filter((l: any) => !sentIds.has(l.id));
-
-      const userLimit = batch_size && batch_size > 0 ? batch_size : leads.length;
-      leads = leads.slice(0, userLimit);
     } else {
       // Get leads NOT already sent for this campaign
       let query = serviceClient.from("leads").select("*")
@@ -404,18 +488,12 @@ Deno.serve(async (req) => {
       const sentIds = new Set((sentRows || []).map((r: any) => r.lead_id));
       leads = filteredLeads.filter((l: any) => !sentIds.has(l.id));
 
-      // Apply user-requested batch_size as the TOTAL they want to send across all calls
-      // But per-call we only send MAX_LEADS_PER_CALL
-      const userLimit = batch_size && batch_size > 0 ? batch_size : leads.length;
-      leads = leads.slice(0, userLimit);
+      // Do NOT slice by batch_size here — the frontend controls the batch count
+      // via its own loop counter. We need the full unsent list to compute has_more accurately.
     }
 
-    // Now limit to MAX_LEADS_PER_CALL for THIS single execution
-    const leadsThisCall = leads.slice(0, test_mode ? leads.length : MAX_LEADS_PER_CALL);
-    const totalRemaining = leads.length; // total unsent before this call
-
-    // === ANTI-BAN: Filter out known invalid numbers for this user ===
-    if (!test_mode && leadsThisCall.length > 0) {
+    // === ANTI-BAN: Filter out known invalid numbers BEFORE selecting leads ===
+    if (!test_mode && leads.length > 0) {
       const { data: invalidRows } = await serviceClient
         .from("invalid_numbers")
         .select("phone")
@@ -426,19 +504,40 @@ Deno.serve(async (req) => {
       );
 
       if (invalidPhones.size > 0) {
-        const before = leadsThisCall.length;
-        for (let i = leadsThisCall.length - 1; i >= 0; i--) {
-          const cleanPhone = (leadsThisCall[i].phone || "").replace(/\D/g, "");
-          if (invalidPhones.has(cleanPhone)) {
-            leadsThisCall.splice(i, 1);
+        const invalidLeads = leads.filter((l: any) => {
+          const cleanPhone = (l.phone || "").replace(/\D/g, "");
+          return invalidPhones.has(cleanPhone);
+        });
+        leads = leads.filter((l: any) => {
+          const cleanPhone = (l.phone || "").replace(/\D/g, "");
+          return !invalidPhones.has(cleanPhone);
+        });
+
+        // Mark invalid leads as "skipped" so they are not re-fetched on the next call
+        if (invalidLeads.length > 0) {
+          console.log(`Pre-filtered ${invalidLeads.length} leads with known invalid numbers — marking as skipped`);
+          const skipInserts = invalidLeads
+            .filter((l: any) => l.id && !l.id.startsWith("expired_"))
+            .map((l: any) => ({
+              campaign_id,
+              lead_id: l.id,
+              status: "skipped",
+              error_reason: "Número inválido (blacklist)",
+            }));
+          if (skipInserts.length > 0) {
+            await serviceClient
+              .from("campaign_sent_leads")
+              .upsert(skipInserts, { onConflict: "campaign_id,lead_id", ignoreDuplicates: true });
           }
-        }
-        const skipped = before - leadsThisCall.length;
-        if (skipped > 0) {
-          console.log(`Skipped ${skipped} leads with known invalid numbers`);
         }
       }
     }
+
+    // Total unsent leads BEFORE sending (used for has_more)
+    const totalRemaining = leads.length;
+
+    // Now limit to MAX_LEADS_PER_CALL for THIS single execution
+    const leadsThisCall = leads.slice(0, test_mode ? leads.length : MAX_LEADS_PER_CALL);
 
     // === ANTI-BAN: Cap leadsThisCall by remaining daily quota ===
     if (!test_mode && dailyLimit > 0) {
@@ -451,7 +550,15 @@ Deno.serve(async (req) => {
 
     if (leadsThisCall.length === 0) {
       return new Response(
-        JSON.stringify({ success: true, message: "Todos os leads já foram enviados!", leads_count: 0, errors: 0, failed_leads: [], all_sent: true, has_more: false }),
+        JSON.stringify({
+          success: true,
+          message: "Todos os leads já foram enviados!",
+          leads_count: 0,
+          errors: 0,
+          failed_leads: [],
+          all_sent: true,
+          has_more: false,
+        }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -508,9 +615,10 @@ Deno.serve(async (req) => {
     const allowLinksInMessage = hasAnyLink(baseMessage);
 
     const variationCount = Math.max(leadsThisCall.length, 12);
-    const variations = await generateVariations(baseMessage, variationCount);
+    const variationResult = await generateVariations(baseMessage, variationCount);
+    const variations = variationResult.variations;
     const variationWarning = variations.length === 0
-      ? "Variação por IA indisponível. Todas as mensagens serão enviadas com o texto original (maior risco de detecção)."
+      ? `Variação por IA indisponível: ${variationResult.error || "erro desconhecido"}. Mensagens enviadas com texto original.`
       : null;
     console.log(`Variations ready: ${variations.length} for ${leadsThisCall.length} leads`);
 
@@ -648,8 +756,14 @@ Deno.serve(async (req) => {
       }
     }
 
-    const allSent = test_mode || (totalSent || 0) >= totalTargetLeads;
-    const hasMore = !test_mode && !allSent && (totalRemaining - leadsThisCall.length) > 0;
+    const allSent = test_mode || (totalTargetLeads > 0 && (totalSent || 0) >= totalTargetLeads);
+    // hasMore: there are still unsent leads in the queue for this batch
+    // Fallback: if totalRemaining shows leads exist, always continue regardless of allSent calculation
+    const remainingInBatch = totalRemaining - leadsThisCall.length;
+    const hasMore = !test_mode && remainingInBatch > 0;
+
+    // Log for debugging
+    console.log(`[LOOP DEBUG] totalSent=${totalSent}, totalTargetLeads=${totalTargetLeads}, allSent=${allSent}, totalRemaining=${totalRemaining}, leadsThisCall=${leadsThisCall.length}, remainingInBatch=${remainingInBatch}, hasMore=${hasMore}`);
 
     // Update campaign status
     await serviceClient.from("campaigns")

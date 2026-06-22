@@ -460,132 +460,144 @@ const UserCampaigns = () => {
     const size = batchSize === "all" ? 0 : parseInt(batchSize);
     let totalSentAcrossLoops = 0;
     let totalErrorsAcrossLoops = 0;
+    let consecutiveNetworkErrors = 0;
+    let consecutiveZeroLeads = 0;
     const allFailedLeads: Array<{ name: string | null; phone: string | null; reason: string }> = [];
     let loopCount = 0;
 
     try {
+      const maxIterations = (size || 200) * 3 + 50;
       while (true) {
         if (cancelRef.current) {
-          toast({ title: "🛑 Disparo cancelado", description: `${totalSentAcrossLoops} mensagens foram enviadas antes do cancelamento.` });
+          toast({ title: "🛑 Disparo cancelado", description: `${totalSentAcrossLoops} mensagens enviadas antes do cancelamento.` });
           break;
         }
-
         loopCount++;
-        setSendingProgress(`Enviando lote ${loopCount}... (${totalSentAcrossLoops} enviados)`);
+        if (loopCount > maxIterations) { break; }
 
-        const { data, error } = await supabase.functions.invoke("trigger-campaign", {
-          body: { campaign_id: id, test_mode: testMode, batch_size: testMode ? 0 : size },
-        });
+        setSendingProgress(`Enviando lead ${loopCount}... (${totalSentAcrossLoops} enviados)`);
 
-        // Handle errors - supabase SDK puts non-2xx responses in error
-        let responseData = data;
-        if (error) {
-          // Try to extract JSON body from FunctionsHttpError
-          try {
-            const ctx = (error as any).context;
-            if (ctx && typeof ctx.json === "function") {
-              responseData = await ctx.json();
-            } else if (error.message) {
-              try { responseData = JSON.parse(error.message); } catch {}
-            }
-          } catch {}
+        // Refresh JWT to prevent expiration during long loops
+        try { await supabase.auth.refreshSession(); } catch {}
 
-          if (!responseData || !responseData.code) {
-            toast({ title: "Erro no envio", description: responseData?.error || error.message, variant: "destructive" });
-            break;
+        // Call the edge function via raw fetch to avoid Supabase SDK error handling issues
+        let responseData: any = null;
+        try {
+          const session = (await supabase.auth.getSession()).data.session;
+          const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+          const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+          const res = await fetch(`${supabaseUrl}/functions/v1/trigger-campaign`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${session?.access_token || ""}`,
+              "apikey": anonKey,
+            },
+            body: JSON.stringify({ campaign_id: id, test_mode: testMode }),
+          });
+          const text = await res.text();
+          console.log(`[DISPATCH] status=${res.status} body=${text.substring(0, 500)}`);
+          try { responseData = JSON.parse(text); } catch {
+            console.error("[DISPATCH] JSON parse failed, raw:", text.substring(0, 200));
+            responseData = null;
           }
+        } catch (e: any) {
+          console.error("[DISPATCH] fetch exception:", e?.message || e);
         }
 
-        // === Anti-ban error handling ===
-        if (responseData?.code === "DAILY_LIMIT_REACHED") {
-          toast({
-            title: "Limite diário atingido",
-            description: responseData.error || `Você já enviou ${responseData.daily_sent} mensagens hoje. Limite: ${responseData.daily_limit}/dia.`,
-            variant: "destructive",
-          });
-          if (typeof responseData.daily_limit === "number") setDailyLimit(responseData.daily_limit);
+        console.log("[DISPATCH] responseData:", JSON.stringify(responseData));
+
+        // No response at all — network error or timeout, retry
+        if (!responseData) {
+          consecutiveNetworkErrors++;
+          console.warn(`[DISPATCH] No responseData (attempt ${consecutiveNetworkErrors}/10)`);
+          if (consecutiveNetworkErrors <= 10) {
+            setSendingProgress(`⚠️ Erro de rede (${consecutiveNetworkErrors}/10), tentando novamente...`);
+            await new Promise((r) => setTimeout(r, 5000));
+            continue;
+          }
+          toast({ title: "Erro no envio", description: "Servidor não respondeu após 10 tentativas.", variant: "destructive" });
           break;
         }
-        if (responseData?.code === "OUTSIDE_SAFE_HOURS") {
-          toast({
-            title: "Fora do horário seguro",
-            description: responseData.error || "Disparos só são permitidos entre 8h e 21h para proteger seu número.",
-            variant: "destructive",
-          });
+        consecutiveNetworkErrors = 0;
+
+        // HARD STOPS — only these specific codes break the loop
+        const code = responseData.code;
+        if (code === "DAILY_LIMIT_REACHED" || code === "OUTSIDE_SAFE_HOURS" || code === "INSTANCE_NOT_CONNECTED" || code === "UNAUTHORIZED") {
+          console.log(`[DISPATCH] HARD STOP: code=${code}`);
+          toast({ title: "Disparo interrompido", description: responseData.error, variant: "destructive" });
           break;
         }
-        if (responseData?.error && !responseData?.success) {
+        // Error WITHOUT success flag — fatal
+        if (responseData.error && responseData.success !== true) {
+          console.log(`[DISPATCH] ERROR STOP: error="${responseData.error}" success=${responseData.success} code=${code}`);
           toast({ title: "Erro no envio", description: responseData.error, variant: "destructive" });
           break;
         }
 
+        // PROCESS successful response
         totalSentAcrossLoops += responseData.leads_count || 0;
         totalErrorsAcrossLoops += responseData.errors || 0;
-        if (responseData.failed_leads?.length > 0) {
-          allFailedLeads.push(...responseData.failed_leads);
-        }
-
-        // Safety: if backend returned 0 leads sent and didn't say all_sent,
-        // something unexpected happened — break to avoid infinite loop
-        if ((responseData.leads_count || 0) === 0 && !responseData.all_sent) {
-          toast({
-            title: "Disparo pausado",
-            description: responseData.message || "Nenhum lead disponível para envio neste lote.",
-          });
-          break;
-        }
-
-        // Update daily counter from backend
-        if (typeof responseData.daily_sent === "number") {
-          setDailySent(responseData.daily_sent);
-        }
-
-        // Warn on the FIRST loop that the AI fallback kicked in. Without
-        // this, the user thinks anti-ban variation worked when in fact
-        // every lead got the same raw template.
+        if (responseData.failed_leads?.length > 0) allFailedLeads.push(...responseData.failed_leads);
+        if (typeof responseData.daily_sent === "number") setDailySent(responseData.daily_sent);
         if (responseData.variation_warning && loopCount === 1) {
-          toast({
-            title: "⚠️ Variação por IA indisponível",
-            description: responseData.variation_warning,
-            variant: "destructive",
-          });
+          toast({ title: "⚠️ Variação por IA indisponível", description: responseData.variation_warning, variant: "destructive" });
         }
 
-        if (responseData.all_sent || responseData.has_more === false || testMode) {
-          if (responseData.all_sent) {
-            toast({
-              title: "✅ Todos os leads foram enviados!",
-              description: `${responseData.total_sent} leads enviados com sucesso.${totalErrorsAcrossLoops > 0 ? ` (${totalErrorsAcrossLoops} erros)` : ""}`,
-            });
-          } else {
-            toast({
-              title: testMode ? "🧪 Teste enviado!" : "📱 Lote enviado!",
-              description: `${totalSentAcrossLoops} enviados. ${responseData.remaining > 0 ? `Restam ${responseData.remaining} leads.` : ""}${totalErrorsAcrossLoops > 0 ? ` (${totalErrorsAcrossLoops} erros)` : ""}`,
-            });
+        // Zero leads processed — skip delay, try next immediately
+        const leadsProcessed = (responseData.leads_count || 0) + (responseData.errors || 0);
+        if (leadsProcessed === 0) {
+          consecutiveZeroLeads++;
+          console.log(`[DISPATCH] Zero leads processed (${consecutiveZeroLeads}/50), has_more=${responseData.has_more}`);
+          if (consecutiveZeroLeads >= 50) {
+            toast({ title: "Disparo pausado", description: "Muitos leads filtrados consecutivamente. Verifique se há leads válidos na campanha." });
+            break;
           }
+          // If server says no more leads, stop even with zero processed
+          if (responseData.has_more === false) {
+            toast({ title: "✅ Todos enviados!", description: `${totalSentAcrossLoops} enviados.${totalErrorsAcrossLoops > 0 ? ` ${totalErrorsAcrossLoops} erros.` : ""}` });
+            break;
+          }
+          continue;
+        }
+        consecutiveZeroLeads = 0;
+
+        // STOP CONDITIONS — batch is done when we've SENT enough (errors don't count toward batch goal)
+        const batchDone = size > 0 && totalSentAcrossLoops >= size;
+        const noMore = responseData.has_more === false;
+        console.log(`[DISPATCH] sent=${totalSentAcrossLoops} err=${totalErrorsAcrossLoops} has_more=${responseData.has_more} batchDone=${batchDone} noMore=${noMore} testMode=${testMode}`);
+
+        if (testMode || noMore || batchDone) {
+          console.log(`[DISPATCH] STOPPING LOOP: testMode=${testMode} noMore=${noMore} batchDone=${batchDone}`);
+          toast({
+            title: noMore ? "✅ Todos enviados!" : "📱 Lote concluído!",
+            description: `${totalSentAcrossLoops} enviados.${totalErrorsAcrossLoops > 0 ? ` ${totalErrorsAcrossLoops} erros.` : ""}`,
+          });
           break;
         }
 
-        // Anti-ban: delay between each message (60-180s with 30% chance of extra 10-30s)
-        const baseDelay = 60 + Math.floor(Math.random() * 121); // 60-180s
-        const extraPause = Math.random() < 0.3 ? (10 + Math.floor(Math.random() * 21)) : 0;
-        const pauseSeconds = baseDelay + extraPause;
+        // ANTI-BAN DELAY: 30-90s between messages
+        const pauseSeconds = 30 + Math.floor(Math.random() * 61);
+        console.log(`[DISPATCH] Starting anti-ban delay: ${pauseSeconds}s`);
         for (let s = pauseSeconds; s > 0; s--) {
           if (cancelRef.current) break;
           const mins = Math.floor(s / 60);
           const secs = s % 60;
-          setSendingProgress(`⏳ Anti-ban: aguardando ${mins > 0 ? `${mins}m` : ""}${secs}s... (${totalSentAcrossLoops} enviados)`);
+          setSendingProgress(`⏳ Anti-ban: aguardando ${mins > 0 ? `${mins}m` : ""}${secs}s... (${totalSentAcrossLoops}/${size || "∞"} enviados)`);
           await new Promise((r) => setTimeout(r, 1000));
         }
+        console.log(`[DISPATCH] Delay finished, continuing loop...`);
       }
 
+      console.log(`[DISPATCH] LOOP ENDED normally. sent=${totalSentAcrossLoops} err=${totalErrorsAcrossLoops}`);
       if (allFailedLeads.length > 0) {
         setFailedLeads(allFailedLeads);
         setShowFailedDialog(true);
       }
       fetchCampaigns();
     } catch (e: any) {
-      toast({ title: "Erro", description: e.message, variant: "destructive" });
+      console.error(`[DISPATCH] LOOP CRASHED:`, e);
+      toast({ title: "Erro", description: e.message || "Erro inesperado no loop", variant: "destructive" });
     }
     setScheduling(null);
     setSendingProgress(null);
@@ -786,35 +798,46 @@ const UserCampaigns = () => {
         }
 
         loopCount++;
-        setSendingProgress(`Enviando lote ${loopCount}... (${totalSent} enviados)`);
+        setSendingProgress(`Enviando participante ${loopCount}... (${totalSent} enviados)`);
 
-        const { data, error } = await supabase.functions.invoke("send-group-message", {
-          body: {
-            group_ids: campaign.group_ids,
-            message: campaign.message_template,
-            image_urls: imageUrls,
-            audio_urls: audioUrls,
-            batch_size: size,
-            sent_phones: sentPhones,
-          },
-        });
+        // Refresh JWT to prevent expiration during long loops
+        try { await supabase.auth.refreshSession(); } catch {}
 
-        // Handle errors - supabase SDK puts non-2xx responses in error
-        let grpData = data;
-        if (error) {
-          try {
-            const ctx = (error as any).context;
-            if (ctx && typeof ctx.json === "function") {
-              grpData = await ctx.json();
-            } else if (error.message) {
-              try { grpData = JSON.parse(error.message); } catch {}
-            }
-          } catch {}
-
-          if (!grpData || !grpData.code) {
-            toast({ title: "Erro no envio", description: grpData?.error || error.message, variant: "destructive" });
-            break;
+        // Call via raw fetch to avoid Supabase SDK timeout/error handling issues
+        let grpData: any = null;
+        try {
+          const session = (await supabase.auth.getSession()).data.session;
+          const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+          const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+          const res = await fetch(`${supabaseUrl}/functions/v1/send-group-message`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${session?.access_token || ""}`,
+              "apikey": anonKey,
+            },
+            body: JSON.stringify({
+              group_ids: campaign.group_ids,
+              message: campaign.message_template,
+              image_urls: imageUrls,
+              audio_urls: audioUrls,
+              batch_size: size,
+              sent_phones: sentPhones,
+            }),
+          });
+          const text = await res.text();
+          console.log(`[GROUP-DISPATCH] status=${res.status} body=${text.substring(0, 500)}`);
+          try { grpData = JSON.parse(text); } catch {
+            console.error("[GROUP-DISPATCH] JSON parse failed, raw:", text.substring(0, 200));
+            grpData = null;
           }
+        } catch (e: any) {
+          console.error("[GROUP-DISPATCH] fetch exception:", e?.message || e);
+        }
+
+        if (!grpData) {
+          toast({ title: "Erro no envio", description: "Servidor não respondeu. Tente novamente.", variant: "destructive" });
+          break;
         }
 
         if (grpData?.code === "DAILY_LIMIT_REACHED" || grpData?.code === "OUTSIDE_SAFE_HOURS" || grpData?.code === "INSTANCE_NOT_CONNECTED") {
@@ -848,11 +871,11 @@ const UserCampaigns = () => {
           break;
         }
 
-        // Anti-block: pause between micro-batches (20-60s)
-        const pauseSeconds = 20 + Math.floor(Math.random() * 41);
+        // Anti-ban: delay between calls (60-180s) — same as trigger-campaign
+        const pauseSeconds = 60 + Math.floor(Math.random() * 121);
         for (let s = pauseSeconds; s > 0; s--) {
           if (groupCancelRef.current) break;
-          setSendingProgress(`Aguardando ${s}s antes do próximo lote... (${totalSent} enviados)`);
+          setSendingProgress(`⏳ Anti-ban: aguardando ${s}s antes do próximo envio... (${totalSent} enviados)`);
           await new Promise((r) => setTimeout(r, 1000));
         }
       }
