@@ -480,15 +480,41 @@ Deno.serve(async (req) => {
         filteredLeads = filteredLeads.filter((l: any) => listLeadIds!.has(l.id));
       }
 
-      // Get already processed lead IDs — only exclude FINAL statuses (sent, failed, skipped).
-      // "sending" entries are transient locks cleaned up above; they should NOT permanently block leads.
+      // Get already processed lead IDs — only exclude leads that should NOT be retried.
+      // "sending" = transient lock (cleaned above), "failed" with temporary errors = retryable.
+      // Only permanently exclude: "sent", "skipped", and "failed" with permanent errors.
       const { data: sentRows } = await serviceClient
         .from("campaign_sent_leads")
-        .select("lead_id, status")
+        .select("lead_id, status, error_reason")
         .eq("campaign_id", campaign_id)
         .in("status", ["sent", "failed", "skipped"]);
 
-      const sentIds = new Set((sentRows || []).map((r: any) => r.lead_id));
+      const permanentFailReasons = ["Número não existe no WhatsApp", "Número inválido (blacklist)", "Sem número de telefone"];
+      const sentIds = new Set(
+        (sentRows || [])
+          .filter((r: any) => {
+            if (r.status === "sent" || r.status === "skipped") return true;
+            if (r.status === "failed") {
+              return permanentFailReasons.some((reason) => (r.error_reason || "").includes(reason));
+            }
+            return false;
+          })
+          .map((r: any) => r.lead_id)
+      );
+
+      // Delete retryable "failed" entries so they can be re-processed cleanly
+      const retryableRows = (sentRows || []).filter((r: any) =>
+        r.status === "failed" && !permanentFailReasons.some((reason) => (r.error_reason || "").includes(reason))
+      );
+      if (retryableRows.length > 0) {
+        console.log(`Clearing ${retryableRows.length} retryable failed entries for re-send`);
+        await serviceClient
+          .from("campaign_sent_leads")
+          .delete()
+          .eq("campaign_id", campaign_id)
+          .in("lead_id", retryableRows.map((r: any) => r.lead_id));
+      }
+
       leads = filteredLeads.filter((l: any) => !sentIds.has(l.id));
 
       // Do NOT slice by batch_size here — the frontend controls the batch count
