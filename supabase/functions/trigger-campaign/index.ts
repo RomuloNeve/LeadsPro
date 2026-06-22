@@ -102,7 +102,7 @@ async function generateVariations(originalMessage: string, count: number): Promi
 
   try {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 90000);
+    const timeout = setTimeout(() => controller.abort(), 25000);
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       signal: controller.signal,
@@ -592,8 +592,8 @@ Deno.serve(async (req) => {
       );
     }
 
-    // LOCK: Prevent concurrent calls from processing the same leads
-    // Pre-register all leads as "sending" BEFORE actually sending, to prevent race conditions
+    // Mark leads as "sending" for progress tracking (no lock re-verification needed
+    // since frontend calls are sequential with 30-90s delays between them)
     if (!test_mode) {
       const preInserts = leadsThisCall
         .filter((l: any) => l.id)
@@ -602,40 +602,11 @@ Deno.serve(async (req) => {
           lead_id: l.id,
           status: "sending",
         }));
-      
+
       if (preInserts.length > 0) {
-        const { error: lockError } = await serviceClient
+        await serviceClient
           .from("campaign_sent_leads")
-          .upsert(preInserts, { onConflict: "campaign_id,lead_id", ignoreDuplicates: true });
-        
-        if (lockError) {
-          console.error("Lock error:", lockError);
-        }
-      }
-
-      // Re-check which leads are actually ours to send (weren't already locked by another call)
-      const { data: lockedRows } = await serviceClient
-        .from("campaign_sent_leads")
-        .select("lead_id, status")
-        .eq("campaign_id", campaign_id)
-        .in("lead_id", leadsThisCall.filter((l: any) => l.id).map((l: any) => l.id));
-
-      const myLeadIds = new Set(
-        (lockedRows || [])
-          .filter((r: any) => r.status === "sending")
-          .map((r: any) => r.lead_id)
-      );
-
-      // Remove leads that were already sent or locked by another concurrent call
-      const filteredLeads = leadsThisCall.filter((l: any) => !l.id || myLeadIds.has(l.id));
-      leadsThisCall.length = 0;
-      leadsThisCall.push(...filteredLeads);
-
-      if (leadsThisCall.length === 0) {
-        return new Response(
-          JSON.stringify({ success: true, message: "Leads já sendo processados por outra chamada", leads_count: 0, errors: 0, failed_leads: [], all_sent: false, has_more: true }),
-          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+          .upsert(preInserts, { onConflict: "campaign_id,lead_id" });
       }
     }
 
@@ -643,7 +614,7 @@ Deno.serve(async (req) => {
     const baseMessage = campaign.message_template;
     const allowLinksInMessage = hasAnyLink(baseMessage);
 
-    const variationCount = Math.max(leadsThisCall.length, 12);
+    const variationCount = Math.max(leadsThisCall.length, 3);
     const variationResult = await generateVariations(baseMessage, variationCount);
     const variations = variationResult.variations;
     const variationWarning = variations.length === 0
