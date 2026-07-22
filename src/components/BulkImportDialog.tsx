@@ -124,10 +124,11 @@ export function BulkImportDialog({ licenseId, onImportComplete }: BulkImportDial
     setImporting(true);
     setProgress({ current: 0, total: rows.length });
 
-    const BATCH_SIZE = 200;
+    const BATCH_SIZE = 50;
     const MAX_RETRIES = 3;
     let imported = 0;
     let failed = 0;
+    let lastError = "";
     const insertedLeadIds: string[] = [];
 
     // Create a list named after the uploaded file
@@ -171,17 +172,23 @@ export function BulkImportDialog({ licenseId, onImportComplete }: BulkImportDial
           insertedLeadIds.push(...insertedBatch.map((l) => l.id));
         } else if (attempt === MAX_RETRIES - 1) {
           failed += batch.length;
+          lastError = error?.message || "Erro desconhecido";
         } else {
-          await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)));
+          await new Promise((r) => setTimeout(r, 2000 * (attempt + 1)));
         }
       }
 
       setProgress({ current: imported, total: rows.length });
+
+      // Small delay between batches to avoid overwhelming the database
+      if (i + BATCH_SIZE < rows.length) {
+        await new Promise((r) => setTimeout(r, 300));
+      }
     }
 
     // Associate all inserted leads with the list
     if (insertedLeadIds.length > 0) {
-      const LINK_BATCH = 500;
+      const LINK_BATCH = 200;
       for (let i = 0; i < insertedLeadIds.length; i += LINK_BATCH) {
         const linkBatch = insertedLeadIds.slice(i, i + LINK_BATCH).map((lead_id) => ({
           list_id: listId,
@@ -192,8 +199,12 @@ export function BulkImportDialog({ licenseId, onImportComplete }: BulkImportDial
           const { error } = await supabase.from("lead_list_items").insert(linkBatch);
           if (!error) break;
           if (attempt < MAX_RETRIES - 1) {
-            await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)));
+            await new Promise((r) => setTimeout(r, 2000 * (attempt + 1)));
           }
+        }
+
+        if (i + LINK_BATCH < insertedLeadIds.length) {
+          await new Promise((r) => setTimeout(r, 200));
         }
       }
     }
@@ -205,7 +216,7 @@ export function BulkImportDialog({ licenseId, onImportComplete }: BulkImportDial
     } else {
       toast({
         title: `${imported} importados, ${failed} falharam`,
-        description: `Lista "${listName}" criada. Alguns lotes não puderam ser salvos.`,
+        description: lastError || "Alguns lotes não puderam ser salvos. Tente novamente.",
         variant: "destructive",
       });
     }
