@@ -58,6 +58,7 @@ export function BulkImportDialog({ licenseId, onImportComplete }: BulkImportDial
   const [open, setOpen] = useState(false);
   const [rows, setRows] = useState<ImportRow[]>([]);
   const [invalidCount, setInvalidCount] = useState(0);
+  const [duplicateCount, setDuplicateCount] = useState(0);
   const [importing, setImporting] = useState(false);
   const [progress, setProgress] = useState({ current: 0, total: 0 });
   const [fileName, setFileName] = useState("");
@@ -67,6 +68,7 @@ export function BulkImportDialog({ licenseId, onImportComplete }: BulkImportDial
   const reset = () => {
     setRows([]);
     setInvalidCount(0);
+    setDuplicateCount(0);
     setProgress({ current: 0, total: 0 });
     setFileName("");
     if (fileRef.current) fileRef.current.value = "";
@@ -95,8 +97,23 @@ export function BulkImportDialog({ licenseId, onImportComplete }: BulkImportDial
           }
         }
 
-        setRows(valid);
+        // Deduplicate by phone within the file itself
+        const seenPhones = new Set<string>();
+        const deduped: ImportRow[] = [];
+        let dupeCount = 0;
+        for (const row of valid) {
+          const phone = row.phone?.trim();
+          if (phone && seenPhones.has(phone)) {
+            dupeCount++;
+          } else {
+            if (phone) seenPhones.add(phone);
+            deduped.push(row);
+          }
+        }
+
+        setRows(deduped);
         setInvalidCount(invalid);
+        setDuplicateCount(dupeCount);
 
         if (valid.length === 0) {
           toast({
@@ -293,6 +310,12 @@ export function BulkImportDialog({ licenseId, onImportComplete }: BulkImportDial
                   <div className="flex items-center gap-2">
                     <AlertCircle className="h-4 w-4 text-destructive" />
                     <span className="text-sm text-destructive">{invalidCount} ignorados (sem categoria)</span>
+                  </div>
+                )}
+                {duplicateCount > 0 && (
+                  <div className="flex items-center gap-2">
+                    <AlertCircle className="h-4 w-4 text-yellow-500" />
+                    <span className="text-sm text-yellow-600">{duplicateCount} duplicatas removidas</span>
                   </div>
                 )}
               </div>
