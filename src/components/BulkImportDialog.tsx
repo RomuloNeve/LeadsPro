@@ -59,6 +59,7 @@ export function BulkImportDialog({ licenseId, onImportComplete }: BulkImportDial
   const [rows, setRows] = useState<ImportRow[]>([]);
   const [invalidCount, setInvalidCount] = useState(0);
   const [importing, setImporting] = useState(false);
+  const [progress, setProgress] = useState({ current: 0, total: 0 });
   const [fileName, setFileName] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
@@ -66,6 +67,7 @@ export function BulkImportDialog({ licenseId, onImportComplete }: BulkImportDial
   const reset = () => {
     setRows([]);
     setInvalidCount(0);
+    setProgress({ current: 0, total: 0 });
     setFileName("");
     if (fileRef.current) fileRef.current.value = "";
   };
@@ -120,37 +122,58 @@ export function BulkImportDialog({ licenseId, onImportComplete }: BulkImportDial
   const handleImport = async () => {
     if (rows.length === 0) return;
     setImporting(true);
+    setProgress({ current: 0, total: rows.length });
 
-    try {
-      const BATCH_SIZE = 100;
-      let imported = 0;
+    const BATCH_SIZE = 500;
+    const MAX_RETRIES = 3;
+    let imported = 0;
+    let failed = 0;
 
-      for (let i = 0; i < rows.length; i += BATCH_SIZE) {
-        const batch = rows.slice(i, i + BATCH_SIZE).map((r) => ({
-          license_id: licenseId,
-          category: r.category,
-          name: r.name || null,
-          phone: r.phone || null,
-          email: r.email || null,
-          instagram: r.instagram || null,
-          website: r.website || null,
-          linkedin: r.linkedin || null,
-        }));
+    for (let i = 0; i < rows.length; i += BATCH_SIZE) {
+      const batch = rows.slice(i, i + BATCH_SIZE).map((r) => ({
+        license_id: licenseId,
+        category: r.category,
+        name: r.name || null,
+        phone: r.phone || null,
+        email: r.email || null,
+        instagram: r.instagram || null,
+        website: r.website || null,
+        linkedin: r.linkedin || null,
+      }));
 
+      let success = false;
+      for (let attempt = 0; attempt < MAX_RETRIES && !success; attempt++) {
         const { error } = await supabase.from("leads").insert(batch);
-        if (error) throw error;
-        imported += batch.length;
+        if (!error) {
+          success = true;
+          imported += batch.length;
+        } else if (attempt === MAX_RETRIES - 1) {
+          failed += batch.length;
+        } else {
+          await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)));
+        }
       }
 
-      toast({ title: `${imported} leads importados com sucesso!` });
-      onImportComplete();
-      reset();
-      setOpen(false);
-    } catch (err: any) {
-      toast({ title: "Erro na importação", description: err.message, variant: "destructive" });
-    } finally {
-      setImporting(false);
+      setProgress({ current: i + batch.length, total: rows.length });
     }
+
+    setImporting(false);
+
+    if (failed === 0) {
+      toast({ title: `${imported} leads importados com sucesso!` });
+    } else {
+      toast({
+        title: `${imported} importados, ${failed} falharam`,
+        description: "Alguns lotes não puderam ser salvos. Tente importar novamente os que faltaram.",
+        variant: "destructive",
+      });
+    }
+
+    if (imported > 0) {
+      onImportComplete();
+    }
+    reset();
+    setOpen(false);
   };
 
   return (
@@ -262,11 +285,26 @@ export function BulkImportDialog({ licenseId, onImportComplete }: BulkImportDial
               )}
             </div>
 
+            {importing && progress.total > 0 && (
+              <div className="space-y-2">
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>Importando...</span>
+                  <span>{progress.current.toLocaleString()} / {progress.total.toLocaleString()}</span>
+                </div>
+                <div className="h-2 bg-muted rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-primary transition-all duration-300 rounded-full"
+                    style={{ width: `${Math.round((progress.current / progress.total) * 100)}%` }}
+                  />
+                </div>
+              </div>
+            )}
+
             <Button onClick={handleImport} disabled={importing} className="w-full gradient-bg">
               {importing ? (
-                <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Importando...</>
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Importando {Math.round((progress.current / progress.total) * 100)}%</>
               ) : (
-                <><Upload className="h-4 w-4 mr-2" /> Importar {rows.length} leads</>
+                <><Upload className="h-4 w-4 mr-2" /> Importar {rows.length.toLocaleString()} leads</>
               )}
             </Button>
           </div>
