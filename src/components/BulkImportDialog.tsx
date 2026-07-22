@@ -124,7 +124,7 @@ export function BulkImportDialog({ licenseId, onImportComplete }: BulkImportDial
     setImporting(true);
     setProgress({ current: 0, total: rows.length });
 
-    const BATCH_SIZE = 500;
+    const BATCH_SIZE = 200;
     const MAX_RETRIES = 3;
     let imported = 0;
     let failed = 0;
@@ -176,18 +176,25 @@ export function BulkImportDialog({ licenseId, onImportComplete }: BulkImportDial
         }
       }
 
-      setProgress({ current: i + batch.length, total: rows.length });
+      setProgress({ current: imported, total: rows.length });
     }
 
     // Associate all inserted leads with the list
     if (insertedLeadIds.length > 0) {
-      const LINK_BATCH = 1000;
+      const LINK_BATCH = 500;
       for (let i = 0; i < insertedLeadIds.length; i += LINK_BATCH) {
         const linkBatch = insertedLeadIds.slice(i, i + LINK_BATCH).map((lead_id) => ({
           list_id: listId,
           lead_id,
         }));
-        await supabase.from("lead_list_items").insert(linkBatch);
+
+        for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+          const { error } = await supabase.from("lead_list_items").insert(linkBatch);
+          if (!error) break;
+          if (attempt < MAX_RETRIES - 1) {
+            await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)));
+          }
+        }
       }
     }
 
