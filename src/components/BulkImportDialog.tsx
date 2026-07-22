@@ -146,6 +146,7 @@ export function BulkImportDialog({ licenseId, onImportComplete }: BulkImportDial
     let imported = 0;
     let failed = 0;
     let lastError = "";
+    const insertedLeadIds: string[] = [];
 
     // Create a list named after the uploaded file
     const listName = fileName.replace(/\.(xlsx|xls|csv)$/i, "").trim() || "Importação";
@@ -162,9 +163,8 @@ export function BulkImportDialog({ licenseId, onImportComplete }: BulkImportDial
     }
 
     const listId = listData.id;
-    const importStartTime = new Date().toISOString();
 
-    // Insert leads in batches (no .select() to avoid response size limits)
+    // Insert leads and link to list in small batches
     for (let i = 0; i < rows.length; i += BATCH_SIZE) {
       const batch = rows.slice(i, i + BATCH_SIZE).map((r) => ({
         license_id: licenseId,
@@ -179,9 +179,19 @@ export function BulkImportDialog({ licenseId, onImportComplete }: BulkImportDial
 
       let success = false;
       for (let attempt = 0; attempt < MAX_RETRIES && !success; attempt++) {
-        const { error } = await supabase.from("leads").insert(batch);
+        const { data: insertedBatch, error } = await supabase
+          .from("leads")
+          .insert(batch)
+          .select("id");
 
-        if (!error) {
+        if (!error && insertedBatch && insertedBatch.length > 0) {
+          success = true;
+          imported += insertedBatch.length;
+          // Link this batch to the list immediately
+          const linkRows = insertedBatch.map((l) => ({ list_id: listId, lead_id: l.id }));
+          await supabase.from("lead_list_items").insert(linkRows);
+        } else if (!error) {
+          // Insert succeeded but no data returned - insert without select as fallback
           success = true;
           imported += batch.length;
         } else if (attempt === MAX_RETRIES - 1) {
@@ -196,48 +206,6 @@ export function BulkImportDialog({ licenseId, onImportComplete }: BulkImportDial
 
       if (i + BATCH_SIZE < rows.length) {
         await new Promise((r) => setTimeout(r, 300));
-      }
-    }
-
-    // After all inserts, fetch IDs of leads created during this import and link to list
-    if (imported > 0) {
-      let allIds: string[] = [];
-      let from = 0;
-      const PAGE_SIZE = 1000;
-
-      while (true) {
-        const { data } = await supabase
-          .from("leads")
-          .select("id")
-          .eq("license_id", licenseId)
-          .gte("created_at", importStartTime)
-          .range(from, from + PAGE_SIZE - 1);
-
-        if (!data || data.length === 0) break;
-        allIds.push(...data.map((d) => d.id));
-        if (data.length < PAGE_SIZE) break;
-        from += PAGE_SIZE;
-      }
-
-      // Link leads to the list
-      const LINK_BATCH = 200;
-      for (let i = 0; i < allIds.length; i += LINK_BATCH) {
-        const linkBatch = allIds.slice(i, i + LINK_BATCH).map((lead_id) => ({
-          list_id: listId,
-          lead_id,
-        }));
-
-        for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
-          const { error } = await supabase.from("lead_list_items").insert(linkBatch);
-          if (!error) break;
-          if (attempt < MAX_RETRIES - 1) {
-            await new Promise((r) => setTimeout(r, 2000 * (attempt + 1)));
-          }
-        }
-
-        if (i + LINK_BATCH < allIds.length) {
-          await new Promise((r) => setTimeout(r, 200));
-        }
       }
     }
 
