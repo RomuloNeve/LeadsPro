@@ -179,10 +179,12 @@ export function BulkImportDialog({ licenseId, onImportComplete }: BulkImportDial
 
       let success = false;
       for (let attempt = 0; attempt < MAX_RETRIES && !success; attempt++) {
-        const { data: insertedBatch, error } = await supabase
+        const { data: insertedBatch, error, status, statusText } = await supabase
           .from("leads")
           .insert(batch)
           .select("id");
+
+        console.log(`[Import] Batch ${Math.floor(i / BATCH_SIZE) + 1}: status=${status} statusText=${statusText} rows=${insertedBatch?.length ?? 0} error=${error?.message ?? "none"}`);
 
         if (!error && insertedBatch && insertedBatch.length > 0) {
           success = true;
@@ -191,12 +193,13 @@ export function BulkImportDialog({ licenseId, onImportComplete }: BulkImportDial
           const linkRows = insertedBatch.map((l) => ({ list_id: listId, lead_id: l.id }));
           await supabase.from("lead_list_items").insert(linkRows);
         } else if (!error) {
-          // Insert succeeded but no data returned - insert without select as fallback
+          // Insert succeeded but no data returned - count as success
           success = true;
           imported += batch.length;
         } else if (attempt === MAX_RETRIES - 1) {
           failed += batch.length;
-          lastError = error?.message || "Erro desconhecido";
+          lastError = error?.message || `Status ${status}: ${statusText}`;
+          console.error(`[Import] Batch ${Math.floor(i / BATCH_SIZE) + 1} FAILED after ${MAX_RETRIES} retries:`, error);
         } else {
           await new Promise((r) => setTimeout(r, 2000 * (attempt + 1)));
         }
