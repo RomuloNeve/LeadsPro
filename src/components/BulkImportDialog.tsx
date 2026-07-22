@@ -128,6 +128,23 @@ export function BulkImportDialog({ licenseId, onImportComplete }: BulkImportDial
     const MAX_RETRIES = 3;
     let imported = 0;
     let failed = 0;
+    const insertedLeadIds: string[] = [];
+
+    // Create a list named after the uploaded file
+    const listName = fileName.replace(/\.(xlsx|xls|csv)$/i, "").trim() || "Importação";
+    const { data: listData, error: listError } = await supabase
+      .from("lead_lists")
+      .insert({ name: listName, license_id: licenseId })
+      .select("id")
+      .single();
+
+    if (listError || !listData) {
+      toast({ title: "Erro ao criar lista", description: listError?.message, variant: "destructive" });
+      setImporting(false);
+      return;
+    }
+
+    const listId = listData.id;
 
     for (let i = 0; i < rows.length; i += BATCH_SIZE) {
       const batch = rows.slice(i, i + BATCH_SIZE).map((r) => ({
@@ -143,10 +160,15 @@ export function BulkImportDialog({ licenseId, onImportComplete }: BulkImportDial
 
       let success = false;
       for (let attempt = 0; attempt < MAX_RETRIES && !success; attempt++) {
-        const { error } = await supabase.from("leads").insert(batch);
-        if (!error) {
+        const { data: insertedBatch, error } = await supabase
+          .from("leads")
+          .insert(batch)
+          .select("id");
+
+        if (!error && insertedBatch) {
           success = true;
-          imported += batch.length;
+          imported += insertedBatch.length;
+          insertedLeadIds.push(...insertedBatch.map((l) => l.id));
         } else if (attempt === MAX_RETRIES - 1) {
           failed += batch.length;
         } else {
@@ -157,14 +179,26 @@ export function BulkImportDialog({ licenseId, onImportComplete }: BulkImportDial
       setProgress({ current: i + batch.length, total: rows.length });
     }
 
+    // Associate all inserted leads with the list
+    if (insertedLeadIds.length > 0) {
+      const LINK_BATCH = 1000;
+      for (let i = 0; i < insertedLeadIds.length; i += LINK_BATCH) {
+        const linkBatch = insertedLeadIds.slice(i, i + LINK_BATCH).map((lead_id) => ({
+          list_id: listId,
+          lead_id,
+        }));
+        await supabase.from("lead_list_items").insert(linkBatch);
+      }
+    }
+
     setImporting(false);
 
     if (failed === 0) {
-      toast({ title: `${imported} leads importados com sucesso!` });
+      toast({ title: `${imported} leads importados na lista "${listName}"!` });
     } else {
       toast({
         title: `${imported} importados, ${failed} falharam`,
-        description: "Alguns lotes não puderam ser salvos. Tente importar novamente os que faltaram.",
+        description: `Lista "${listName}" criada. Alguns lotes não puderam ser salvos.`,
         variant: "destructive",
       });
     }
