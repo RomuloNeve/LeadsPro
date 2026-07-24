@@ -71,12 +71,25 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
   const { toast } = useToast();
 
   const fetchLeads = async (licenseId: string) => {
-    const { data } = await supabase
-      .from("leads")
-      .select("*")
-      .eq("license_id", licenseId)
-      .order("created_at", { ascending: false });
-    setLeads((data as Lead[]) || []);
+    const PAGE_SIZE = 1000;
+    let allLeads: Lead[] = [];
+    let from = 0;
+
+    while (true) {
+      const { data } = await supabase
+        .from("leads")
+        .select("*")
+        .eq("license_id", licenseId)
+        .order("created_at", { ascending: false })
+        .range(from, from + PAGE_SIZE - 1);
+
+      if (!data || data.length === 0) break;
+      allLeads = allLeads.concat(data as Lead[]);
+      if (data.length < PAGE_SIZE) break;
+      from += PAGE_SIZE;
+    }
+
+    setLeads(allLeads);
   };
 
   const fetchLicense = async () => {
